@@ -29,7 +29,7 @@ class Monitor extends Model
 
     public const KEEP_HISTORY_DAYS = 30;
 
-    protected $fillable = ['name', 'url'];
+    protected $fillable = ['name', 'url', 'deploy_path'];
 
     protected function casts(): array
     {

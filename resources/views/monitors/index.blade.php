@@ -23,6 +23,7 @@
                         @csrf @method('PUT')
                         <input name="name" value="{{ $monitor->name }}" required maxlength="100" aria-label="Name" class="w-40 rounded-md border border-zinc-700 px-2 py-1 text-sm">
                         <input name="url" value="{{ $monitor->url }}" required aria-label="URL" class="min-w-48 flex-1 rounded-md border border-zinc-700 px-2 py-1 text-sm">
+                        <input name="deploy_path" value="{{ $monitor->deploy_path }}" placeholder="/var/www/…" aria-label="Server folder" class="w-44 rounded-md border border-zinc-700 px-2 py-1 text-sm">
                         <button class="rounded border px-2 py-1 text-xs hover:bg-zinc-800">Save</button>
                     </form>
                     <form method="POST" action="{{ route('monitors.check-one', $monitor) }}">@csrf<button class="rounded border px-2 py-1 text-xs hover:bg-zinc-800">Check</button></form>

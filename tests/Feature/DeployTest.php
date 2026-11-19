@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Deployment;
+use App\Models\Monitor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Tests\TestCase;
 
@@ -21,13 +23,27 @@ class DeployTest extends TestCase
         $this->actingAs(User::factory()->create());
     }
 
-    public function test_pressing_deploy_queues_one_deployment_for_the_current_branch(): void
+    public function test_deploy_all_queues_every_registered_site_with_lore_last_and_skips_busy_ones(): void
     {
+        Monitor::factory()->create(['name' => 'job-scout', 'deploy_path' => '/var/www/job-scout']);
+        Monitor::factory()->create(['name' => 'verbeek-ug', 'deploy_path' => '/var/www/verbeek-ug']);
+        Monitor::factory()->create(['name' => 'no-folder', 'deploy_path' => null]);
+
         $this->post(route('deploy.store'))->assertRedirect(route('deploy.index'));
         $this->post(route('deploy.store'));
 
-        $this->assertSame(1, Deployment::count());
-        $this->get(route('deploy.index'))->assertOk()->assertSee('Waiting for the scheduler');
+        $this->assertSame(['job-scout', 'verbeek-ug', 'lore'], Deployment::orderBy('id')->pluck('site')->all());
+        $this->get(route('deploy.index'))->assertOk()->assertSee('Waiting for the scheduler')->assertDontSee('no-folder');
+    }
+
+    public function test_a_single_site_can_be_deployed_and_unknown_paths_are_refused(): void
+    {
+        Monitor::factory()->create(['name' => 'job-scout', 'deploy_path' => '/var/www/job-scout']);
+
+        $this->post(route('deploy.store'), ['path' => '/etc'])->assertStatus(422);
+        $this->post(route('deploy.store'), ['path' => '/var/www/job-scout'])->assertRedirect();
+
+        $this->assertSame(['job-scout'], Deployment::pluck('site')->all());
     }
 
     public function test_deploying_is_refused_when_switched_off(): void
@@ -36,6 +52,17 @@ class DeployTest extends TestCase
 
         $this->post(route('deploy.store'))->assertForbidden();
         $this->get(route('deploy.index'))->assertOk()->assertSee('switched off');
+    }
+
+    public function test_the_site_form_only_accepts_folders_directly_under_var_www(): void
+    {
+        Http::fake();
+
+        $this->post(route('analytics.store'), ['name' => 'x', 'url' => 'https://x.test', 'deploy_path' => '/etc/passwd'])->assertSessionHasErrors('deploy_path');
+        $this->post(route('analytics.store'), ['name' => 'x', 'url' => 'https://x.test', 'deploy_path' => '/var/www/../etc'])->assertSessionHasErrors('deploy_path');
+        $this->post(route('analytics.store'), ['name' => 'x', 'url' => 'https://x.test', 'deploy_path' => '/var/www/x'])->assertSessionDoesntHaveErrors();
+
+        $this->assertSame('/var/www/x', Monitor::sole()->deploy_path);
     }
 
     public function test_the_scheduler_reports_how_far_behind_the_branch_is(): void
@@ -64,7 +91,7 @@ class DeployTest extends TestCase
             '*diff*' => Process::result("resources/views/dashboard.blade.php\n"),
             '*' => Process::result('done'),
         ]);
-        Deployment::create();
+        Deployment::create(['site' => 'lore', 'path' => base_path()]);
 
         $this->artisan('lore:deploy')->assertSuccessful();
 
@@ -85,7 +112,7 @@ class DeployTest extends TestCase
             '*pull*' => Process::result('', 'error: local changes would be overwritten', 1),
             '*' => Process::result('ok'),
         ]);
-        Deployment::create();
+        Deployment::create(['site' => 'lore', 'path' => base_path()]);
 
         $this->artisan('lore:deploy')->assertSuccessful();
 
@@ -99,5 +126,28 @@ class DeployTest extends TestCase
     private function commandLine(object $process): string
     {
         return is_array($process->command) ? implode(' ', array_map(fn (string $part) => "'{$part}'", $process->command)) : $process->command;
+    }
+
+    public function test_another_laravel_site_is_deployed_in_its_own_folder_without_a_lore_backup(): void
+    {
+        $dir = sys_get_temp_dir().'/lore-deploy-'.uniqid();
+        mkdir($dir);
+        touch($dir.'/artisan');
+        file_put_contents($dir.'/composer.json', '{}');
+        file_put_contents($dir.'/package.json', '{"scripts":{"build":"vite build"}}');
+        Process::fake(['*--abbrev-ref*' => Process::result("main\n"), '*' => Process::result('ok')]);
+        Deployment::create(['site' => 'other', 'path' => $dir]);
+
+        $this->artisan('lore:deploy')->assertSuccessful();
+
+        $this->assertSame('succeeded', Deployment::sole()->status);
+        Process::assertRan(fn ($process, $result) => $process->path === $dir && str_contains($this->commandLine($process), "'migrate'"));
+        Process::assertRan(fn ($process) => $process->path === $dir && str_contains($this->commandLine($process), "'run' 'build'"));
+        Process::assertDidntRun(fn ($process) => str_contains($this->commandLine($process), 'lore:backup'));
+
+        unlink($dir.'/artisan');
+        unlink($dir.'/composer.json');
+        unlink($dir.'/package.json');
+        rmdir($dir);
     }
 }

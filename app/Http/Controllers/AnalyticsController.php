@@ -26,10 +26,11 @@ class AnalyticsController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'url' => ['required', 'url:http,https', 'max:2000'],
+            'deploy_path' => ['nullable', 'regex:#^/var/www/[A-Za-z0-9._-]+$#'],
             'property_id' => ['nullable', 'regex:/^\d{6,15}$/', 'unique:analytics_sites,property_id'],
-        ], ['property_id.regex' => 'Use the numeric GA4 property ID (Admin → Property details), not the G-XXXX measurement ID.']);
+        ], ['deploy_path.regex' => 'Use the site\'s folder on the server, like /var/www/my-site.', 'property_id.regex' => 'Use the numeric GA4 property ID (Admin → Property details), not the G-XXXX measurement ID.']);
 
-        $monitor = Monitor::create(['name' => $data['name'], 'url' => $data['url']]);
+        $monitor = Monitor::create(['name' => $data['name'], 'url' => $data['url'], 'deploy_path' => $data['deploy_path'] ?? null]);
         Monitor::check($monitor->newCollection([$monitor]));
 
         if (! empty($data['property_id'])) {

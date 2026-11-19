@@ -77,13 +77,14 @@ class MonitorController extends Controller
     }
 
     /**
-     * @return array{name: string, url: string}
+     * @return array{name: string, url: string, deploy_path: string|null}
      */
     private function validated(Request $request): array
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'url' => ['required', 'url:http,https', 'max:2000'],
+            'deploy_path' => ['nullable', 'regex:#^/var/www/[A-Za-z0-9._-]+$#'],
         ]);
     }
 }
