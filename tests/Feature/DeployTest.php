@@ -89,7 +89,7 @@ class DeployTest extends TestCase
         Process::fake([
             '*--abbrev-ref*' => Process::result("main\n"),
             '*rev-parse*HEAD*' => Process::sequence()->push(Process::result("aaaaaaa\n"))->push(Process::result("bbbbbbb\n"))->whenEmpty(Process::result("bbbbbbb\n")),
-            '*diff*' => Process::result("resources/views/dashboard.blade.php\n"),
+            '*diff*' => Process::result("database/migrations/2030_01_01_000000_add_things.php\nresources/views/dashboard.blade.php\n"),
             '*' => Process::result('done'),
         ]);
         Deployment::create(['site' => 'lore', 'path' => base_path()]);
@@ -110,6 +110,7 @@ class DeployTest extends TestCase
     {
         Process::fake([
             '*rev-parse*' => Process::result("main\n"),
+            '*diff*' => Process::result("database/migrations/2030_01_01_000000_add_things.php\n"),
             '*pull*' => Process::result('', 'error: local changes would be overwritten', 1),
             '*' => Process::result('ok'),
         ]);
@@ -150,5 +151,21 @@ class DeployTest extends TestCase
         unlink($dir.'/composer.json');
         unlink($dir.'/package.json');
         rmdir($dir);
+    }
+
+    public function test_a_site_stays_online_during_a_deploy_unless_migrations_are_incoming(): void
+    {
+        Process::fake([
+            '*--abbrev-ref*' => Process::result("main\n"),
+            '*diff*' => Process::result("resources/views/dashboard.blade.php\n"),
+            '*' => Process::result('ok'),
+        ]);
+        Deployment::create(['site' => 'lore', 'path' => base_path()]);
+
+        $this->artisan('lore:deploy')->assertSuccessful();
+
+        $this->assertSame('succeeded', Deployment::sole()->status);
+        Process::assertDidntRun(fn ($process) => str_contains($this->commandLine($process), "'down'"));
+        Process::assertRan(fn ($process) => str_contains($this->commandLine($process), "'migrate'"));
     }
 }

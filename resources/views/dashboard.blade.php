@@ -11,8 +11,8 @@
         </a>
     @endif
 
-    <section class="mt-6">
-        <div class="mb-2 flex items-center justify-between">
+    <section class="mt-12">
+        <div class="mb-4 flex items-center justify-between">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-400">Server health
                 @if($monitors->isNotEmpty())
                     <span class="ml-2 normal-case {{ $monitors->contains('is_up', false) ? 'text-red-400' : 'text-emerald-400' }}">{{ $monitors->where('is_up', true)->count() }}/{{ $monitors->count() }} up</span>
@@ -33,9 +33,9 @@
     </section>
 
     @if($analytics)
-        <section class="mt-6">
-            <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days · daily users</span> <a href="{{ route('analytics.index') }}" class="ml-2 normal-case text-zinc-400 hover:text-zinc-100">Manage</a></h2>
-            <div class="mb-3">@include('partials.world-map')</div>
+        <section class="mt-12">
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days · daily users</span> <a href="{{ route('analytics.index') }}" class="ml-2 normal-case text-zinc-400 hover:text-zinc-100">Manage</a></h2>
+            <div class="mb-4">@include('partials.world-map')</div>
             <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 @foreach($analytics as $site)
                     <li class="border border-zinc-800 bg-zinc-900 p-3">@include('partials.analytics-tile', ['site' => $site])</li>
@@ -44,8 +44,8 @@
         </section>
     @endif
 
-    <section class="mt-8">
-        <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Due now</h2>
+    <section class="mt-12">
+        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Due now</h2>
         @if($due->isEmpty())
             <p class="text-sm text-zinc-400">Nothing due. 🎉</p>
         @else
@@ -53,8 +53,8 @@
         @endif
     </section>
 
-    <section class="mt-8">
-        <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Next 14 days</h2>
+    <section class="mt-12">
+        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Next 14 days</h2>
         @if($upcoming->isEmpty())
             <p class="text-sm text-zinc-400">No upcoming reminders. <a href="{{ route('reminders.index') }}" class="underline">Add one</a>.</p>
         @else
@@ -62,8 +62,8 @@
         @endif
     </section>
 
-    <section class="mt-8">
-        <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Recently updated pages</h2>
+    <section class="mt-12">
+        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Recently updated pages</h2>
         <ul class="divide-y divide-zinc-800 rounded-lg border border-zinc-800 bg-zinc-900 text-sm">
             @forelse($recent as $p)
                 <li class="flex justify-between px-3 py-2"><a href="{{ route('pages.show', $p) }}" class="font-medium hover:underline">{{ $p->title }}</a><span class="text-zinc-400">{{ $p->space->name }} · {{ $p->updated_at->diffForHumans() }}</span></li>

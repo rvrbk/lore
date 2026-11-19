@@ -116,7 +116,10 @@ class Deployer
             if ($path === base_path()) {
                 $steps[] = ['Back up the database', ['php', 'artisan', 'lore:backup']];
             }
-            if ($laravel) {
+            // Only take a Laravel site offline when the incoming commits carry migrations; otherwise it keeps serving while it builds.
+            $this->run($path, ['git', 'fetch', 'origin', $branch]);
+            $incoming = explode("\n", trim($this->run($path, ['git', 'diff', '--name-only', 'HEAD', 'FETCH_HEAD'])->output()));
+            if ($laravel && collect($incoming)->contains(fn (string $file) => str_starts_with($file, 'database/migrations/'))) {
                 $steps[] = ['Maintenance mode on', ['php', 'artisan', 'down']];
             }
             $steps[] = ["Pull origin/{$branch}", ['git', 'pull', '--ff-only', 'origin', $branch]];
