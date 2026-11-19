@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'IBM Plex Mono', ui-monospace, monospace;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --font-pixel: 'Press Start 2P', 'IBM Plex Mono', monospace;
+
+    --radius-xs: 0;
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+
+    /* Retro palette: deep violet neutrals with violet and cyan accents (all text pairs checked for WCAG AA) */
+    --color-zinc-100: #f8f7ff;
+    --color-zinc-200: #ece9fb;
+    --color-zinc-300: #dcd6f7;
+    --color-zinc-400: #c3baee;
+    --color-zinc-500: #a396dc;
+    --color-zinc-600: #6a5bb0;
+    --color-zinc-700: #463a8a;
+    --color-zinc-800: #251c4d;
+    --color-zinc-900: #181233;
+    --color-zinc-950: #0f0b23;
+
+    --color-indigo-300: #cdbfff;
+    --color-indigo-400: #7ee3ee;
+    --color-indigo-500: #8b6cf0;
+    --color-indigo-600: #6d49d8;
+    --color-indigo-700: #5a38bd;
+    --color-emerald-600: #1f7a5f;
+    --color-emerald-700: #19654e;
+    --color-red-400: #ff8a9a;
+    --color-red-500: #c9364b;
+}
+
+.md h1 { @apply mt-6 mb-3 text-2xl font-semibold; }
+.md h2 { @apply mt-6 mb-2 text-xl font-semibold; }
+.md h3 { @apply mt-4 mb-2 text-lg font-semibold; }
+.md p, .md ul, .md ol, .md pre, .md blockquote, .md table { @apply my-3; }
+.md ul { @apply list-disc pl-6; }
+.md ol { @apply list-decimal pl-6; }
+.md a { @apply text-indigo-400 underline; }
+.md code { @apply rounded bg-zinc-800 px-1 py-0.5 text-sm; }
+.md pre { @apply overflow-x-auto rounded-lg bg-zinc-950 p-4 text-sm text-zinc-100 ring-1 ring-zinc-800; }
+.md pre code { @apply bg-transparent p-0 text-inherit; }
+.md blockquote { @apply border-l-4 border-zinc-600 pl-4 text-zinc-400; }
+.md table { @apply w-full border-collapse text-sm; }
+.md th, .md td { @apply border border-zinc-700 px-3 py-1.5 text-left; }
+.md th { @apply bg-zinc-800; }
+.md hr { @apply my-6 border-zinc-200; }
+.md input[type=checkbox] { @apply mr-1.5; }
+
+html { color-scheme: dark; font-size: 15px; }
+
+@layer base {
+    *, ::before, ::after { border-color: var(--color-zinc-700); }
+
+    input:not([type=checkbox]):not([type=hidden]), select, textarea {
+        @apply bg-zinc-950 text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30;
+    }
+
+    summary { @apply select-none; }
+    ::selection { @apply bg-indigo-500/40; }
+}
+
+@layer base {
+    body { background-image: linear-gradient(to bottom, transparent 60%, rgb(139 108 240 / 0.07)); background-attachment: fixed; }
+
+    h1, h2, h3 { font-family: var(--font-pixel); line-height: 1.6; }
+    h1, h2, h3 { text-transform: none; }
+    h1.text-3xl, h1.text-2xl { font-size: 0.95rem; }
+    h2 { font-size: 0.6rem; text-transform: uppercase; color: var(--color-zinc-400); }
+    .md h1, .md h2, .md h3 { font-size: 0.85rem; text-transform: none; color: var(--color-zinc-100); }
+
+    a, button, summary { cursor: pointer; }
+}
+
+@layer components {
+    .bg-indigo-600 { box-shadow: 2px 2px 0 var(--color-zinc-700); }
+    aside { border-right-color: var(--color-zinc-700); }
+}

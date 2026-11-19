@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Providers;
+
+use App\Models\Monitor;
+use App\Models\Reminder;
+use App\Models\Space;
+use Illuminate\Foundation\DevCommands;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        // Runs the scheduler (reminder notifications) alongside `composer dev` / `php artisan dev`.
+        DevCommands::artisan('schedule:work', 'scheduler');
+
+        View::composer('components.layouts.app', fn ($view) => $view->with([
+            'navSpaces' => Space::orderBy('name')->get(),
+            'dueCount' => Reminder::due()->count(),
+            'downCount' => Monitor::where('is_up', false)->count(),
+        ]));
+    }
+}
