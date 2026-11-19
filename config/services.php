@@ -42,6 +42,12 @@ return [
         'email' => env('JOB_SCOUT_EMAIL'),
     ],
 
+    'google_analytics' => [
+        // "Name:GA4 property id" pairs, comma separated, and the path to a service account JSON key with Viewer access.
+        'properties' => env('GA_PROPERTIES'),
+        'credentials' => env('GA_CREDENTIALS'),
+    ],
+
     'monitor_alerts' => [
         // Slack/Discord/ntfy-style webhook that receives {"text": ..., "content": ...} when an app goes down or recovers.
         'webhook' => env('MONITOR_ALERT_WEBHOOK'),

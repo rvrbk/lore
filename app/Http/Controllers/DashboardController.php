@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Reminder;
+use App\Services\GoogleAnalytics;
 use App\Services\JobScout;
 
 class DashboardController extends Controller
@@ -13,6 +14,7 @@ class DashboardController extends Controller
     {
         return view('dashboard', [
             'jobScout' => app(JobScout::class)->newMatches(),
+            'analytics' => app(GoogleAnalytics::class)->summary(),
             'monitors' => $monitors = Monitor::orderBy('name')->get(),
             'sparks' => Monitor::sparklines($monitors),
             'due' => Reminder::due()->with('page')->orderBy('due_at')->get(),
