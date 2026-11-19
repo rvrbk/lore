@@ -34,22 +34,10 @@
 
     @if($analytics)
         <section class="mt-6">
-            <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days · daily users</span></h2>
+            <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days · daily users</span> <a href="{{ route('analytics.index') }}" class="ml-2 normal-case text-zinc-400 hover:text-zinc-100">Manage</a></h2>
             <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 @foreach($analytics as $site)
-                    <li class="border border-zinc-800 bg-zinc-900 p-3">
-                        <div class="truncate text-sm font-medium text-zinc-100">{{ $site['name'] }}</div>
-                        @if($site['users'] === null)
-                            <p class="mt-2 text-xs text-red-400">Could not load. Is the service account added to this property?</p>
-                        @else
-                            <div class="mt-2">@include('partials.trend', ['values' => $site['daily'], 'label' => 'Daily users for '.$site['name']])</div>
-                            <dl class="mt-3 grid grid-cols-3 gap-2 text-xs text-zinc-400">
-                                <div><dd class="text-xl font-semibold text-indigo-400">{{ number_format($site['users']) }}</dd><dt>Users</dt></div>
-                                <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['sessions']) }}</dd><dt>Sessions</dt></div>
-                                <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['views']) }}</dd><dt>Views</dt></div>
-                            </dl>
-                        @endif
-                    </li>
+                    <li class="border border-zinc-800 bg-zinc-900 p-3">@include('partials.analytics-tile', ['site' => $site])</li>
                 @endforeach
             </ul>
         </section>

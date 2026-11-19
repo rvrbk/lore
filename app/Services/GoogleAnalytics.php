@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AnalyticsSite;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -13,27 +14,19 @@ class GoogleAnalytics
 {
     private const SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
 
-    public function isConfigured(): bool
+    public function hasCredentials(): bool
     {
-        return $this->properties() !== [] && is_readable((string) config('services.google_analytics.credentials'));
+        return is_readable((string) config('services.google_analytics.credentials'));
     }
 
-    /**
-     * Properties are configured as "Name:propertyId" pairs, comma separated.
-     *
-     * @return array<string, string>
-     */
-    public function properties(): array
+    public function isConfigured(): bool
     {
-        $properties = [];
-        foreach (array_filter(array_map('trim', explode(',', (string) config('services.google_analytics.properties')))) as $pair) {
-            [$name, $id] = array_pad(explode(':', $pair, 2), 2, '');
-            if (ctype_digit(trim($id)) && trim($name) !== '') {
-                $properties[trim($name)] = trim($id);
-            }
-        }
+        return $this->hasCredentials() && AnalyticsSite::exists();
+    }
 
-        return $properties;
+    public function forget(): void
+    {
+        Cache::forget('google-analytics.summary');
     }
 
     /**
@@ -49,7 +42,7 @@ class GoogleAnalytics
             try {
                 $token = $this->accessToken();
                 $rows = [];
-                foreach ($this->properties() as $name => $id) {
+                foreach (AnalyticsSite::orderBy('name')->pluck('property_id', 'name') as $name => $id) {
                     $response = Http::withToken($token)->timeout(8)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$id}:runReport", [
                         'dateRanges' => [['startDate' => '6daysAgo', 'endDate' => 'today']],
                         'dimensions' => [['name' => 'date']],

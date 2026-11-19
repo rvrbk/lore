@@ -1,0 +1,11 @@
+<div class="truncate text-sm font-medium text-zinc-100">{{ $site['name'] }}</div>
+@if($site['users'] === null)
+    <p class="mt-2 text-xs text-red-400">Could not load. Is the service account added to this property?</p>
+@else
+    <div class="mt-2">@include('partials.trend', ['values' => $site['daily'], 'label' => 'Daily users for '.$site['name']])</div>
+    <dl class="mt-3 grid grid-cols-3 gap-2 text-xs text-zinc-400">
+        <div><dd class="text-xl font-semibold text-indigo-400">{{ number_format($site['users']) }}</dd><dt>Users</dt></div>
+        <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['sessions']) }}</dd><dt>Sessions</dt></div>
+        <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['views']) }}</dd><dt>Views</dt></div>
+    </dl>
+@endif

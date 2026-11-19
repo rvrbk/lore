@@ -24,6 +24,7 @@
                 @if($dueCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount }}</span>@endif
             </a>
             <a href="{{ route('tags.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tags.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Tags</a>
+            <a href="{{ route('analytics.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('analytics.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Analytics</a>
             @if($jobScout)
                 <a href="{{ $jobScout['url'] }}" target="_blank" rel="noopener" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800">
                     Vacancies
@@ -84,6 +85,7 @@
         ['title' => 'Board', 'hint' => 'Go to', 'url' => route('tasks.index')],
         ['title' => 'Reminders', 'hint' => 'Go to', 'url' => route('reminders.index')],
         ['title' => 'Tags', 'hint' => 'Go to', 'url' => route('tags.index')],
+        ['title' => 'Analytics', 'hint' => 'Go to', 'url' => route('analytics.index')],
         ['title' => 'Server health', 'hint' => 'Go to', 'url' => route('monitors.index')],
         isset($space) ? ['title' => 'New page in '.$space->name, 'hint' => 'Action', 'url' => route('pages.create', $space)] : null,
     ]));

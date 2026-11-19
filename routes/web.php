@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
@@ -59,6 +60,10 @@ Route::middleware('auth')->group(function () {
     Route::post('monitors/{monitor}/check', [MonitorController::class, 'check'])->name('monitors.check-one');
     Route::put('monitors/{monitor}', [MonitorController::class, 'update'])->name('monitors.update');
     Route::delete('monitors/{monitor}', [MonitorController::class, 'destroy'])->name('monitors.destroy');
+
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::post('analytics', [AnalyticsController::class, 'store'])->name('analytics.store');
+    Route::delete('analytics/{site}', [AnalyticsController::class, 'destroy'])->name('analytics.destroy');
 
     Route::get('reminders', [ReminderController::class, 'index'])->name('reminders.index');
     Route::post('reminders', [ReminderController::class, 'store'])->name('reminders.store');
