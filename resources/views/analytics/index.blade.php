@@ -11,6 +11,10 @@
         <div class="mt-3">@include('partials.site-form')</div>
     </details>
 
+    @if($analytics)
+        <div class="mt-6">@include('partials.world-map')</div>
+    @endif
+
     @if($sites->isNotEmpty())
         <ul class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             @foreach($sites as $site)

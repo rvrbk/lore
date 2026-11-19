@@ -30,7 +30,7 @@ class GoogleAnalytics
     }
 
     /**
-     * @return array<int, array{name: string, users: int|null, sessions: int|null, views: int|null, daily: array<int, int>}>|null
+     * @return array<int, array{name: string, users: int|null, sessions: int|null, views: int|null, daily: array<int, int>, countries: array<string, int>}>|null
      */
     public function summary(): ?array
     {
@@ -50,7 +50,7 @@ class GoogleAnalytics
                         'metricAggregations' => ['TOTAL'],
                     ]);
                     if (! $response->successful()) {
-                        $rows[] = ['name' => $name, 'users' => null, 'sessions' => null, 'views' => null, 'daily' => []];
+                        $rows[] = ['name' => $name, 'users' => null, 'sessions' => null, 'views' => null, 'daily' => [], 'countries' => []];
 
                         continue;
                     }
@@ -58,12 +58,22 @@ class GoogleAnalytics
                     $byDay = collect($response->json('rows') ?? [])->mapWithKeys(fn (array $row) => [$row['dimensionValues'][0]['value'] => (int) ($row['metricValues'][0]['value'] ?? 0)]);
                     $daily = collect(range(6, 0))->map(fn (int $ago) => $byDay->get(now()->subDays($ago)->format('Ymd'), 0))->all();
                     $totals = $response->json('totals.0.metricValues') ?? [];
+                    $countryReport = Http::withToken($token)->timeout(8)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$id}:runReport", [
+                        'dateRanges' => [['startDate' => '6daysAgo', 'endDate' => 'today']],
+                        'dimensions' => [['name' => 'countryId']],
+                        'metrics' => [['name' => 'activeUsers']],
+                        'limit' => 250,
+                    ]);
+                    $countries = $countryReport->successful()
+                        ? collect($countryReport->json('rows') ?? [])->mapWithKeys(fn (array $row) => [strtoupper($row['dimensionValues'][0]['value']) => (int) ($row['metricValues'][0]['value'] ?? 0)])->all()
+                        : [];
                     $rows[] = [
                         'name' => $name,
                         'users' => (int) ($totals[0]['value'] ?? 0),
                         'sessions' => (int) ($totals[1]['value'] ?? 0),
                         'views' => (int) ($totals[2]['value'] ?? 0),
                         'daily' => $daily,
+                        'countries' => $countries,
                     ];
                 }
 
@@ -74,6 +84,37 @@ class GoogleAnalytics
         });
 
         return $result ?: null;
+    }
+
+    /**
+     * Users per country (ISO 3166-1 alpha-2) summed over all sites, biggest first.
+     *
+     * @param  array<int, array{countries?: array<string, int>}>  $summary
+     * @return array<string, int>
+     */
+    public function countryTotals(array $summary): array
+    {
+        $totals = [];
+        foreach ($summary as $site) {
+            foreach ($site['countries'] ?? [] as $code => $users) {
+                $totals[$code] = ($totals[$code] ?? 0) + $users;
+            }
+        }
+        arsort($totals);
+
+        return $totals;
+    }
+
+    /**
+     * Country outlines, as SVG path data keyed by ISO code (Natural Earth, public domain).
+     *
+     * @return array{width: int, height: int, countries: array<string, array{name: string, d: string}>}
+     */
+    public function worldMap(): array
+    {
+        static $map = null;
+
+        return $map ??= json_decode((string) file_get_contents(resource_path('data/world-map.json')), true);
     }
 
     private function accessToken(): string
