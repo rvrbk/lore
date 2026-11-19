@@ -11,28 +11,6 @@
         </a>
     @endif
 
-    @if($analytics)
-        <section class="mt-6">
-            <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days</span></h2>
-            <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                @foreach($analytics as $site)
-                    <li class="border border-zinc-800 bg-zinc-900 p-3">
-                        <div class="truncate text-sm font-medium text-zinc-100">{{ $site['name'] }}</div>
-                        @if($site['users'] === null)
-                            <p class="mt-2 text-xs text-red-400">Could not load. Is the service account added to this property?</p>
-                        @else
-                            <dl class="mt-2 grid grid-cols-3 gap-2 text-xs text-zinc-400">
-                                <div><dd class="text-xl font-semibold text-indigo-400">{{ number_format($site['users']) }}</dd><dt>Users</dt></div>
-                                <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['sessions']) }}</dd><dt>Sessions</dt></div>
-                                <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['views']) }}</dd><dt>Views</dt></div>
-                            </dl>
-                        @endif
-                    </li>
-                @endforeach
-            </ul>
-        </section>
-    @endif
-
     <section class="mt-6">
         <div class="mb-2 flex items-center justify-between">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-400">Server health
@@ -53,6 +31,29 @@
             <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">@foreach($monitors as $monitor) @include('partials.monitor-tile', ['monitor' => $monitor, 'sparks' => $sparks]) @endforeach</ul>
         @endif
     </section>
+
+    @if($analytics)
+        <section class="mt-6">
+            <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days · daily users</span></h2>
+            <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach($analytics as $site)
+                    <li class="border border-zinc-800 bg-zinc-900 p-3">
+                        <div class="truncate text-sm font-medium text-zinc-100">{{ $site['name'] }}</div>
+                        @if($site['users'] === null)
+                            <p class="mt-2 text-xs text-red-400">Could not load. Is the service account added to this property?</p>
+                        @else
+                            <div class="mt-2">@include('partials.trend', ['values' => $site['daily'], 'label' => 'Daily users for '.$site['name']])</div>
+                            <dl class="mt-3 grid grid-cols-3 gap-2 text-xs text-zinc-400">
+                                <div><dd class="text-xl font-semibold text-indigo-400">{{ number_format($site['users']) }}</dd><dt>Users</dt></div>
+                                <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['sessions']) }}</dd><dt>Sessions</dt></div>
+                                <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($site['views']) }}</dd><dt>Views</dt></div>
+                            </dl>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
 
     <section class="mt-8">
         <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Due now</h2>

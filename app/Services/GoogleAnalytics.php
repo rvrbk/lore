@@ -37,7 +37,7 @@ class GoogleAnalytics
     }
 
     /**
-     * @return array<int, array{name: string, users: int, sessions: int, views: int}>|null
+     * @return array<int, array{name: string, users: int|null, sessions: int|null, views: int|null, daily: array<int, int>}>|null
      */
     public function summary(): ?array
     {
@@ -52,12 +52,26 @@ class GoogleAnalytics
                 foreach ($this->properties() as $name => $id) {
                     $response = Http::withToken($token)->timeout(8)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$id}:runReport", [
                         'dateRanges' => [['startDate' => '6daysAgo', 'endDate' => 'today']],
+                        'dimensions' => [['name' => 'date']],
                         'metrics' => [['name' => 'activeUsers'], ['name' => 'sessions'], ['name' => 'screenPageViews']],
+                        'metricAggregations' => ['TOTAL'],
                     ]);
-                    $values = $response->successful() ? ($response->json('rows.0.metricValues') ?? []) : null;
-                    $rows[] = $values === null
-                        ? ['name' => $name, 'users' => null, 'sessions' => null, 'views' => null]
-                        : ['name' => $name, 'users' => (int) ($values[0]['value'] ?? 0), 'sessions' => (int) ($values[1]['value'] ?? 0), 'views' => (int) ($values[2]['value'] ?? 0)];
+                    if (! $response->successful()) {
+                        $rows[] = ['name' => $name, 'users' => null, 'sessions' => null, 'views' => null, 'daily' => []];
+
+                        continue;
+                    }
+
+                    $byDay = collect($response->json('rows') ?? [])->mapWithKeys(fn (array $row) => [$row['dimensionValues'][0]['value'] => (int) ($row['metricValues'][0]['value'] ?? 0)]);
+                    $daily = collect(range(6, 0))->map(fn (int $ago) => $byDay->get(now()->subDays($ago)->format('Ymd'), 0))->all();
+                    $totals = $response->json('totals.0.metricValues') ?? [];
+                    $rows[] = [
+                        'name' => $name,
+                        'users' => (int) ($totals[0]['value'] ?? 0),
+                        'sessions' => (int) ($totals[1]['value'] ?? 0),
+                        'views' => (int) ($totals[2]['value'] ?? 0),
+                        'daily' => $daily,
+                    ];
                 }
 
                 return $rows;

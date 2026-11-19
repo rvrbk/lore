@@ -23,14 +23,17 @@ class GoogleAnalyticsTest extends TestCase
         Cache::flush();
         Http::fake([
             'oauth2.googleapis.com/*' => Http::response(['access_token' => 'tok']),
-            '*properties/111:runReport' => Http::response(['rows' => [['metricValues' => [['value' => '1234'], ['value' => '2000'], ['value' => '9876']]]]]),
+            '*properties/111:runReport' => Http::response([
+                'rows' => [['dimensionValues' => [['value' => now()->format('Ymd')]], 'metricValues' => [['value' => '5'], ['value' => '6'], ['value' => '7']]]],
+                'totals' => [['metricValues' => [['value' => '1234'], ['value' => '2000'], ['value' => '9876']]]],
+            ]),
             '*properties/222:runReport' => Http::response('denied', 403),
         ]);
         $this->actingAs(User::factory()->create());
 
         $this->get(route('dashboard'))->assertOk()
             ->assertSee('Verbeek')->assertSee('1,234')->assertSee('9,876')
-            ->assertSee('Broken')->assertSee('Could not load');
+            ->assertSee('Daily users for Verbeek')->assertSee('Broken')->assertSee('Could not load');
 
         unlink($path);
     }
