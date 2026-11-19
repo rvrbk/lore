@@ -2,6 +2,32 @@ import './board.js';
 import './editor.js';
 import './palette.js';
 
+const sidebar = document.getElementById('sidebar');
+const navToggle = document.querySelector('[data-nav-toggle]');
+const navBackdrop = document.querySelector('[data-nav-backdrop]');
+
+if (sidebar && navToggle && navBackdrop) {
+    const setNav = (open) => {
+        sidebar.toggleAttribute('data-open', open);
+        navBackdrop.hidden = !open;
+        navToggle.setAttribute('aria-expanded', String(open));
+        document.body.classList.toggle('overflow-hidden', open);
+    };
+
+    navToggle.addEventListener('click', () => setNav(!sidebar.hasAttribute('data-open')));
+    navBackdrop.addEventListener('click', () => setNav(false));
+    sidebar.addEventListener('click', (event) => {
+        if (event.target.closest('a, [data-palette-open]')) {
+            setNav(false);
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setNav(false);
+        }
+    });
+}
+
 document.querySelectorAll('[data-inline-editor]').forEach((root) => {
     const form = root.querySelector('[data-edit]');
     const views = root.querySelectorAll('[data-view]');

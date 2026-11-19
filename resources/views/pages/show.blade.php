@@ -6,8 +6,8 @@
                 @foreach($page->breadcrumbs() as $crumb) / <a href="{{ route('pages.show', $crumb) }}" class="hover:underline">{{ $crumb->title }}</a>@endforeach
             </div>
             <div data-inline-editor data-open="{{ $errors->any() ? 'true' : 'false' }}">
-                <div class="mt-1 flex items-start justify-between gap-4">
-                    <h1 data-view data-click-to-edit="title" title="Click to edit" class="min-w-0 flex-1 cursor-text text-3xl font-semibold hover:bg-zinc-800/60">{{ $page->title }}</h1>
+                <div class="mt-1 flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
+                    <h1 data-view data-click-to-edit="title" title="Click to edit" class="min-w-0 flex-1 cursor-text text-3xl break-words font-semibold hover:bg-zinc-800/60">{{ $page->title }}</h1>
                     <div class="flex shrink-0 flex-wrap justify-end gap-2 text-sm">
                         <form method="POST" action="{{ route('pages.pin', $page) }}">@csrf<button class="rounded border px-3 py-1.5 hover:bg-zinc-800" title="{{ $page->pinned_at ? 'Remove from the pinned list' : 'Pin to the sidebar' }}">{{ $page->pinned_at ? 'Unpin' : 'Pin' }}</button></form>
                         <a href="{{ route('pages.create', [$space, 'parent' => $page->id]) }}" class="rounded border px-3 py-1.5 hover:bg-zinc-800">Add child</a>
