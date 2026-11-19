@@ -6,7 +6,6 @@ use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Space;
-use App\Services\JobScout;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -32,7 +31,6 @@ class AppServiceProvider extends ServiceProvider
         View::composer('components.layouts.app', fn ($view) => $view->with([
             'navSpaces' => Space::orderBy('name')->get(),
             'dueCount' => Reminder::due()->count(),
-            'jobScout' => app(JobScout::class)->newMatches(),
             'downCount' => Monitor::where('is_up', false)->count(),
             'pinnedPages' => Page::whereNotNull('pinned_at')->orderBy('pinned_at')->limit(10)->get(),
             'recentPages' => Page::whereNotNull('viewed_at')->orderByDesc('viewed_at')->limit(5)->get(),
