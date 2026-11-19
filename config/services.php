@@ -35,6 +35,13 @@ return [
         ],
     ],
 
+    'job_scout' => [
+        // Base URL of Job Scout, the shared bearer token (LORE_API_TOKEN there) and the account email to count matches for.
+        'url' => env('JOB_SCOUT_URL'),
+        'token' => env('JOB_SCOUT_TOKEN'),
+        'email' => env('JOB_SCOUT_EMAIL'),
+    ],
+
     'monitor_alerts' => [
         // Slack/Discord/ntfy-style webhook that receives {"text": ..., "content": ...} when an app goes down or recovers.
         'webhook' => env('MONITOR_ALERT_WEBHOOK'),

@@ -24,6 +24,12 @@
                 @if($dueCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount }}</span>@endif
             </a>
             <a href="{{ route('tags.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tags.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Tags</a>
+            @if($jobScout)
+                <a href="{{ $jobScout['url'] }}" target="_blank" rel="noopener" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800">
+                    Vacancies
+                    @if($jobScout['new'])<span class="rounded-full bg-indigo-600 px-2 text-xs font-semibold text-white" title="New matches in Job Scout">{{ $jobScout['new'] }}</span>@endif
+                </a>
+            @endif
             <a href="{{ route('monitors.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('monitors.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
                 Server health
                 @if($downCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $downCount }}</span>@endif

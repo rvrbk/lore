@@ -4,6 +4,13 @@
         <a href="{{ route('export.all') }}" class="rounded border px-3 py-1.5 text-sm hover:bg-zinc-800" title="Download every page as Markdown files in a .zip">Export everything</a>
     </div>
 
+    @if($jobScout)
+        <a href="{{ $jobScout['url'] }}" target="_blank" rel="noopener" class="mt-6 flex items-center justify-between border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-500">
+            <span class="text-sm text-zinc-400">New vacancies in Job Scout</span>
+            <span class="text-2xl font-semibold {{ $jobScout['new'] ? 'text-indigo-400' : 'text-zinc-500' }}">{{ $jobScout['new'] }}</span>
+        </a>
+    @endif
+
     <section class="mt-6">
         <div class="mb-2 flex items-center justify-between">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-400">Server health
