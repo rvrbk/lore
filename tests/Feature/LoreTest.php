@@ -7,6 +7,7 @@ use App\Models\Reminder;
 use App\Models\Space;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Tests\TestCase;
 
@@ -76,6 +77,38 @@ class LoreTest extends TestCase
         Process::assertRanTimes(fn ($p) => in_array('Due', $p->command), 1);
         $this->assertNotNull(Reminder::where('title', 'Due')->first()->notified_at);
         $this->assertNull(Reminder::where('title', 'Later')->first()->notified_at);
+    }
+
+    public function test_due_reminders_are_sent_to_telegram_and_retried_when_it_fails(): void
+    {
+        Process::fake();
+        config(['services.telegram' => ['token' => 'bot-token', 'chat_id' => '42']]);
+        Http::fake(['api.telegram.org/*' => Http::sequence()->push(['ok' => false, 'description' => 'down'], 500)->push(['ok' => true])]);
+        $reminder = Reminder::create(['title' => 'Pay <rent>', 'notes' => 'Before Friday', 'due_at' => now()->subMinute(), 'recurrence' => 'monthly']);
+
+        $this->artisan('reminders:notify')->assertSuccessful();
+        $this->assertNull($reminder->fresh()->notified_at, 'A failed Telegram send is retried.');
+
+        $this->artisan('reminders:notify')->assertSuccessful();
+        $this->assertNotNull($reminder->fresh()->notified_at);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'botbot-token/sendMessage')
+            && $request['chat_id'] === '42'
+            && str_contains($request['text'], 'Pay &lt;rent&gt;')
+            && str_contains($request['text'], 'Before Friday')
+            && str_contains($request['text'], 'Repeats monthly'));
+    }
+
+    public function test_telegram_test_command_lists_chats_until_a_chat_id_is_set(): void
+    {
+        config(['services.telegram' => ['token' => 'bot-token', 'chat_id' => null]]);
+        Http::fake(['api.telegram.org/*' => Http::response(['result' => [['message' => ['chat' => ['id' => 555, 'first_name' => 'Rik']]]]])]);
+
+        $this->artisan('telegram:test')->expectsOutputToContain('TELEGRAM_CHAT_ID')->assertFailed();
+
+        config(['services.telegram.chat_id' => '555']);
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
+        $this->artisan('telegram:test')->expectsOutputToContain('Test message sent')->assertSuccessful();
     }
 
     public function test_snooze_resets_notification(): void

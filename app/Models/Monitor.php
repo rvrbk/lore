@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Telegram;
 use Database\Factories\MonitorFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -101,15 +102,17 @@ class Monitor extends Model
     {
         if (! $this->is_up && $this->consecutive_failures >= self::ALERT_AFTER_FAILURES && $this->alerted_at === null) {
             $this->forceFill(['alerted_at' => now()])->save();
-            $this->sendAlert("{$this->name} is DOWN ({$this->error}) · {$this->url}");
+            $this->sendAlert("{$this->name} is DOWN ({$this->error}) · {$this->url}", '🔴');
         } elseif ($this->is_up && $this->alerted_at !== null) {
             $this->forceFill(['alerted_at' => null])->save();
-            $this->sendAlert("{$this->name} is back UP · {$this->url}");
+            $this->sendAlert("{$this->name} is back UP · {$this->url}", '🟢');
         }
     }
 
-    private function sendAlert(string $message): void
+    private function sendAlert(string $message, string $icon): void
     {
+        app(Telegram::class)->send($icon.' <b>Server health</b>'."\n".e($message));
+
         if ($webhook = config('services.monitor_alerts.webhook')) {
             try {
                 Http::timeout(5)->post($webhook, ['text' => $message, 'content' => $message]);

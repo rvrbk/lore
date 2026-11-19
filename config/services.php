@@ -53,6 +53,12 @@ return [
         'enabled' => env('DEPLOY_ENABLED', false),
     ],
 
+    'telegram' => [
+        // Bot token from @BotFather and the id of the chat that should receive reminders.
+        'token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+    ],
+
     'monitor_alerts' => [
         // Slack/Discord/ntfy-style webhook that receives {"text": ..., "content": ...} when an app goes down or recovers.
         'webhook' => env('MONITOR_ALERT_WEBHOOK'),
