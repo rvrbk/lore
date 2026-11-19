@@ -10,4 +10,5 @@ Artisan::command('inspire', function () {
 
 Schedule::command('reminders:notify')->everyMinute();
 Schedule::command('monitors:check')->everyMinute()->withoutOverlapping();
+Schedule::command('lore:deploy')->everyMinute()->withoutOverlapping(60);
 Schedule::command('lore:backup')->dailyAt('03:15');

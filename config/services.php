@@ -48,6 +48,11 @@ return [
         'credentials' => env('GA_CREDENTIALS'),
     ],
 
+    'deploy' => [
+        // Lets the Deploy page queue a git pull + rebuild that the scheduler runs. Only enable on the server.
+        'enabled' => env('DEPLOY_ENABLED', false),
+    ],
+
     'monitor_alerts' => [
         // Slack/Discord/ntfy-style webhook that receives {"text": ..., "content": ...} when an app goes down or recovers.
         'webhook' => env('MONITOR_ALERT_WEBHOOK'),

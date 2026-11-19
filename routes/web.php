@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
@@ -59,6 +60,9 @@ Route::middleware('auth')->group(function () {
     Route::post('monitors/{monitor}/check', [MonitorController::class, 'check'])->name('monitors.check-one');
     Route::put('monitors/{monitor}', [MonitorController::class, 'update'])->name('monitors.update');
     Route::delete('monitors/{monitor}', [MonitorController::class, 'destroy'])->name('monitors.destroy');
+
+    Route::get('deploy', [DeployController::class, 'index'])->name('deploy.index');
+    Route::post('deploy', [DeployController::class, 'store'])->name('deploy.store');
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::post('analytics', [AnalyticsController::class, 'store'])->name('analytics.store');
