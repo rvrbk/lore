@@ -60,7 +60,8 @@ class DeployTest extends TestCase
 
         $this->post(route('analytics.store'), ['name' => 'x', 'url' => 'https://x.test', 'deploy_path' => '/etc/passwd'])->assertSessionHasErrors('deploy_path');
         $this->post(route('analytics.store'), ['name' => 'x', 'url' => 'https://x.test', 'deploy_path' => '/var/www/../etc'])->assertSessionHasErrors('deploy_path');
-        $this->post(route('analytics.store'), ['name' => 'x', 'url' => 'https://x.test', 'deploy_path' => '/var/www/x'])->assertSessionDoesntHaveErrors();
+        $this->from(route('deploy.index'))->post(route('analytics.store'), ['name' => 'x', 'url' => 'https://x.test', 'deploy_path' => '/var/www/x'])->assertRedirect(route('deploy.index'));
+        $this->get(route('deploy.index'))->assertSee('Add a site')->assertSee('/var/www/x');
 
         $this->assertSame('/var/www/x', Monitor::sole()->deploy_path);
     }
