@@ -2,12 +2,16 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpaceController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\UploadController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -22,6 +26,14 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/search', SearchController::class)->name('search');
+    Route::get('palette', [SearchController::class, 'palette'])->name('palette');
+    Route::post('markdown/preview', MarkdownController::class)->name('markdown.preview');
+    Route::post('uploads', [UploadController::class, 'store'])->name('uploads.store');
+    Route::get('uploads/{filename}', [UploadController::class, 'show'])->name('uploads.show');
+    Route::get('tags', [TagController::class, 'index'])->name('tags.index');
+    Route::get('tags/{tag}', [TagController::class, 'show'])->name('tags.show');
+    Route::get('export', [ExportController::class, 'all'])->name('export.all');
+    Route::get('spaces/{space}/export', [ExportController::class, 'space'])->name('export.space');
 
     Route::resource('spaces', SpaceController::class)->except('index');
     Route::get('spaces/{space}/pages/create', [PageController::class, 'create'])->name('pages.create');
@@ -30,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('pages/{page}/edit', [PageController::class, 'edit'])->name('pages.edit');
     Route::put('pages/{page}', [PageController::class, 'update'])->name('pages.update');
     Route::delete('pages/{page}', [PageController::class, 'destroy'])->name('pages.destroy');
+    Route::post('pages/{page}/pin', [PageController::class, 'pin'])->name('pages.pin');
     Route::get('pages/{page}/history', [PageController::class, 'history'])->name('pages.history');
     Route::post('pages/{page}/history/{revision}/restore', [PageController::class, 'restore'])->name('pages.restore');
 
@@ -41,6 +54,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('monitors', [MonitorController::class, 'index'])->name('monitors.index');
     Route::post('monitors', [MonitorController::class, 'store'])->name('monitors.store');
+    Route::get('monitors/{monitor}', [MonitorController::class, 'show'])->name('monitors.show');
     Route::post('monitors/check', [MonitorController::class, 'check'])->name('monitors.check');
     Route::post('monitors/{monitor}/check', [MonitorController::class, 'check'])->name('monitors.check-one');
     Route::put('monitors/{monitor}', [MonitorController::class, 'update'])->name('monitors.update');

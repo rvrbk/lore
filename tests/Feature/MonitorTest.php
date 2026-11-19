@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Process;
 use Tests\TestCase;
 
 class MonitorTest extends TestCase
@@ -17,6 +18,7 @@ class MonitorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Process::fake();
         $this->actingAs(User::factory()->create());
     }
 

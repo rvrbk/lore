@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'monitor_alerts' => [
+        // Slack/Discord/ntfy-style webhook that receives {"text": ..., "content": ...} when an app goes down or recovers.
+        'webhook' => env('MONITOR_ALERT_WEBHOOK'),
+    ],
+
 ];

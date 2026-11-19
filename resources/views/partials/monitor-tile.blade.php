@@ -7,12 +7,13 @@
 @endphp
 <li class="border bg-zinc-900 p-3 {{ $state['border'] }}">
     <div class="flex items-center justify-between gap-2">
-        <span class="truncate font-medium text-zinc-100" title="{{ $monitor->name }}">{{ $monitor->name }}</span>
+        <a href="{{ route('monitors.show', $monitor) }}" class="truncate font-medium text-zinc-100 hover:underline" title="{{ $monitor->name }}: uptime history">{{ $monitor->name }}</a>
         <span class="flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase {{ $state['text'] }}">
             <span class="size-2.5 {{ $state['dot'] }}"></span>{{ $state['label'] }}
         </span>
     </div>
     <a href="{{ $monitor->url }}" target="_blank" rel="noopener noreferrer" class="mt-0.5 block truncate text-xs text-zinc-400 hover:underline">{{ $monitor->host() }}</a>
+    @isset($sparks)<div class="mt-2">@include('partials.sparkline', ['checks' => $sparks->get($monitor->id, collect())])</div>@endisset
     <div class="mt-3 flex items-end justify-between text-xs text-zinc-400">
         @if($monitor->is_up === null)
             <span>Not checked yet</span>

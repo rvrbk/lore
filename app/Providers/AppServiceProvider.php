@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Monitor;
+use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Space;
 use Illuminate\Foundation\DevCommands;
@@ -31,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
             'navSpaces' => Space::orderBy('name')->get(),
             'dueCount' => Reminder::due()->count(),
             'downCount' => Monitor::where('is_up', false)->count(),
+            'pinnedPages' => Page::whereNotNull('pinned_at')->orderBy('pinned_at')->limit(10)->get(),
+            'recentPages' => Page::whereNotNull('viewed_at')->orderByDesc('viewed_at')->limit(5)->get(),
         ]));
     }
 }

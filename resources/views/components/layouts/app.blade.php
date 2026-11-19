@@ -8,7 +8,7 @@
     <aside class="sticky top-0 flex h-screen w-72 shrink-0 flex-col gap-5 overflow-y-auto border-r border-zinc-800 bg-zinc-900 p-4">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-pixel text-base text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-7" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
         <form action="{{ route('search') }}">
-            <input name="q" value="{{ request('q') }}" placeholder="Search pages…" class="w-full rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
+            <input name="q" value="{{ request('q') }}" placeholder="Search pages…  ( / )" data-search-input class="w-full rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
         </form>
         <nav class="space-y-1 text-sm">
             <a href="{{ route('dashboard') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('dashboard') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Home</a>
@@ -17,18 +17,31 @@
                 Reminders
                 @if($dueCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount }}</span>@endif
             </a>
+            <a href="{{ route('tags.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tags.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Tags</a>
             <a href="{{ route('monitors.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('monitors.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
                 Server health
                 @if($downCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $downCount }}</span>@endif
             </a>
         </nav>
+        @foreach(['Pinned' => $pinnedPages, 'Recent' => $recentPages] as $heading => $list)
+            @if($list->isNotEmpty())
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-wide text-zinc-400">{{ $heading }}</div>
+                    <nav class="mt-2 space-y-0.5 text-sm">
+                        @foreach($list as $p)
+                            <a href="{{ route('pages.show', $p) }}" title="{{ $p->title }}" class="block truncate rounded px-2 py-1 hover:bg-zinc-800 {{ isset($page) && $page?->is($p) ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">{{ $p->title }}</a>
+                        @endforeach
+                    </nav>
+                </div>
+            @endif
+        @endforeach
         <div class="min-h-0 flex-1">
             <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 Spaces <a href="{{ route('spaces.create') }}" class="text-base leading-none hover:text-zinc-100" title="New space">+</a>
             </div>
             <nav class="mt-2 space-y-1 text-sm">
                 @foreach($navSpaces as $s)
-                    @php($isActive = isset($space) && $space->is($s))
+                    @php $isActive = isset($space) && $space->is($s); @endphp
                     <a href="{{ route('spaces.show', $s) }}" class="block rounded px-2 py-1.5 hover:bg-zinc-800 {{ $isActive ? 'font-medium text-zinc-100' : '' }}">{{ $s->name }}</a>
                     @if($isActive)
                         <div class="mb-2 ml-2 border-l border-zinc-800 pl-2">
@@ -39,9 +52,10 @@
                 @endforeach
             </nav>
         </div>
-        <form method="POST" action="{{ route('logout') }}" class="flex items-center justify-between border-t border-zinc-800 pt-3 text-sm">
+        <form method="POST" action="{{ route('logout') }}" class="flex items-center gap-2 border-t border-zinc-800 pt-3 text-sm">
             @csrf
-            <span class="truncate text-zinc-400" title="Signed in as {{ auth()->user()->username }}">{{ auth()->user()->username }}</span>
+            <span class="min-w-0 flex-1 truncate text-zinc-400" title="Signed in as {{ auth()->user()->username }}">{{ auth()->user()->username }}</span>
+            <button type="button" data-palette-open class="border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-100" title="Quick switcher">Ctrl+K</button>
             <button class="text-zinc-400 hover:text-zinc-100">Log out</button>
         </form>
     </aside>
@@ -49,5 +63,23 @@
         <div class="mx-auto max-w-4xl">{{ $slot }}</div>
     </main>
 </div>
+
+@php
+    $paletteActions = array_values(array_filter([
+        ['title' => 'New task', 'hint' => 'Board', 'url' => route('tasks.index', ['new' => 1])],
+        ['title' => 'New space', 'hint' => 'Action', 'url' => route('spaces.create')],
+        ['title' => 'Home', 'hint' => 'Go to', 'url' => route('dashboard')],
+        ['title' => 'Board', 'hint' => 'Go to', 'url' => route('tasks.index')],
+        ['title' => 'Reminders', 'hint' => 'Go to', 'url' => route('reminders.index')],
+        ['title' => 'Tags', 'hint' => 'Go to', 'url' => route('tags.index')],
+        ['title' => 'Server health', 'hint' => 'Go to', 'url' => route('monitors.index')],
+        isset($space) ? ['title' => 'New page in '.$space->name, 'hint' => 'Action', 'url' => route('pages.create', $space)] : null,
+    ]));
+@endphp
+<dialog data-palette data-url="{{ route('palette') }}" data-actions="{{ json_encode($paletteActions) }}" class="m-auto mt-[12vh] w-full max-w-xl border border-zinc-700 bg-zinc-900 p-0 text-zinc-200 backdrop:bg-black/70">
+    <input data-palette-input placeholder="Jump to a page or action…" autocomplete="off" class="w-full border-0 border-b border-zinc-700 bg-transparent px-4 py-3 text-base focus:ring-0">
+    <ul data-palette-list class="max-h-80 overflow-y-auto py-1 text-sm"></ul>
+    <div class="border-t border-zinc-800 px-4 py-1.5 text-xs text-zinc-500">↑↓ to move · Enter to open · Esc to close</div>
+</dialog>
 </body>
 </html>

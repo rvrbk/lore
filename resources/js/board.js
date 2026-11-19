@@ -82,17 +82,69 @@ if (board) {
 
     board.addEventListener('click', (event) => {
         const card = event.target.closest('[data-task-id]');
-        if (!card || didDrag) {
+        if (!card || didDrag || event.target.closest('a')) {
             return;
         }
-        const task = JSON.parse(card.dataset.task);
+        openTask(JSON.parse(card.dataset.task));
+    });
+
+    const checklist = dialog.querySelector('[data-checklist]');
+    const addChecklistRow = (item = { text: '', done: false }) => {
+        const row = document.createElement('li');
+        row.className = 'flex items-center gap-2';
+        const done = document.createElement('input');
+        done.type = 'checkbox';
+        done.value = '1';
+        done.checked = Boolean(item.done);
+        done.className = 'accent-indigo-500';
+        const text = document.createElement('input');
+        text.maxLength = 200;
+        text.value = item.text;
+        text.placeholder = 'Checklist item';
+        text.className = 'min-w-0 flex-1 rounded-md border border-zinc-700 px-2 py-1 text-sm';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = '×';
+        remove.title = 'Remove item';
+        remove.className = 'px-1 text-zinc-400 hover:text-red-400';
+        remove.addEventListener('click', () => {
+            row.remove();
+            renumberChecklist();
+        });
+        row.append(done, text, remove);
+        checklist.append(row);
+        renumberChecklist();
+
+        return text;
+    };
+    const renumberChecklist = () => {
+        [...checklist.children].forEach((row, i) => {
+            row.children[0].name = `checklist[${i}][done]`;
+            row.children[1].name = `checklist[${i}][text]`;
+        });
+    };
+    dialog.querySelector('[data-checklist-add]').addEventListener('click', () => addChecklistRow().focus());
+    checklist.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && event.target.type === 'text') {
+            event.preventDefault();
+            addChecklistRow().focus();
+        }
+    });
+
+    function openTask(task) {
         editForm.action = url(editForm.dataset.updateUrl, task.id);
         deleteForm.action = url(deleteForm.dataset.deleteUrl, task.id);
-        ['title', 'description', 'status', 'priority', 'due_on'].forEach((field) => {
+        ['title', 'description', 'status', 'priority', 'due_on', 'page_id', 'recurrence', 'tags'].forEach((field) => {
             editForm.elements[field].value = task[field] ?? '';
         });
+        checklist.replaceChildren();
+        (task.checklist ?? []).forEach((item) => addChecklistRow(item));
         dialog.showModal();
-    });
+    }
+
+    if (new URLSearchParams(location.search).has('new')) {
+        board.querySelector('[data-column="todo"] input[name="title"]')?.focus();
+    }
 
     dialog.querySelector('[data-close]').addEventListener('click', () => dialog.close());
     dialog.addEventListener('click', (event) => {

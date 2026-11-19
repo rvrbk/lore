@@ -1,5 +1,8 @@
 <x-layouts.app title="Home">
-    <h1 class="text-2xl font-semibold">Welcome back</h1>
+    <div class="flex items-start justify-between gap-4">
+        <h1 class="text-2xl font-semibold">Welcome back</h1>
+        <a href="{{ route('export.all') }}" class="rounded border px-3 py-1.5 text-sm hover:bg-zinc-800" title="Download every page as Markdown files in a .zip">Export everything</a>
+    </div>
 
     <section class="mt-6">
         <div class="mb-2 flex items-center justify-between">
@@ -18,7 +21,7 @@
         @if($monitors->isEmpty())
             <p class="text-sm text-zinc-400">No apps monitored yet. <a href="{{ route('monitors.index') }}" class="underline">Add the first one</a>.</p>
         @else
-            <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">@foreach($monitors as $monitor) @include('partials.monitor-tile', ['monitor' => $monitor]) @endforeach</ul>
+            <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">@foreach($monitors as $monitor) @include('partials.monitor-tile', ['monitor' => $monitor, 'sparks' => $sparks]) @endforeach</ul>
         @endif
     </section>
 

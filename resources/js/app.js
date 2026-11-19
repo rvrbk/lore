@@ -1,14 +1,17 @@
 import './board.js';
+import './editor.js';
+import './palette.js';
 
 document.querySelectorAll('[data-inline-editor]').forEach((root) => {
     const form = root.querySelector('[data-edit]');
     const views = root.querySelectorAll('[data-view]');
     const title = form.elements.title;
     const body = form.elements.body;
-    const original = { title: title.value, body: body.value };
+    const tags = form.elements.tags;
+    const original = { title: title.value, body: body.value, tags: tags.value };
     let editing = false;
 
-    const isDirty = () => title.value !== original.title || body.value !== original.body;
+    const isDirty = () => title.value !== original.title || body.value !== original.body || tags.value !== original.tags;
     const fit = () => {
         body.style.height = 'auto';
         body.style.height = `${Math.max(body.scrollHeight + 2, 320)}px`;
@@ -30,6 +33,8 @@ document.querySelectorAll('[data-inline-editor]').forEach((root) => {
         }
         title.value = original.title;
         body.value = original.body;
+        tags.value = original.tags;
+        body.dispatchEvent(new Event('input'));
         editing = false;
         form.hidden = true;
         views.forEach((el) => (el.hidden = false));
@@ -60,6 +65,7 @@ document.querySelectorAll('[data-inline-editor]').forEach((root) => {
     form.addEventListener('submit', () => {
         original.title = title.value;
         original.body = body.value;
+        original.tags = tags.value;
     });
 
     window.addEventListener('beforeunload', (event) => {

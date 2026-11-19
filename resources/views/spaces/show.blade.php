@@ -5,6 +5,7 @@
             @if($space->description)<p class="mt-1 text-zinc-400">{{ $space->description }}</p>@endif
         </div>
         <div class="flex gap-2 text-sm">
+            <a href="{{ route('export.space', $space) }}" class="rounded border px-3 py-1.5 hover:bg-zinc-800" title="Download this space as Markdown files in a .zip">Export</a>
             <a href="{{ route('spaces.edit', $space) }}" class="rounded border px-3 py-1.5 hover:bg-zinc-800">Edit</a>
             <a href="{{ route('pages.create', $space) }}" class="rounded bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700">New page</a>
         </div>

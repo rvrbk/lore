@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SearchController extends Controller
@@ -20,5 +21,17 @@ class SearchController extends Controller
             ->get();
 
         return view('search', ['q' => $q, 'results' => $results]);
+    }
+
+    /**
+     * Every page, for the Ctrl+K quick switcher.
+     */
+    public function palette(): JsonResponse
+    {
+        return response()->json(Page::with('space')->orderBy('title')->get()->map(fn (Page $page) => [
+            'title' => $page->title,
+            'space' => $page->space->name,
+            'url' => route('pages.show', $page),
+        ])->all());
     }
 }

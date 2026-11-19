@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasTags;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 
 class Task extends Model
 {
     /** @use HasFactory<TaskFactory> */
-    use HasFactory;
+    use HasFactory, HasTags;
 
     public const STATUSES = [
         'todo' => 'To do',
@@ -24,15 +26,29 @@ class Task extends Model
         'low' => 'Low',
     ];
 
-    protected $attributes = ['status' => 'todo', 'priority' => 'medium'];
+    protected $attributes = ['status' => 'todo', 'priority' => 'medium', 'recurrence' => 'none'];
 
-    protected $fillable = ['title', 'description', 'status', 'priority', 'due_on'];
+    protected $fillable = ['title', 'description', 'status', 'priority', 'due_on', 'page_id', 'checklist', 'recurrence'];
 
     protected function casts(): array
     {
         return [
             'due_on' => 'date',
+            'checklist' => 'array',
         ];
+    }
+
+    public function page(): BelongsTo
+    {
+        return $this->belongsTo(Page::class);
+    }
+
+    /** @return array{done: int, total: int} */
+    public function checklistProgress(): array
+    {
+        $items = collect($this->checklist ?? []);
+
+        return ['done' => $items->where('done', true)->count(), 'total' => $items->count()];
     }
 
     public function isOverdue(): bool
@@ -68,10 +84,52 @@ class Task extends Model
             $this->update(['status' => $status]);
             static::renumber($ids);
 
+            if ($status === 'done' && $previous !== 'done') {
+                $this->spawnNextOccurrence();
+            }
+
             if ($previous !== $status) {
                 static::renumber(static::where('status', $previous)->orderBy('position')->orderBy('id')->pluck('id')->all());
             }
         });
+    }
+
+    /**
+     * A recurring task that is finished hands its schedule to a fresh copy in "To do".
+     */
+    private function spawnNextOccurrence(): void
+    {
+        if ($this->recurrence === 'none') {
+            return;
+        }
+
+        $due = ($this->due_on ?? now())->copy()->startOfDay();
+        $step = fn ($date) => match ($this->recurrence) {
+            'daily' => $date->addDay(),
+            'weekly' => $date->addWeek(),
+            'monthly' => $date->addMonthNoOverflow(),
+            default => $date->addYearNoOverflow(),
+        };
+        for ($guard = 0; $guard < 1000; $guard++) {
+            $due = $step($due);
+            if ($due->isFuture()) {
+                break;
+            }
+        }
+
+        $next = static::createAtBottom([
+            'title' => $this->title,
+            'description' => $this->description,
+            'status' => 'todo',
+            'priority' => $this->priority,
+            'due_on' => $due,
+            'page_id' => $this->page_id,
+            'recurrence' => $this->recurrence,
+            'checklist' => collect($this->checklist ?? [])->map(fn (array $item) => ['text' => $item['text'], 'done' => false])->all() ?: null,
+        ]);
+        $next->tags()->sync($this->tags->pluck('id')->all());
+
+        $this->update(['recurrence' => 'none']);
     }
 
     /**

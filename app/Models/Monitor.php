@@ -6,9 +6,12 @@ use Database\Factories\MonitorFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Throwable;
 
 class Monitor extends Model
@@ -21,6 +24,11 @@ class Monitor extends Model
     /** Responses below this status count as "up": an app answering 401/404 is alive, a 5xx is not. */
     public const FIRST_FAILING_STATUS = 500;
 
+    /** A down alert is sent once this many checks in a row failed, so a single blip stays quiet. */
+    public const ALERT_AFTER_FAILURES = 2;
+
+    public const KEEP_HISTORY_DAYS = 30;
+
     protected $fillable = ['name', 'url'];
 
     protected function casts(): array
@@ -29,6 +37,7 @@ class Monitor extends Model
             'is_up' => 'boolean',
             'checked_at' => 'datetime',
             'status_changed_at' => 'datetime',
+            'alerted_at' => 'datetime',
         ];
     }
 
@@ -52,18 +61,91 @@ class Monitor extends Model
         }
     }
 
+    public function checks(): HasMany
+    {
+        return $this->hasMany(MonitorCheck::class);
+    }
+
     public function recordResult(Response|Throwable $result): void
     {
         $isUp = $result instanceof Response && $result->status() < self::FIRST_FAILING_STATUS;
+        $statusCode = $result instanceof Response ? $result->status() : null;
+        $responseMs = $result instanceof Response ? (int) round(($result->handlerStats()['total_time'] ?? 0) * 1000) : null;
+        $error = $result instanceof Response ? ($isUp ? null : 'HTTP '.$result->status()) : str($result->getMessage())->before(' (see ')->limit(120)->toString();
 
         $this->forceFill([
             'is_up' => $isUp,
-            'status_code' => $result instanceof Response ? $result->status() : null,
-            'response_ms' => $result instanceof Response ? (int) round(($result->handlerStats()['total_time'] ?? 0) * 1000) : null,
-            'error' => $result instanceof Response ? ($isUp ? null : 'HTTP '.$result->status()) : str($result->getMessage())->before(' (see ')->limit(120)->toString(),
+            'status_code' => $statusCode,
+            'response_ms' => $responseMs,
+            'error' => $error,
             'checked_at' => now(),
             'status_changed_at' => $this->is_up === $isUp && $this->status_changed_at ? $this->status_changed_at : now(),
+            'consecutive_failures' => $isUp ? 0 : $this->consecutive_failures + 1,
         ])->save();
+
+        $this->checks()->create([
+            'is_up' => $isUp,
+            'status_code' => $statusCode,
+            'response_ms' => $responseMs,
+            'error' => $error,
+            'checked_at' => now(),
+        ]);
+
+        $this->alertOnChange();
+    }
+
+    /**
+     * Notify once when the app has been failing for a while, and once when it recovers.
+     */
+    private function alertOnChange(): void
+    {
+        if (! $this->is_up && $this->consecutive_failures >= self::ALERT_AFTER_FAILURES && $this->alerted_at === null) {
+            $this->forceFill(['alerted_at' => now()])->save();
+            $this->sendAlert("{$this->name} is DOWN ({$this->error}) · {$this->url}");
+        } elseif ($this->is_up && $this->alerted_at !== null) {
+            $this->forceFill(['alerted_at' => null])->save();
+            $this->sendAlert("{$this->name} is back UP · {$this->url}");
+        }
+    }
+
+    private function sendAlert(string $message): void
+    {
+        if ($webhook = config('services.monitor_alerts.webhook')) {
+            try {
+                Http::timeout(5)->post($webhook, ['text' => $message, 'content' => $message]);
+            } catch (Throwable $e) {
+                Log::warning('Monitor alert webhook failed', ['error' => $e->getMessage()]);
+            }
+        }
+
+        $result = Process::run(['notify-send', '--app-name=Lore', '--urgency=critical', 'Server health', $message]);
+        if ($result->failed()) {
+            Log::info('Monitor desktop alert not delivered', ['error' => $result->errorOutput()]);
+        }
+    }
+
+    /**
+     * The last hour of checks for each monitor, for the tile sparklines.
+     *
+     * @param  Collection<int, Monitor>  $monitors
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Support\Collection<int, MonitorCheck>>
+     */
+    public static function sparklines(Collection $monitors): \Illuminate\Support\Collection
+    {
+        return MonitorCheck::whereIn('monitor_id', $monitors->modelKeys())
+            ->where('checked_at', '>=', now()->subHour())
+            ->orderBy('checked_at')
+            ->get(['monitor_id', 'is_up', 'response_ms'])
+            ->groupBy('monitor_id');
+    }
+
+    /** Share of checks in the last N days that were up, or null without data. */
+    public function uptimePercent(int $days): ?float
+    {
+        $counts = $this->checks()->where('checked_at', '>=', now()->subDays($days))
+            ->selectRaw('count(*) as total, sum(is_up) as up')->toBase()->first();
+
+        return $counts->total > 0 ? round($counts->up / $counts->total * 100, 2) : null;
     }
 
     public function host(): string

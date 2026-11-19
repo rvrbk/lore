@@ -53,6 +53,8 @@
 .md th { @apply bg-zinc-800; }
 .md hr { @apply my-6 border-zinc-200; }
 .md input[type=checkbox] { @apply mr-1.5; }
+.md img { @apply my-3 h-auto max-w-full border border-zinc-800; }
+.md a[href*="/pages/create?"] { @apply text-red-400 decoration-dashed; }
 
 html { color-scheme: dark; font-size: 15px; }
 
