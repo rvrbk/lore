@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Page;
 use App\Models\Space;
+use App\Models\Task;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -25,6 +26,7 @@ class PageController extends Controller
             'space' => $space,
             'parents' => $this->parentOptions($space),
             'template' => $request->query('template'),
+            'templateTasks' => $template['tasks'] ?? [],
         ]);
     }
 
@@ -34,6 +36,10 @@ class PageController extends Controller
         $page = $space->pages()->create(Arr::except($data, 'tags'));
         $page->revisions()->create(['title' => $page->title, 'body' => $page->body]);
         $page->syncTagNames($data['tags'] ?? null);
+
+        if ($request->boolean('spawn_tasks')) {
+            $this->spawnTemplateTasks($page, $request->input('template'), $data['tags'] ?? null);
+        }
 
         return redirect()->route('pages.show', $page);
     }
@@ -60,6 +66,7 @@ class PageController extends Controller
             'space' => $page->space,
             'parents' => $this->parentOptions($page->space, $page),
             'template' => null,
+            'templateTasks' => [],
         ]);
     }
 
@@ -144,5 +151,23 @@ class PageController extends Controller
         $walk('', 0);
 
         return $out;
+    }
+
+    /**
+     * Put a checklist template's tasks on the board, linked to the new page and tagged like it.
+     *
+     * @param  string|array<int, string>|null  $tags
+     */
+    private function spawnTemplateTasks(Page $page, ?string $template, string|array|null $tags): void
+    {
+        foreach (Page::TEMPLATES[$template]['tasks'] ?? [] as $item) {
+            $task = Task::createAtBottom([
+                'title' => $item['title'],
+                'priority' => $item['priority'],
+                'due_on' => today()->addDays($item['days']),
+                'page_id' => $page->id,
+            ]);
+            $task->syncTagNames($tags);
+        }
     }
 }

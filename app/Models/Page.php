@@ -14,7 +14,7 @@ class Page extends Model
 {
     use HasTags;
 
-    /** @var array<string, array{label: string, title: string, body: string}> {{date}} is replaced when a page is created from a template */
+    /** @var array<string, array{label: string, title: string, body: string, tasks?: array<int, array{title: string, days: int, priority: string}>}> {{date}} is replaced when a page is created from a template; templates with tasks can also put those tasks on the board */
     public const TEMPLATES = [
         'runbook' => [
             'label' => 'Runbook',
@@ -35,6 +35,48 @@ class Page extends Model
             'label' => 'Post-mortem',
             'title' => 'Post-mortem: ',
             'body' => "## Summary\n\nWhat happened, in two sentences.\n\n## Impact\n\nWho or what was affected, and for how long.\n\n## Root cause\n\n\n\n## What went well\n\n- \n\n## What went wrong\n\n- \n\n## Follow-ups\n\n- [ ] \n",
+        ],
+        'launch-site' => [
+            'label' => 'Launch a new site',
+            'title' => 'Launch: ',
+            'body' => "## Checklist\n\n- [ ] Register the domain and point DNS at the server\n- [ ] Create the site folder and clone the repo under /var/www\n- [ ] Configure .env, database and run migrations\n- [ ] Set up the web server vhost and SSL certificate\n- [ ] Add the site under Server health (monitor, deploy folder, analytics)\n- [ ] Set up scheduler, queue worker and backups\n- [ ] Run a full smoke test of the main flows\n- [ ] Announce the launch\n\n## Notes\n\n",
+            'tasks' => [
+                ['title' => 'Register the domain and point DNS at the server', 'days' => 0, 'priority' => 'high'],
+                ['title' => 'Create the site folder and clone the repo under /var/www', 'days' => 1, 'priority' => 'high'],
+                ['title' => 'Configure .env, database and run migrations', 'days' => 1, 'priority' => 'high'],
+                ['title' => 'Set up the web server vhost and SSL certificate', 'days' => 2, 'priority' => 'high'],
+                ['title' => 'Add the site under Server health (monitor, deploy folder, analytics)', 'days' => 2, 'priority' => 'medium'],
+                ['title' => 'Set up scheduler, queue worker and backups', 'days' => 3, 'priority' => 'medium'],
+                ['title' => 'Run a full smoke test of the main flows', 'days' => 4, 'priority' => 'medium'],
+                ['title' => 'Announce the launch', 'days' => 5, 'priority' => 'low'],
+            ],
+        ],
+        'server-setup' => [
+            'label' => 'Server setup',
+            'title' => 'Server setup: ',
+            'body' => "## Checklist\n\n- [ ] Create the deploy user and add SSH keys\n- [ ] Disable password login and root SSH\n- [ ] Enable the firewall (only 22, 80, 443)\n- [ ] Install PHP, Composer, Node, database and web server\n- [ ] Set up automatic security updates\n- [ ] Configure database backups and test a restore\n- [ ] Add the server to monitoring and resource alerts\n\n## Notes\n\n",
+            'tasks' => [
+                ['title' => 'Create the deploy user and add SSH keys', 'days' => 0, 'priority' => 'high'],
+                ['title' => 'Disable password login and root SSH', 'days' => 0, 'priority' => 'high'],
+                ['title' => 'Enable the firewall (only 22, 80, 443)', 'days' => 1, 'priority' => 'high'],
+                ['title' => 'Install PHP, Composer, Node, database and web server', 'days' => 1, 'priority' => 'medium'],
+                ['title' => 'Set up automatic security updates', 'days' => 2, 'priority' => 'medium'],
+                ['title' => 'Configure database backups and test a restore', 'days' => 3, 'priority' => 'high'],
+                ['title' => 'Add the server to monitoring and resource alerts', 'days' => 3, 'priority' => 'medium'],
+            ],
+        ],
+        'client-onboarding' => [
+            'label' => 'Client onboarding',
+            'title' => 'Onboarding: ',
+            'body' => "## Checklist\n\n- [ ] Send the welcome message and agree on the communication channel\n- [ ] Collect access (hosting, domain, analytics, repos)\n- [ ] Write down goals, scope and deadlines\n- [ ] Set up the project space, board and tags\n- [ ] Plan the first milestone and share it\n- [ ] Book the first review call\n\n## Notes\n\n",
+            'tasks' => [
+                ['title' => 'Send the welcome message and agree on the communication channel', 'days' => 0, 'priority' => 'medium'],
+                ['title' => 'Collect access (hosting, domain, analytics, repos)', 'days' => 1, 'priority' => 'high'],
+                ['title' => 'Write down goals, scope and deadlines', 'days' => 2, 'priority' => 'high'],
+                ['title' => 'Set up the project space, board and tags', 'days' => 2, 'priority' => 'medium'],
+                ['title' => 'Plan the first milestone and share it', 'days' => 5, 'priority' => 'medium'],
+                ['title' => 'Book the first review call', 'days' => 7, 'priority' => 'low'],
+            ],
         ],
     ];
 

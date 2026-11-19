@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\IncidentReporter;
 use App\Services\Telegram;
 use Database\Factories\MonitorFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -13,6 +14,7 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Str;
 use Throwable;
 
 class Monitor extends Model
@@ -39,6 +41,9 @@ class Monitor extends Model
             'checked_at' => 'datetime',
             'status_changed_at' => 'datetime',
             'alerted_at' => 'datetime',
+            'ssl_expires_at' => 'datetime',
+            'domain_expires_at' => 'datetime',
+            'expiry_checked_at' => 'datetime',
         ];
     }
 
@@ -65,6 +70,27 @@ class Monitor extends Model
     public function checks(): HasMany
     {
         return $this->hasMany(MonitorCheck::class);
+    }
+
+    public function incidents(): HasMany
+    {
+        return $this->hasMany(Incident::class);
+    }
+
+    /** Tasks, pages and reminders tagged with this name show up on the site's hub page. */
+    public function tagName(): string
+    {
+        return Tag::normalize($this->name)[0] ?? '';
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->public_token !== null;
+    }
+
+    public function setPublic(bool $public): void
+    {
+        $this->forceFill(['public_token' => $public ? ($this->public_token ?? Str::lower(Str::random(16))) : null])->save();
     }
 
     public function recordResult(Response|Throwable $result): void
@@ -103,9 +129,11 @@ class Monitor extends Model
         if (! $this->is_up && $this->consecutive_failures >= self::ALERT_AFTER_FAILURES && $this->alerted_at === null) {
             $this->forceFill(['alerted_at' => now()])->save();
             $this->sendAlert("{$this->name} is DOWN ({$this->error}) · {$this->url}", '🔴');
+            app(IncidentReporter::class)->open(Incident::DOWN, "{$this->name} is down", $this, "{$this->error} · {$this->url}", notify: false);
         } elseif ($this->is_up && $this->alerted_at !== null) {
             $this->forceFill(['alerted_at' => null])->save();
             $this->sendAlert("{$this->name} is back UP · {$this->url}", '🟢');
+            app(IncidentReporter::class)->resolve(Incident::DOWN, $this, notify: false);
         }
     }
 

@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Deployment;
+use App\Models\Incident;
 use App\Models\Monitor;
 use Illuminate\Contracts\Process\ProcessResult;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
+use Throwable;
 
 /**
  * Pulls the checked-out branch of Lore and of every registered site that has a server path, then runs the
@@ -17,6 +20,11 @@ class Deployer
 {
     /** Site paths must sit directly under this directory. */
     public const ROOT = '/var/www';
+
+    /** The site is requested this many times after a deploy before the deploy counts as having broken it. */
+    public const SMOKE_ATTEMPTS = 3;
+
+    public function __construct(private IncidentReporter $incidents) {}
 
     public function enabled(): bool
     {
@@ -173,6 +181,51 @@ class Deployer
             ]);
             $this->refreshStatus($path);
         }
+
+        if ($ok) {
+            $this->smokeCheck($deployment->fresh());
+        }
+    }
+
+    /**
+     * Request the site's monitored URL once the deploy is finished. A site that does not answer opens an incident
+     * (board card, Telegram, banner) that points at this deploy; the deploy itself is left in place.
+     */
+    public function smokeCheck(Deployment $deployment): void
+    {
+        $monitor = Monitor::where('deploy_path', $deployment->path)->first();
+        if ($monitor === null) {
+            $deployment->update(['smoke_status' => Deployment::SMOKE_SKIPPED, 'smoke_detail' => 'No monitored URL for this folder.']);
+
+            return;
+        }
+
+        $detail = null;
+        for ($attempt = 1; $attempt <= self::SMOKE_ATTEMPTS; $attempt++) {
+            try {
+                $response = Http::timeout(Monitor::TIMEOUT_SECONDS)->get($monitor->url);
+                $detail = $response->status() < Monitor::FIRST_FAILING_STATUS ? null : 'HTTP '.$response->status();
+            } catch (Throwable $e) {
+                $detail = str($e->getMessage())->before(' (see ')->limit(120)->toString();
+            }
+
+            if ($detail === null) {
+                break;
+            }
+            if ($attempt < self::SMOKE_ATTEMPTS) {
+                sleep((int) config('services.deploy.smoke_retry_seconds', 5));
+            }
+        }
+
+        if ($detail === null) {
+            $deployment->update(['smoke_status' => Deployment::SMOKE_PASSED, 'smoke_detail' => $monitor->host().' answered.']);
+            $this->incidents->resolve(Incident::SMOKE_FAILED, $monitor);
+
+            return;
+        }
+
+        $deployment->update(['smoke_status' => Deployment::SMOKE_FAILED, 'smoke_detail' => $detail]);
+        $this->incidents->open(Incident::SMOKE_FAILED, "{$monitor->name} failed its check after deploy #{$deployment->id}", $monitor, "{$detail} · {$monitor->url}", $deployment);
     }
 
     private function statusKey(string $path): string

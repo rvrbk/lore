@@ -63,6 +63,9 @@
                     <span class="font-medium {{ $style }}"><span class="uppercase">{{ $deployment->status }}</span> <span class="text-zinc-100">{{ $deployment->site ?? 'lore' }}</span></span>
                     <span class="text-xs text-zinc-400">{{ $deployment->branch }} · {{ $deployment->from_commit ? substr($deployment->from_commit, 0, 7) : '—' }} → {{ $deployment->to_commit ? substr($deployment->to_commit, 0, 7) : '—' }} · {{ $deployment->created_at->diffForHumans() }}</span>
                 </div>
+                @if($deployment->smoke_status && $deployment->smoke_status !== 'skipped')
+                    <p class="mt-1 text-xs {{ $deployment->smoke_status === 'passed' ? 'text-emerald-400' : 'text-red-400' }}">{{ $deployment->smoke_status === 'passed' ? '✓ Site answered after deploy' : '✗ Site did not answer after deploy' }} · {{ $deployment->smoke_detail }}</p>
+                @endif
                 @if($deployment->output)
                     <details class="mt-2"><summary class="cursor-pointer text-xs text-zinc-400">Output</summary><pre class="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words bg-zinc-950 p-3 text-xs text-zinc-300">{{ $deployment->output }}</pre></details>
                 @elseif($deployment->isActive())

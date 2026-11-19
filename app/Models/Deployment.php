@@ -20,9 +20,15 @@ class Deployment extends Model
 
     public const FAILED = 'failed';
 
+    public const SMOKE_PASSED = 'passed';
+
+    public const SMOKE_FAILED = 'failed';
+
+    public const SMOKE_SKIPPED = 'skipped';
+
     protected $attributes = ['status' => self::REQUESTED];
 
-    protected $fillable = ['site', 'path', 'branch', 'status', 'from_commit', 'to_commit', 'output', 'started_at', 'finished_at'];
+    protected $fillable = ['site', 'path', 'branch', 'status', 'from_commit', 'to_commit', 'output', 'started_at', 'finished_at', 'smoke_status', 'smoke_detail'];
 
     protected function casts(): array
     {

@@ -51,6 +51,8 @@ return [
     'deploy' => [
         // Lets the Deploy page queue a git pull + rebuild that the scheduler runs. Only enable on the server.
         'enabled' => env('DEPLOY_ENABLED', false),
+        // Seconds between the attempts of the post-deploy check that the site answers again.
+        'smoke_retry_seconds' => env('DEPLOY_SMOKE_RETRY_SECONDS', 5),
     ],
 
     'telegram' => [

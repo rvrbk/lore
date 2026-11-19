@@ -13,6 +13,7 @@
     <form method="POST" action="{{ $page->exists ? route('pages.update', $page) : route('pages.store', $space) }}" class="mt-6 space-y-4">
         @csrf
         @if($page->exists) @method('PUT') @endif
+        @if(! $page->exists && $template)<input type="hidden" name="template" value="{{ $template }}">@endif
         <input name="title" value="{{ old('title', $page->title) }}" placeholder="Title" required class="w-full rounded-md border border-zinc-700 px-3 py-2 text-lg font-medium">
         <div class="grid gap-3 sm:grid-cols-2">
             <select name="parent_id" class="w-full rounded-md border border-zinc-700 px-3 py-2 text-sm">
@@ -23,6 +24,12 @@
             </select>
             <input name="tags" value="{{ old('tags', $page->exists ? $page->tagList() : '') }}" placeholder="Tags, comma separated" maxlength="300" class="w-full rounded-md border border-zinc-700 px-3 py-2 text-sm">
         </div>
+        @if(! $page->exists && ! empty($templateTasks))
+            <label class="flex items-start gap-2 border border-zinc-800 bg-zinc-900 p-3 text-sm">
+                <input type="checkbox" name="spawn_tasks" value="1" checked class="mt-0.5">
+                <span>Also add these {{ count($templateTasks) }} tasks to the board, linked to this page and with due dates spread from today<span class="mt-1 block text-xs text-zinc-400">{{ collect($templateTasks)->pluck('title')->implode(' · ') }}</span></span>
+            </label>
+        @endif
         @include('partials.markdown-editor', ['value' => old('body', $page->body), 'rows' => 24])
         @if($errors->any())<p class="text-sm text-red-400">{{ $errors->first() }}</p>@endif
         <div class="flex gap-3">

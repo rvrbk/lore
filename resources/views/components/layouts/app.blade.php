@@ -30,6 +30,10 @@
                 Server health
                 @if($downCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $downCount }}</span>@endif
             </a>
+            <a href="{{ route('incidents.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('incidents.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
+                Incidents
+                @if($openIncidents->isNotEmpty())<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $openIncidents->count() }}</span>@endif
+            </a>
         </nav>
         @foreach(['Pinned' => $pinnedPages, 'Recent' => $recentPages] as $heading => $list)
             @if($list->isNotEmpty())
@@ -68,7 +72,23 @@
         </form>
     </aside>
     <main class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <div class="mx-auto max-w-4xl">{{ $slot }}</div>
+        <div class="mx-auto max-w-4xl">
+            @if($openIncidents->isNotEmpty() && ! request()->routeIs('incidents.*'))
+                <div role="alert" class="mb-6 border border-red-500/60 bg-red-500/10 p-3 text-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="font-semibold text-red-300">{{ $openIncidents->count() }} open incident{{ $openIncidents->count() === 1 ? '' : 's' }}</span>
+                        <a href="{{ route('incidents.index') }}" class="text-red-300 underline hover:text-red-200">Review</a>
+                    </div>
+                    <ul class="mt-1 space-y-0.5 text-zinc-300">
+                        @foreach($openIncidents->take(4) as $incident)
+                            <li class="truncate">🐞 {{ $incident->title }} <span class="text-zinc-500">· for {{ $incident->duration() }}</span></li>
+                        @endforeach
+                        @if($openIncidents->count() > 4)<li class="text-zinc-500">and {{ $openIncidents->count() - 4 }} more</li>@endif
+                    </ul>
+                </div>
+            @endif
+            {{ $slot }}
+        </div>
     </main>
 </div>
 
@@ -83,6 +103,7 @@
         ['title' => 'Deploy', 'hint' => 'Go to', 'url' => route('deploy.index')],
         ['title' => 'Analytics', 'hint' => 'Go to', 'url' => route('analytics.index')],
         ['title' => 'Server health', 'hint' => 'Go to', 'url' => route('monitors.index')],
+        ['title' => 'Incidents', 'hint' => 'Go to', 'url' => route('incidents.index')],
         isset($space) ? ['title' => 'New page in '.$space->name, 'hint' => 'Action', 'url' => route('pages.create', $space)] : null,
     ]));
 @endphp

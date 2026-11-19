@@ -2,22 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Deployment;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
+use App\Models\Page;
+use App\Models\Reminder;
+use App\Models\Task;
+use App\Services\GoogleAnalytics;
+use App\Services\ServerHealth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class MonitorController extends Controller
 {
-    public function index(): View
+    public function index(ServerHealth $health): View
     {
         $monitors = Monitor::orderBy('name')->get();
 
-        return view('monitors.index', ['monitors' => $monitors, 'sparks' => Monitor::sparklines($monitors)]);
+        return view('monitors.index', [
+            'monitors' => $monitors,
+            'sparks' => Monitor::sparklines($monitors),
+            'metrics' => $health->recent(),
+            'diskDaysLeft' => $health->daysUntilDiskFull(),
+        ]);
     }
 
-    public function show(Monitor $monitor): View
+    public function show(Monitor $monitor, GoogleAnalytics $analytics): View
     {
         $recent = $monitor->checks()->where('checked_at', '>=', now()->subDay())->orderBy('checked_at')->get();
 
@@ -41,8 +52,22 @@ class MonitorController extends Controller
             $incidents[] = ['from' => $downSince, 'to' => null];
         }
 
+        $tag = $monitor->tagName();
+        $tasks = $tag === '' ? collect() : Task::withTag($tag)->where('status', '!=', 'done')->orderBy('position')->get();
+        $pages = $tag === '' ? collect() : Page::withTag($tag)->with('space')->orderBy('title')->get();
+        $reminders = Reminder::open()->orderBy('due_at')
+            ->where(fn ($query) => $query->whereIn('task_id', $tasks->modelKeys())->orWhereIn('page_id', $pages->modelKeys())->orWhere('title', 'like', $monitor->name.': %'))
+            ->limit(10)->get();
+
         return view('monitors.show', [
             'monitor' => $monitor,
+            'tag' => $tag,
+            'tasks' => $tasks,
+            'pages' => $pages,
+            'reminders' => $reminders,
+            'siteIncidents' => $monitor->incidents()->latest('started_at')->limit(10)->get(),
+            'deployments' => $monitor->deploy_path ? Deployment::where('path', $monitor->deploy_path)->latest('id')->limit(8)->get() : collect(),
+            'traffic' => collect($analytics->summary() ?? [])->firstWhere('name', $monitor->name),
             'checks' => $recent,
             'hours' => $hours,
             'incidents' => array_reverse($incidents),
@@ -54,6 +79,7 @@ class MonitorController extends Controller
     public function update(Request $request, Monitor $monitor): RedirectResponse
     {
         $monitor->update($this->validated($request));
+        $monitor->setPublic($request->boolean('is_public'));
         Monitor::check($monitor->newCollection([$monitor]));
 
         return redirect()->route('monitors.index');

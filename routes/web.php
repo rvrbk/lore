@@ -5,12 +5,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpaceController;
+use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UploadController;
@@ -22,6 +24,8 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('register', [AuthController::class, 'register']);
 });
+
+Route::get('status/{token}', StatusPageController::class)->name('status.show');
 
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
@@ -60,6 +64,10 @@ Route::middleware('auth')->group(function () {
     Route::post('monitors/{monitor}/check', [MonitorController::class, 'check'])->name('monitors.check-one');
     Route::put('monitors/{monitor}', [MonitorController::class, 'update'])->name('monitors.update');
     Route::delete('monitors/{monitor}', [MonitorController::class, 'destroy'])->name('monitors.destroy');
+
+    Route::get('incidents', [IncidentController::class, 'index'])->name('incidents.index');
+    Route::put('incidents/{incident}', [IncidentController::class, 'update'])->name('incidents.update');
+    Route::post('incidents/{incident}/post-mortem', [IncidentController::class, 'postMortem'])->name('incidents.post-mortem');
 
     Route::get('deploy', [DeployController::class, 'index'])->name('deploy.index');
     Route::post('deploy', [DeployController::class, 'store'])->name('deploy.store');
