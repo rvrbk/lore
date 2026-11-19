@@ -8,14 +8,8 @@
     <p class="mt-2 text-sm text-zinc-400">Each app's URL is requested every minute while the scheduler runs. A response below HTTP 500 counts as up; timeouts, connection errors and 5xx count as down.</p>
 
     <details class="mt-5 border border-zinc-800 bg-zinc-900 p-3" @if($errors->any()) open @endif>
-        <summary class="cursor-pointer text-sm font-medium">Add an app</summary>
-        <form method="POST" action="{{ route('monitors.store') }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
-            @csrf
-            <input name="name" value="{{ old('name') }}" placeholder="Name" required maxlength="100" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
-            <input name="url" value="{{ old('url') }}" placeholder="https://example.com/up" required class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
-            <button class="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">Add</button>
-            @if($errors->any())<p class="text-sm text-red-400 sm:col-span-3">{{ $errors->first() }}</p>@endif
-        </form>
+        <summary class="cursor-pointer text-sm font-medium">Add a site</summary>
+        <div class="mt-3">@include('partials.site-form')</div>
     </details>
 
     @if($monitors->isNotEmpty())

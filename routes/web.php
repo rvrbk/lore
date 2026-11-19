@@ -54,7 +54,6 @@ Route::middleware('auth')->group(function () {
     Route::post('tasks/{task}/move', [TaskController::class, 'move'])->name('tasks.move');
 
     Route::get('monitors', [MonitorController::class, 'index'])->name('monitors.index');
-    Route::post('monitors', [MonitorController::class, 'store'])->name('monitors.store');
     Route::get('monitors/{monitor}', [MonitorController::class, 'show'])->name('monitors.show');
     Route::post('monitors/check', [MonitorController::class, 'check'])->name('monitors.check');
     Route::post('monitors/{monitor}/check', [MonitorController::class, 'check'])->name('monitors.check-one');

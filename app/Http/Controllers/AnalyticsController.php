@@ -37,7 +37,7 @@ class AnalyticsController extends Controller
             $analytics->forget();
         }
 
-        return redirect()->route('analytics.index');
+        return redirect()->back(fallback: route('analytics.index'));
     }
 
     public function destroy(AnalyticsSite $site, GoogleAnalytics $analytics): RedirectResponse

@@ -70,8 +70,8 @@ class MonitorTest extends TestCase
     {
         Http::fake(['*' => Http::response('ok', 200)]);
 
-        $this->post(route('monitors.store'), ['name' => 'x', 'url' => 'ftp://nope'])->assertSessionHasErrors('url');
-        $this->post(route('monitors.store'), ['name' => 'fuganda', 'url' => 'https://fuganda.test'])->assertRedirect(route('monitors.index'));
+        $this->post(route('analytics.store'), ['name' => 'x', 'url' => 'ftp://nope'])->assertSessionHasErrors('url');
+        $this->from(route('monitors.index'))->post(route('analytics.store'), ['name' => 'fuganda', 'url' => 'https://fuganda.test'])->assertRedirect(route('monitors.index'));
 
         $monitor = Monitor::firstOrFail();
         $this->assertTrue($monitor->is_up, 'A new app is checked right away.');

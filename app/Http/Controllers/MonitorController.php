@@ -51,14 +51,6 @@ class MonitorController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
-    {
-        $monitor = Monitor::create($this->validated($request));
-        Monitor::check($monitor->newCollection([$monitor]));
-
-        return redirect()->route('monitors.index');
-    }
-
     public function update(Request $request, Monitor $monitor): RedirectResponse
     {
         $monitor->update($this->validated($request));
