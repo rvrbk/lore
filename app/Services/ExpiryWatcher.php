@@ -136,7 +136,7 @@ class ExpiryWatcher
         $prefix = "{$monitor->name}: {$what} expires ";
         $current = $prefix.$expires->format('j M Y');
 
-        $existing = Reminder::where('title', 'like', '%: '.$what.' expires %')->get()->filter(fn (Reminder $r) => str_starts_with($r->title, $prefix));
+        $existing = Reminder::where('title', Sql::like(), '%: '.$what.' expires %')->get()->filter(fn (Reminder $r) => str_starts_with($r->title, $prefix));
         // A renewed certificate or domain has a new date, which makes the old countdown obsolete.
         $existing->filter(fn (Reminder $r) => $r->completed_at === null && ! str_starts_with($r->title, $current))->each->delete();
         $titles = $existing->filter(fn (Reminder $r) => str_starts_with($r->title, $current))->pluck('title');

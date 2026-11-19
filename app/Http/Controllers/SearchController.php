@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Services\Sql;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -13,9 +14,11 @@ class SearchController extends Controller
         $q = trim((string) $request->query('q'));
         $like = '%'.addcslashes($q, '%_\\').'%';
 
+        $operator = Sql::like();
+
         $results = $q === '' ? collect() : Page::with('space')
-            ->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('body', 'like', $like))
-            ->orderByRaw('case when title like ? then 0 else 1 end', [$like])
+            ->where(fn ($w) => $w->where('title', $operator, $like)->orWhere('body', $operator, $like))
+            ->orderByRaw("case when title {$operator} ? then 0 else 1 end", [$like])
             ->latest('updated_at')
             ->limit(50)
             ->get();

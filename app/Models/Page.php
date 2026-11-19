@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasTags;
+use App\Services\Sql;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -151,12 +152,13 @@ class Page extends Model
     public function backlinks(): Collection
     {
         $title = addcslashes($this->title, '%_\\');
+        $like = Sql::like();
 
         return static::with('space')
             ->whereKeyNot($this->id)
             ->where(fn ($q) => $q
-                ->whereRaw("body like ? escape '\\'", ['%[['.$title.']]%'])
-                ->orWhereRaw("body like ? escape '\\'", ['%[['.$title.'|%']))
+                ->whereRaw("body {$like} ? escape '\\'", ['%[['.$title.']]%'])
+                ->orWhereRaw("body {$like} ? escape '\\'", ['%[['.$title.'|%']))
             ->orderBy('title')
             ->get();
     }

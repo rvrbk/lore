@@ -174,7 +174,7 @@ class Monitor extends Model
     public function uptimePercent(int $days): ?float
     {
         $counts = $this->checks()->where('checked_at', '>=', now()->subDays($days))
-            ->selectRaw('count(*) as total, sum(is_up) as up')->toBase()->first();
+            ->selectRaw('count(*) as total, sum(case when is_up then 1 else 0 end) as up')->toBase()->first();
 
         return $counts->total > 0 ? round($counts->up / $counts->total * 100, 2) : null;
     }

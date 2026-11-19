@@ -10,6 +10,7 @@ use App\Models\Reminder;
 use App\Models\Task;
 use App\Services\GoogleAnalytics;
 use App\Services\ServerHealth;
+use App\Services\Sql;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -56,7 +57,7 @@ class MonitorController extends Controller
         $tasks = $tag === '' ? collect() : Task::withTag($tag)->where('status', '!=', 'done')->orderBy('position')->get();
         $pages = $tag === '' ? collect() : Page::withTag($tag)->with('space')->orderBy('title')->get();
         $reminders = Reminder::open()->orderBy('due_at')
-            ->where(fn ($query) => $query->whereIn('task_id', $tasks->modelKeys())->orWhereIn('page_id', $pages->modelKeys())->orWhere('title', 'like', $monitor->name.': %'))
+            ->where(fn ($query) => $query->whereIn('task_id', $tasks->modelKeys())->orWhereIn('page_id', $pages->modelKeys())->orWhere('title', Sql::like(), $monitor->name.': %'))
             ->limit(10)->get();
 
         return view('monitors.show', [
