@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Page;
 use App\Models\Reminder;
+use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class ReminderController extends Controller
@@ -12,15 +14,27 @@ class ReminderController extends Controller
     public function index()
     {
         return view('reminders.index', [
-            'open' => Reminder::open()->with('page')->orderBy('due_at')->get(),
-            'done' => Reminder::whereNotNull('completed_at')->with('page')->latest('completed_at')->limit(20)->get(),
+            'open' => Reminder::open()->with(['page', 'task'])->orderBy('due_at')->get(),
+            'done' => Reminder::whereNotNull('completed_at')->with(['page', 'task'])->latest('completed_at')->limit(20)->get(),
+            'tasks' => Task::where('status', '!=', 'done')->orderBy('title')->get(['id', 'title']),
             'pages' => Page::with('space')->orderBy('title')->get(),
         ]);
     }
 
     public function store(Request $request)
     {
-        Reminder::create($this->validated($request));
+        $data = $this->validated($request);
+
+        if ($data['task_id'] === null) {
+            $data['task_id'] = Task::createAtBottom([
+                'title' => $data['title'],
+                'description' => $data['notes'],
+                'due_on' => Carbon::parse($data['due_at'])->toDateString(),
+                'page_id' => $data['page_id'],
+            ])->id;
+        }
+
+        Reminder::create($data);
 
         return back();
     }
@@ -74,8 +88,11 @@ class ReminderController extends Controller
             'due_at' => ['required', 'date'],
             'recurrence' => ['required', Rule::in(array_keys(Reminder::RECURRENCES))],
             'page_id' => ['nullable', 'exists:pages,id'],
+            'task_id' => ['nullable', 'exists:tasks,id'],
         ]);
         $data['page_id'] = $data['page_id'] ?? null;
+        $data['task_id'] = $data['task_id'] ?? null;
+        $data['notes'] = $data['notes'] ?? null;
 
         return $data;
     }

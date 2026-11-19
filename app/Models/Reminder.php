@@ -18,7 +18,7 @@ class Reminder extends Model
 
     protected $attributes = ['recurrence' => 'none'];
 
-    protected $fillable = ['page_id', 'title', 'notes', 'due_at', 'recurrence', 'notified_at', 'completed_at'];
+    protected $fillable = ['page_id', 'task_id', 'title', 'notes', 'due_at', 'recurrence', 'notified_at', 'completed_at'];
 
     protected function casts(): array
     {
@@ -32,6 +32,11 @@ class Reminder extends Model
     public function page(): BelongsTo
     {
         return $this->belongsTo(Page::class);
+    }
+
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(Task::class);
     }
 
     public function scopeOpen(Builder $query): void

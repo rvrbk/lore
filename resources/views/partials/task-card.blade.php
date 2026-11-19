@@ -6,7 +6,7 @@
     };
     $progress = $task->checklistProgress();
 @endphp
-<li draggable="true" data-task-id="{{ $task->id }}" data-task="{{ json_encode(['id' => $task->id, 'title' => $task->title, 'description' => $task->description, 'status' => $task->status, 'priority' => $task->priority, 'due_on' => $task->due_on?->format('Y-m-d'), 'page_id' => $task->page_id, 'recurrence' => $task->recurrence, 'tags' => $task->tagList(), 'checklist' => $task->checklist ?? []]) }}"
+<li draggable="true" data-task-id="{{ $task->id }}" data-task="{{ json_encode(['id' => $task->id, 'title' => $task->title, 'description' => $task->description, 'status' => $task->status, 'priority' => $task->priority, 'due_on' => $task->due_on?->format('Y-m-d'), 'page_id' => $task->page_id, 'remind_at' => $task->reminder?->due_at->format('Y-m-d\\TH:i'), 'recurrence' => $task->recurrence, 'tags' => $task->tagList(), 'checklist' => $task->checklist ?? []]) }}"
     class="cursor-grab border border-zinc-700 bg-zinc-900 p-3 text-sm hover:border-zinc-500 active:cursor-grabbing">
     <div class="break-words font-medium text-zinc-100">{{ $task->title }}</div>
     @if($task->description)<p class="mt-1 line-clamp-2 text-xs text-zinc-400">{{ $task->description }}</p>@endif
@@ -17,6 +17,7 @@
         <span class="flex items-center gap-2">
             <span class="border px-1.5 py-0.5 uppercase {{ $priorityStyle }}">{{ \App\Models\Task::PRIORITIES[$task->priority] }}</span>
             @if($progress['total'])<span class="{{ $progress['done'] === $progress['total'] ? 'text-emerald-400' : 'text-zinc-400' }}" title="Checklist">☑ {{ $progress['done'] }}/{{ $progress['total'] }}</span>@endif
+            @if($task->reminder)<span class="{{ $task->reminder->isOverdue() ? 'text-red-400' : 'text-zinc-400' }}" title="Reminder {{ $task->reminder->due_at->format('j M Y, H:i') }}">&#9742; {{ $task->reminder->due_at->format('j M') }}</span>@endif
             @if($task->recurrence !== 'none')<span class="text-zinc-400" title="Repeats {{ strtolower(\App\Models\Reminder::RECURRENCES[$task->recurrence]) }}">↻</span>@endif
         </span>
         @if($task->due_on)

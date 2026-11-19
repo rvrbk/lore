@@ -7,6 +7,7 @@ use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 
 class Task extends Model
@@ -41,6 +42,34 @@ class Task extends Model
     public function page(): BelongsTo
     {
         return $this->belongsTo(Page::class);
+    }
+
+    public function reminder(): HasOne
+    {
+        return $this->hasOne(Reminder::class)->whereNull('completed_at')->oldestOfMany('due_at');
+    }
+
+    /**
+     * Set, move or clear the task's open reminder.
+     */
+    public function syncReminder(?string $remindAt): void
+    {
+        $open = Reminder::where('task_id', $this->id)->open();
+
+        if ($remindAt === null || $remindAt === '') {
+            $open->delete();
+
+            return;
+        }
+
+        $existing = $open->orderBy('due_at')->first();
+        if ($existing) {
+            $existing->update(['title' => $this->title, 'due_at' => $remindAt, 'notified_at' => null]);
+
+            return;
+        }
+
+        Reminder::create(['task_id' => $this->id, 'page_id' => $this->page_id, 'title' => $this->title, 'due_at' => $remindAt]);
     }
 
     /** @return array{done: int, total: int} */
@@ -85,6 +114,7 @@ class Task extends Model
             static::renumber($ids);
 
             if ($status === 'done' && $previous !== 'done') {
+                Reminder::where('task_id', $this->id)->open()->update(['completed_at' => now()]);
                 $this->spawnNextOccurrence();
             }
 

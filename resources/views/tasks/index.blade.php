@@ -47,6 +47,8 @@
                 <label class="block"><span class="text-xs text-zinc-400">Repeats</span>
                     <select name="recurrence" class="mt-1 w-full rounded-md border border-zinc-700 px-2 py-1.5">@foreach(\App\Models\Reminder::RECURRENCES as $k => $l)<option value="{{ $k }}">{{ $l }}</option>@endforeach</select></label>
             </div>
+            <label class="block text-sm"><span class="text-xs text-zinc-400">Remind me at</span>
+                <input type="datetime-local" name="remind_at" class="mt-1 w-full rounded-md border border-zinc-700 px-2 py-1.5"></label>
             <label class="block text-sm"><span class="text-xs text-zinc-400">Linked page</span>
                 <select name="page_id" class="mt-1 w-full rounded-md border border-zinc-700 px-2 py-1.5">
                     <option value="">No page</option>

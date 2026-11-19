@@ -20,7 +20,7 @@ class TaskController extends Controller
         $tag = $request->query('tag');
 
         return view('tasks.index', [
-            'columns' => Task::with(['tags', 'page'])->withTag($tag)->orderBy('position')->orderBy('id')->get()->groupBy('status'),
+            'columns' => Task::with(['tags', 'page', 'reminder'])->withTag($tag)->orderBy('position')->orderBy('id')->get()->groupBy('status'),
             'activeTag' => $tag,
             'tags' => Tag::whereHas('tasks')->orderBy('name')->get(),
             'pages' => Page::with('space')->orderBy('title')->get(),
@@ -30,7 +30,7 @@ class TaskController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
-        $task = Task::createAtBottom(Arr::except($data, 'tags'));
+        $task = Task::createAtBottom(Arr::except($data, ['tags', 'remind_at']));
         $task->syncTagNames($data['tags'] ?? null);
 
         return redirect()->back(fallback: route('tasks.index'));
@@ -42,7 +42,11 @@ class TaskController extends Controller
         $status = $data['status'] ?? $task->status;
         unset($data['status']);
 
+        $remindAt = Arr::pull($data, 'remind_at');
         $task->update(Arr::except($data, 'tags'));
+        if ($request->has('remind_at')) {
+            $task->syncReminder($remindAt);
+        }
         if (array_key_exists('tags', $data)) {
             $task->syncTagNames($data['tags']);
         }
@@ -90,6 +94,7 @@ class TaskController extends Controller
             'page_id' => ['nullable', 'exists:pages,id'],
             'recurrence' => ['sometimes', Rule::in(array_keys(Reminder::RECURRENCES))],
             'tags' => ['nullable', 'string', 'max:300'],
+            'remind_at' => ['nullable', 'date'],
             'checklist' => ['nullable', 'array', 'max:50'],
             'checklist.*.text' => ['nullable', 'string', 'max:200'],
             'checklist.*.done' => ['nullable', 'boolean'],

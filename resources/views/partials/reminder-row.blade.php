@@ -5,6 +5,7 @@
             <div class="text-xs {{ $reminder->isOverdue() ? 'text-red-400' : 'text-zinc-400' }}">
                 {{ $reminder->due_at->format('D j M Y, H:i') }}
                 @if($reminder->recurrence !== 'none') · {{ strtolower(\App\Models\Reminder::RECURRENCES[$reminder->recurrence]) }} @endif
+                @if($reminder->task) · <a href="{{ route('tasks.index') }}" class="underline">Task: {{ $reminder->task->title }}</a> @endif
                 @if($reminder->page) · <a href="{{ route('pages.show', $reminder->page) }}" class="underline">{{ $reminder->page->title }}</a> @endif
             </div>
             @if($reminder->notes)<p class="mt-1 text-sm text-zinc-400">{{ $reminder->notes }}</p>@endif

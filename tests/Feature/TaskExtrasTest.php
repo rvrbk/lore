@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Reminder;
 use App\Models\Space;
 use App\Models\Task;
 use App\Models\User;
@@ -66,6 +67,74 @@ class TaskExtrasTest extends TestCase
     {
         $task = Task::createAtBottom(['title' => 'Once', 'status' => 'todo']);
         $this->postJson(route('tasks.move', $task), ['status' => 'done', 'position' => 0]);
+        $this->assertSame(1, Task::count());
+    }
+
+    public function test_a_task_reminder_can_be_set_moved_and_cleared(): void
+    {
+        $task = Task::create(['title' => 'Call dentist']);
+        $payload = ['title' => 'Call dentist', 'status' => 'todo', 'recurrence' => 'none'];
+
+        $this->put(route('tasks.update', $task), $payload + ['remind_at' => '2030-01-02T09:00'])->assertRedirect();
+        $reminder = Reminder::where('task_id', $task->id)->sole();
+        $this->assertSame('Call dentist', $reminder->title);
+
+        $this->put(route('tasks.update', $task), $payload + ['remind_at' => '2030-01-03T10:30']);
+        $this->assertSame(1, Reminder::where('task_id', $task->id)->count());
+        $this->assertSame('2030-01-03 10:30', $reminder->fresh()->due_at->format('Y-m-d H:i'));
+
+        $this->put(route('tasks.update', $task), $payload + ['remind_at' => '']);
+        $this->assertSame(0, Reminder::where('task_id', $task->id)->count());
+    }
+
+    public function test_finishing_a_task_completes_its_reminder(): void
+    {
+        $task = Task::create(['title' => 'Pay rent']);
+        $task->syncReminder('2030-01-02T09:00');
+
+        $task->moveTo('done', 0);
+
+        $this->assertNotNull(Reminder::where('task_id', $task->id)->sole()->completed_at);
+    }
+
+    public function test_reminders_can_be_linked_to_a_task_and_follow_its_deletion(): void
+    {
+        $task = Task::create(['title' => 'Renew domain']);
+
+        $this->post(route('reminders.store'), [
+            'title' => 'Renew domain', 'due_at' => '2030-01-02T09:00', 'recurrence' => 'none', 'task_id' => $task->id,
+        ])->assertRedirect();
+        $this->assertSame($task->id, Reminder::sole()->task_id);
+        $this->get(route('reminders.index'))->assertOk()->assertSee('Task: Renew domain');
+
+        $task->delete();
+        $this->assertSame(0, Reminder::count());
+    }
+
+    public function test_a_new_reminder_without_a_task_gets_a_board_entry(): void
+    {
+        $page = Space::create(['name' => 'Ops'])->pages()->create(['title' => 'Runbook']);
+
+        $this->post(route('reminders.store'), [
+            'title' => 'Review runbook', 'due_at' => '2030-01-02T09:00', 'recurrence' => 'none', 'page_id' => $page->id,
+        ])->assertRedirect();
+
+        $task = Task::sole();
+        $this->assertSame('Review runbook', $task->title);
+        $this->assertSame('todo', $task->status);
+        $this->assertSame($page->id, $task->page_id);
+        $this->assertSame('2030-01-02', $task->due_on->toDateString());
+        $this->assertSame($task->id, Reminder::sole()->task_id);
+    }
+
+    public function test_a_reminder_for_an_existing_task_does_not_add_another_card(): void
+    {
+        $task = Task::create(['title' => 'Existing']);
+
+        $this->post(route('reminders.store'), [
+            'title' => 'Existing', 'due_at' => '2030-01-02T09:00', 'recurrence' => 'none', 'task_id' => $task->id,
+        ]);
+
         $this->assertSame(1, Task::count());
     }
 }

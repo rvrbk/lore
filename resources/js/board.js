@@ -134,7 +134,7 @@ if (board) {
     function openTask(task) {
         editForm.action = url(editForm.dataset.updateUrl, task.id);
         deleteForm.action = url(deleteForm.dataset.deleteUrl, task.id);
-        ['title', 'description', 'status', 'priority', 'due_on', 'page_id', 'recurrence', 'tags'].forEach((field) => {
+        ['title', 'description', 'status', 'priority', 'due_on', 'page_id', 'recurrence', 'tags', 'remind_at'].forEach((field) => {
             editForm.elements[field].value = task[field] ?? '';
         });
         checklist.replaceChildren();

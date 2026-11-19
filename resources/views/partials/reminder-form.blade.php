@@ -9,6 +9,14 @@
             <option value="{{ $k }}" @selected(old('recurrence', $r?->recurrence ?? 'none') === $k)>{{ $label }}</option>
         @endforeach
     </select>
+    @isset($tasks)
+        <select name="task_id" aria-label="Linked task" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm sm:col-span-2">
+            <option value="">No linked task</option>
+            @foreach($tasks as $t)
+                <option value="{{ $t->id }}" @selected(old('task_id', $r?->task_id) == $t->id)>{{ $t->title }}</option>
+            @endforeach
+        </select>
+    @endisset
     @isset($pages)
         <select name="page_id" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm sm:col-span-2">
             <option value="">No linked page</option>
