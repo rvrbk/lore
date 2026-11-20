@@ -15,37 +15,37 @@ const PALETTE = {
     V: '#9b5de5',
 };
 
-const FLY = 2;
+const FLY = 3;
+
+const XWING = ['S........', 'SS.......', '.SSS.....', 'RSSSSSSSW', '.SSS.....', 'SS.......', 'S........'];
+const TIE = ['D.....D', 'D.....D', 'D..S..D', 'DSSCSSD', 'D..S..D', 'D.....D', 'D.....D'];
 
 const FLYERS = [
-    { name: 'plane', speed: 16, bob: 0, bitmap: ['...W...', 'W..W...', 'WWWWWWC', 'W..W...', '...W...'] },
-    { name: 'ufo', speed: 11, bob: 1.5, bitmap: ['.GGG.', 'GCYCG', 'GYCYG', 'GCYCG', '.GGG.'] },
-    { name: 'santa', speed: 13, bob: 1, bitmap: ['RRR...B.B', 'RWRYYYBBB', 'RRR...B.B'] },
-    { name: 'rocket', speed: 26, bob: 0, bitmap: ['.R....', 'OYWWWC', '.R....'] },
-    { name: 'comet', speed: 30, bob: 0, bitmap: ['.OOY...', 'OOYYYWW', '.OOY...'] },
-    { name: 'satellite', speed: 7, bob: 0, bitmap: ['C...C', 'CCWCC', 'C...C'] },
-    { name: 'helicopter', speed: 9, bob: 0.5, rotor: 8, bitmap: ['....WW.', 'RRRRWWC', '....WW.'] },
-    { name: 'tie-fighter', speed: 18, bob: 0, bitmap: ['D...D', 'D.S.D', 'DSCSD', 'D.S.D', 'D...D'] },
-    { name: 'x-wing', speed: 20, bob: 0, bitmap: ['S.S....', '.SSS...', 'RSSSSSW', '.SSS...', 'S.S....'] },
-    { name: 'falcon', speed: 14, bob: 0, bitmap: ['.SSSSSSS', 'SSDDDSS.', 'SDDCDDSS', 'SSDDDSS.', '.SSSSSSS'] },
-    { name: 'star-destroyer', speed: 6, bob: 0, bitmap: ['CS.........', 'CSSSSS.....', 'CSSDSSSSSSS', 'CSSSSS.....', 'CS.........'] },
-    { name: 'death-star', speed: 4, bob: 0, upright: true, bitmap: ['..SSS..', '.SSSSS.', 'SSSSDDS', 'SSSSSSS', 'SSSSSSS', '.SSSSS.', '..SSS..'] },
-    { name: 'blimp', speed: 5, bob: 0.5, bitmap: ['.WWWWWW.', 'WRRRRRRC', '.WWWWWW.'] },
+    { name: 'plane', speed: 16, bob: 0, bitmap: ['....W......', '....WW.....', 'WW...WW....', 'WWWWWWWWWWC', 'WW...WW....', '....WW.....', '....W......'] },
+    { name: 'ufo', speed: 11, bob: 1.5, bitmap: ['....C....', '...CCC...', '.GGGGGGG.', 'GYGYGYGYG', '.GG...GG.'] },
+    { name: 'santa', speed: 13, bob: 1, bitmap: ['.....RW...B.B.', 'BBBBBRRR.YBBBB', '.B.B.B.B......'] },
+    { name: 'rocket', speed: 26, bob: 0, bitmap: ['..R.......', '.RRWWWWW..', 'OYWWWCWWWR', '.RRWWWWW..', '..R.......'] },
+    { name: 'comet', speed: 30, bob: 0, bitmap: ['O.O.....WW.', '.OOYYYYWWWW', 'O.O.....WW.'] },
+    { name: 'satellite', speed: 7, bob: 0, bitmap: ['CCC...CCC', 'CCC.W.CCC', 'CCCWWWCCC', 'CCC.W.CCC', 'CCC...CCC'] },
+    { name: 'helicopter', speed: 9, bob: 0.5, rotor: 10, bitmap: ['R...RRRR..', 'RRRRRRRRWC', '....RRRR..', '..DDDDDDD.'] },
+    { name: 'tie-fighter', speed: 18, bob: 0, bitmap: TIE },
+    { name: 'x-wing', speed: 20, bob: 0, bitmap: XWING },
+    { name: 'falcon', speed: 14, bob: 0, bitmap: ['..SSSSSS...', '.SSSSSSSSSS', 'SSSDDDCSS..', '.SSSSSSSSSS', '..SSSSSS...'] },
+    { name: 'star-destroyer', speed: 6, bob: 0, bitmap: ['C..............', 'CSS............', 'CSSSSS.........', 'CSSSDSSSSSSSSSS', 'CSSSSS.........', 'CSS............', 'C..............'] },
+    { name: 'death-star', speed: 4, bob: 0, upright: true, bitmap: ['..SSSSS..', '.SSSSDDS.', 'SSSSDDDSS', 'DDDDDDDDD', 'SSSSSSSSS', 'SSSSSSSSS', '.SSSSSSS.', '..SSSSS..'] },
+    { name: 'blimp', speed: 5, bob: 0.5, bitmap: ['...WWWWWWW..', 'R.WRRRRRRRW.', 'RRRRRRRRRRRC', 'R.WRRRRRRRW.', '...WWWWWWW..', '.....DD.....'] },
+    { name: 'hot-air-balloon', speed: 4, bob: 1, upright: true, bitmap: ['.RRRRR.', 'RRYRYRR', 'RRRYRRR', 'RRRRRRR', '.RRRRR.', '..RRR..', '...B...', '..BBB..'] },
+    { name: 'witch', speed: 10, bob: 1, bitmap: ['.......V..', '......VVV.', 'BBBBBBBVGV', 'BBB...VV..'] },
+    { name: 'dragon', speed: 12, bob: 1, bitmap: ['..GG.......', '.GGGG......', 'GGGGGGGGGGY', 'G..GGGGGG.O', '...G..G....'] },
+    { name: 'nyan', speed: 12, bob: 0.5, bitmap: ['RRRPPPPP..D.D', 'YYYPSPSPDDDDD', 'GGGPPPPPDWDWD', 'CCC.P.P.PDDD.'] },
+    { name: 'shuttle', speed: 22, bob: 0, bitmap: ['...D.......', 'WWWWWWWWWWW', 'OWWWWWWWWWC', '...D.......'] },
+    { name: 'space-station', speed: 6, bob: 0, bitmap: ['CC.CC...CC.CC', 'CC.CC...CC.CC', 'CCCCCWWWCCCCC', 'CC.CC...CC.CC', 'CC.CC...CC.CC'] },
+    { name: 'geese', speed: 8, bob: 1, bitmap: ['W...W.......W', '.W.W..W...W.W', '..W....W.W...'] },
+    { name: 'flying-pig', speed: 9, bob: 1.5, bitmap: ['.WWW......', 'WWWW.P..P.', '.PPPPPPPPP', '.PPPPPPPRR', '..P.P.P.P.'] },
+    { name: 'mothership', speed: 4, bob: 0.5, bitmap: ['.....GGGGG.....', '...GGGGGGGGG...', 'GGGGGGGGGGGGGGG', 'GCYCYCYCYCYCYCG', '.GGGGGGGGGGGGG.', '...Y...Y...Y...'] },
+    { name: 'superman', speed: 17, bob: 0, bitmap: ['RR........', 'RRRCCCCCWW', 'RR..RR....'] },
 ];
-
-FLYERS.push(
-    { name: 'hot-air-balloon', speed: 4, bob: 1, upright: true, crashable: true, bitmap: ['.RRR.', 'RYRYR', 'RRRRR', '.RRR.', '..B..'] },
-    { name: 'witch', speed: 10, bob: 1, crashable: true, bitmap: ['....V..', 'BBBBVVG', '....V..'] },
-    { name: 'dragon', speed: 12, bob: 1, crashable: true, bitmap: ['..GG....', 'GGGGGGGO', '..GG..G.'] },
-    { name: 'nyan', speed: 12, bob: 0.5, bitmap: ['RRPPPP.', 'YYPSSPD', 'GGPPPP.'] },
-    { name: 'shuttle', speed: 22, bob: 0, crashable: true, bitmap: ['..D....', 'WWWWWWW', 'WWWWWWO', '..D....'] },
-    { name: 'space-station', speed: 6, bob: 0, bitmap: ['C.C...C.C', 'CCCWWWCCC', 'C.C...C.C'] },
-    { name: 'geese', speed: 8, bob: 1, bitmap: ['W...W..', '.W.W.W.', '..W...W'] },
-    { name: 'flying-pig', speed: 9, bob: 1.5, bitmap: ['.WW....', 'PPPPPPY', 'P..P...'] },
-    { name: 'mothership', speed: 4, bob: 0.5, bitmap: ['...GGG...', '.GGGGGGG.', 'GCYCYCYCG', '.GGGGGGG.'] },
-    { name: 'superman', speed: 17, bob: 0, bitmap: ['R....', 'RCCCW', '.R...'] },
-);
-['plane', 'ufo', 'santa', 'rocket', 'helicopter', 'tie-fighter', 'x-wing', 'falcon', 'blimp'].forEach((name) => {
+['plane', 'ufo', 'santa', 'rocket', 'helicopter', 'tie-fighter', 'x-wing', 'falcon', 'blimp', 'hot-air-balloon', 'witch', 'dragon', 'shuttle'].forEach((name) => {
     FLYERS.find((kind) => kind.name === name).crashable = true;
 });
 
@@ -57,8 +57,8 @@ const SIDES = [
     { bitmap: FIGHTER, colors: { X: '#39ff14' }, laser: '#aaff66', facing: Math.PI },
 ];
 const STAR_WARS_SIDES = [
-    { bitmap: ['S.S....', '.SSS...', 'RSSSSSW', '.SSS...', 'S.S....'], colors: {}, laser: '#ff4040', facing: 0 },
-    { bitmap: ['D...D', 'D.S.D', 'DSCSD', 'D.S.D', 'D...D'], colors: {}, laser: '#5bff5b', facing: Math.PI },
+    { bitmap: XWING, colors: {}, laser: '#ff4040', facing: 0 },
+    { bitmap: TIE, colors: {}, laser: '#5bff5b', facing: Math.PI },
 ];
 
 const mix = (from, to, amount) => `rgb(${from.map((value, index) => Math.round(value + (to[index] - value) * amount)).join(', ')})`;
@@ -440,12 +440,12 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const createBattle = (now) => {
         const centerX = W * (0.25 + Math.random() * 0.5);
         const centerY = H * (0.3 + Math.random() * 0.3);
-        const gap = 48;
+        const gap = 64;
         const sides = Math.random() < 0.5 ? STAR_WARS_SIDES : SIDES;
         const ships = sides.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
             side: sideIndex,
             x: centerX + (sideIndex === 0 ? -gap : gap) + (Math.random() - 0.5) * 20,
-            y: centerY + (i - 1) * 14 + (Math.random() - 0.5) * 10,
+            y: centerY + (i - 1) * 24 + (Math.random() - 0.5) * 10,
             phase: Math.random() * 6,
             hp: 2,
             alive: true,
@@ -561,15 +561,15 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const now = performance.now();
         if (!document.hidden && actors.length < 4) {
             const battleActive = actors.some((actor) => actor.isBattle);
-            if (!battleActive && Math.random() < 0.15) {
+            if (!battleActive && Math.random() < 0.3) {
                 const battle = createBattle(now);
                 battle.isBattle = true;
                 actors.push(battle);
-            } else if (Math.random() < 0.1) {
+            } else if (Math.random() < 0.2) {
                 actors.push(createCrash(FLYERS.find((kind) => kind.name === 'ufo'), now, true));
             } else {
                 const kind = FLYERS[Math.floor(Math.random() * FLYERS.length)];
-                actors.push(kind.crashable && Math.random() < 0.3 ? createCrash(kind, now) : createFlyer(kind, now));
+                actors.push(kind.crashable && Math.random() < 0.5 ? createCrash(kind, now) : createFlyer(kind, now));
             }
             if (!running) {
                 running = true;
@@ -577,7 +577,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             }
         }
         if (canvas.isConnected) {
-            setTimeout(spawn, 12000 + Math.random() * 18000);
+            setTimeout(spawn, 8000 + Math.random() * 10000);
         }
     };
 
