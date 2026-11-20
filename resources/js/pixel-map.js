@@ -49,11 +49,11 @@ const THEMES = {
         land: 'rgb(0, 180, 205)',
         visited: (heat) => mix([255, 150, 20], [255, 235, 90], heat),
     },
-    amber: {
-        label: 'Amber',
-        sea: ['#0a1020', '#131c33'],
-        land: 'rgb(75, 106, 136)',
-        visited: (heat) => mix([217, 119, 6], [253, 224, 71], heat),
+    fluffy: {
+        label: 'Fluffy',
+        sea: ['#ffd9ec', '#d9e8ff'],
+        land: 'rgb(255, 255, 255)',
+        visited: (heat) => mix([255, 120, 190], [190, 120, 255], heat),
     },
     terminal: {
         label: 'Terminal',
@@ -61,11 +61,11 @@ const THEMES = {
         land: 'rgb(20, 105, 55)',
         visited: (heat) => mix([34, 197, 94], [190, 255, 170], heat),
     },
-    mono: {
-        label: 'Mono',
-        sea: ['#09090b', '#09090b'],
-        land: 'rgb(63, 63, 70)',
-        visited: (heat) => mix([113, 113, 122], [250, 250, 250], heat),
+    ghosty: {
+        label: 'Ghosty',
+        sea: ['#05060d', '#0d1020'],
+        land: 'rgb(120, 130, 160)',
+        visited: (heat) => mix([150, 160, 200], [245, 248, 255], heat),
     },
 };
 
