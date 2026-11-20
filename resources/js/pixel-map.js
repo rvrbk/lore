@@ -85,6 +85,7 @@ const THEMES = {
 };
 
 const DAY_SECONDS = 120;
+const RADAR_PERIOD = 6000;
 const EQUATOR_Y = 84;
 const DEGREES = Math.PI / 180;
 
@@ -524,12 +525,62 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const actors = [];
     let running = false;
 
+    const radarOn = () => animateSun && styleName === 'terminal';
+
+    const drawRadar = (time) => {
+        const centerX = W / 2;
+        const centerY = H / 2;
+        const radius = Math.hypot(W, H) / 2;
+        const angle = ((time % RADAR_PERIOD) / RADAR_PERIOD) * Math.PI * 2 - Math.PI / 2;
+        const wedge = 1.2;
+
+        view.save();
+        view.globalCompositeOperation = 'lighter';
+
+        view.strokeStyle = 'rgba(57, 255, 20, 0.14)';
+        view.lineWidth = 1;
+        [0.25, 0.5, 0.75].forEach((fraction) => {
+            view.beginPath();
+            view.arc(centerX, centerY, radius * fraction, 0, Math.PI * 2);
+            view.stroke();
+        });
+        view.beginPath();
+        view.moveTo(centerX - radius, centerY);
+        view.lineTo(centerX + radius, centerY);
+        view.moveTo(centerX, centerY - radius);
+        view.lineTo(centerX, centerY + radius);
+        view.stroke();
+
+        const sweep = view.createConicGradient(angle - wedge, centerX, centerY);
+        const edge = wedge / (Math.PI * 2);
+        sweep.addColorStop(0, 'rgba(57, 255, 20, 0)');
+        sweep.addColorStop(edge, 'rgba(57, 255, 20, 0.3)');
+        sweep.addColorStop(Math.min(1, edge + 0.0001), 'rgba(57, 255, 20, 0)');
+        sweep.addColorStop(1, 'rgba(57, 255, 20, 0)');
+        view.fillStyle = sweep;
+        view.fillRect(0, 0, W, H);
+
+        view.strokeStyle = 'rgba(170, 255, 140, 0.85)';
+        view.shadowColor = '#39ff14';
+        view.shadowBlur = 6 * res;
+        view.lineWidth = 1.5;
+        view.beginPath();
+        view.moveTo(centerX, centerY);
+        view.lineTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius);
+        view.stroke();
+        view.restore();
+    };
+
     const render = (time = 0) => {
         view.save();
         view.setTransform(1, 0, 0, 1, 0, 0);
         view.clearRect(0, 0, canvas.width, canvas.height);
         view.drawImage(layer, 0, 0);
         view.restore();
+
+        if (radarOn()) {
+            drawRadar(time);
+        }
 
         for (let i = actors.length - 1; i >= 0; i--) {
             if (actors[i].update(time)) {
@@ -544,10 +595,17 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const frame = (time) => {
         render(time);
-        if (actors.length && canvas.isConnected) {
+        if ((actors.length || radarOn()) && canvas.isConnected) {
             requestAnimationFrame(frame);
         } else {
             running = false;
+        }
+    };
+
+    const startLoop = () => {
+        if (!running && canvas.isConnected) {
+            running = true;
+            requestAnimationFrame(frame);
         }
     };
 
@@ -565,10 +623,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 const kind = FLYERS[Math.floor(Math.random() * FLYERS.length)];
                 actors.push(kind.crashable && Math.random() < 0.5 ? createCrash(kind, now) : createFlyer(kind, now));
             }
-            if (!running) {
-                running = true;
-                requestAnimationFrame(frame);
-            }
+            startLoop();
         }
         if (canvas.isConnected) {
             setTimeout(spawn, 8000 + Math.random() * 10000);
@@ -605,6 +660,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     });
 
     svg.replaceWith(sea);
+    startLoop();
 
     const selector = sea.parentElement.querySelector('select[data-map-style]');
     if (selector) {
@@ -622,6 +678,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             paint();
             paintSea();
             render(performance.now());
+            startLoop();
         });
     }
     const observer = new ResizeObserver(() => {
