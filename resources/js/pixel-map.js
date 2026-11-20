@@ -24,6 +24,7 @@ const FLY = 2;
 const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW...WW....', '....WW.....', '....M......'];
 const UFO = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
 
+const JET = ['..L....', '..WW...', 'WWWWWWC', '..WW...', '..M....'];
 const SATELLITE = ['CDCD..L..CDCD', 'CDCDWWWWWCDCD', 'CDCDWWDWWCDCD', 'CDCDWWWWWCDCD', 'CDCD..W..CDCD'];
 const SPACE_STATION = ['CD.CD..W..CD.CD', 'CD.CD..W..CD.CD', 'SSSSSSSLSSSSSSS', 'CD.CD..W..CD.CD', 'CD.CD..W..CD.CD'];
 
@@ -37,8 +38,8 @@ const FLYERS = [
 const ROSWELL = { longitude: -104.52, latitude: 33.39 };
 
 const SIDES = [
-    { bitmap: PLANE, laser: '#ff5577', facing: 0 },
-    { bitmap: UFO, laser: '#aaff66', facing: 0 },
+    { bitmap: UFO, colors: { S: '#ff2d55', D: '#8a1230' }, laser: '#ff5577', facing: 0 },
+    { bitmap: UFO, colors: {}, laser: '#dfe3ff', facing: 0 },
 ];
 
 const mix = (from, to, amount) => `rgb(${from.map((value, index) => Math.round(value + (to[index] - value) * amount)).join(', ')})`;
@@ -464,7 +465,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             draw: (time) => {
                 ships.filter((ship) => ship.alive).forEach((ship) => {
                     const side = sides[ship.side];
-                    drawBitmap(side.bitmap, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 2, side.facing, blinkColors(time));
+                    drawBitmap(side.bitmap, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 2, side.facing, { ...side.colors, ...blinkColors(time) });
                 });
                 lasers.forEach((laser) => {
                     const t = (time - laser.start) / laser.duration;
@@ -482,6 +483,130 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 });
                 drawBlasts(blasts, time);
                 view.shadowBlur = 0;
+            },
+        };
+    };
+
+    const createChase = (now) => {
+        const forward = Math.random() < 0.5 ? 1 : -1;
+        const margin = 40;
+        const travel = W + margin * 2;
+        const duration = (travel / (18 * SCALE)) * 1000;
+        const baseY = H * (0.3 + Math.random() * 0.35);
+        const weave = 14 + Math.random() * 10;
+        const doomed = Math.random() < 0.4;
+        const hitAt = now + duration * (0.45 + Math.random() * 0.2);
+        const lags = [500, 800, 1100].slice(0, 2 + (Math.random() < 0.5 ? 1 : 0));
+        const shots = [];
+        const blasts = [];
+        const puffs = [];
+        let nextShot = now + 600;
+        let nextPuff = now;
+        let downAt = null;
+        let downFrom = null;
+        let crashed = false;
+
+        const leadAt = (time) => {
+            const t = (time - now) / duration;
+
+            return {
+                x: forward > 0 ? -margin + t * travel : W + margin - t * travel,
+                y: baseY + Math.sin(t * 16) * weave,
+            };
+        };
+        const jetAt = (lag, time) => {
+            const here = leadAt(time - lag);
+            const ahead = leadAt(time - lag + 30);
+
+            return { x: here.x, y: here.y, angle: Math.atan2(ahead.y - here.y, ahead.x - here.x) };
+        };
+        const ufoAt = (time) => {
+            if (downAt === null) {
+                return leadAt(time);
+            }
+            const t = Math.min(1, (time - downAt) / 1300);
+
+            return { x: downFrom.x + forward * 24 * t, y: downFrom.y + (H * 0.86 - downFrom.y) * t * t, angle: t * 5 };
+        };
+
+        return {
+            update: (time) => {
+                const ufo = ufoAt(time);
+                if (downAt === null && time >= nextShot && time - now < duration * 0.9) {
+                    nextShot = time + 500 + Math.random() * 400;
+                    shots.push({ lag: lags[Math.floor(Math.random() * lags.length)], start: time, duration: 320 });
+                }
+                for (let i = shots.length - 1; i >= 0; i--) {
+                    if (time - shots[i].start < shots[i].duration) {
+                        continue;
+                    }
+                    if (doomed && downAt === null && time >= hitAt) {
+                        downAt = time;
+                        downFrom = leadAt(time);
+                        blasts.push({ x: downFrom.x, y: downFrom.y, start: time, duration: 500, radius: 9 });
+                    } else if (downAt === null) {
+                        blasts.push({ x: ufo.x + (Math.random() - 0.5) * 30, y: ufo.y + (Math.random() - 0.5) * 30, start: time, duration: 350, radius: 5 });
+                    }
+                    shots.splice(i, 1);
+                }
+                if (downAt !== null && !crashed) {
+                    if (time >= nextPuff) {
+                        nextPuff = time + 50;
+                        puffs.push({ x: ufo.x, y: ufo.y, start: time, life: 900 });
+                    }
+                    if (time - downAt >= 1300) {
+                        crashed = true;
+                        for (let i = 0; i < 4; i++) {
+                            blasts.push({ x: ufo.x + (Math.random() - 0.5) * 12, y: ufo.y + (Math.random() - 0.5) * 6, start: time + i * 130, duration: 600, radius: 7 + Math.random() * 5 });
+                        }
+                    }
+                }
+                for (let i = puffs.length - 1; i >= 0; i--) {
+                    if (time - puffs[i].start >= puffs[i].life) {
+                        puffs.splice(i, 1);
+                    }
+                }
+                for (let i = blasts.length - 1; i >= 0; i--) {
+                    if (time - blasts[i].start >= blasts[i].duration) {
+                        blasts.splice(i, 1);
+                    }
+                }
+
+                return time - now < duration + 2000;
+            },
+            draw: (time) => {
+                const ufo = ufoAt(time);
+                puffs.forEach((puff) => {
+                    const t = (time - puff.start) / puff.life;
+                    view.globalAlpha = (1 - t) * 0.7;
+                    view.fillStyle = t < 0.3 ? '#ff8a00' : '#6c7090';
+                    view.beginPath();
+                    view.arc(puff.x, puff.y - t * 4, 1 + t * 2.5, 0, Math.PI * 2);
+                    view.fill();
+                });
+                view.globalAlpha = 1;
+
+                if (!crashed) {
+                    drawBitmap(UFO, ufo.x, ufo.y, ufo.angle ?? 0, blinkColors(time));
+                }
+                lags.forEach((lag) => {
+                    const jet = jetAt(lag, time);
+                    drawBitmap(JET, jet.x, jet.y, jet.angle, blinkColors(time));
+                });
+                shots.forEach((shot) => {
+                    const jet = jetAt(shot.lag, time);
+                    const t = (time - shot.start) / shot.duration;
+                    const tail = Math.max(0, t - 0.15);
+                    view.strokeStyle = '#ff5577';
+                    view.shadowColor = '#ff5577';
+                    view.shadowBlur = 8 * res;
+                    view.lineWidth = 1;
+                    view.beginPath();
+                    view.moveTo(jet.x + (ufo.x - jet.x) * tail, jet.y + (ufo.y - jet.y) * tail);
+                    view.lineTo(jet.x + (ufo.x - jet.x) * t, jet.y + (ufo.y - jet.y) * t);
+                    view.stroke();
+                });
+                drawBlasts(blasts, time);
             },
         };
     };
@@ -583,6 +708,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 actors.push(battle);
             } else if (Math.random() < 0.2) {
                 actors.push(createCrash(FLYERS.find((kind) => kind.name === 'ufo'), now, true));
+            } else if (Math.random() < 0.2) {
+                actors.push(createChase(now));
             } else {
                 const kind = FLYERS[Math.floor(Math.random() * FLYERS.length)];
                 actors.push(kind.crashable && Math.random() < 0.5 ? createCrash(kind, now) : createFlyer(kind, now));
