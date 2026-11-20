@@ -11,7 +11,7 @@
     <h1 class="mt-4 text-2xl font-semibold text-zinc-100">{{ $booking->isCancelled() ? 'Booking cancelled' : 'You are booked' }}</h1>
     <div class="mt-5 border border-zinc-800 bg-zinc-900 p-4">
         <div class="font-medium text-zinc-100">{{ $booking->type->name }}</div>
-        <div class="mt-2 text-lg {{ $booking->isCancelled() ? 'text-zinc-500 line-through' : 'text-indigo-400' }}">{{ $start->format('l j F Y, H:i') }} – {{ $booking->ends_at->copy()->setTimezone($booking->guest_timezone)->format('H:i') }}</div>
+        <div class="mt-2 text-lg {{ $booking->isCancelled() ? 'text-zinc-500 line-through' : 'text-indigo-400' }}">{{ $start->format('l j F Y, '.\App\Models\Setting::timePattern()) }} – {{ $booking->ends_at->copy()->setTimezone($booking->guest_timezone)->format(\App\Models\Setting::timePattern()) }}</div>
         <div class="text-sm text-zinc-400">{{ str_replace('_', ' ', $booking->guest_timezone) }}</div>
     </div>
     @unless($booking->isCancelled())

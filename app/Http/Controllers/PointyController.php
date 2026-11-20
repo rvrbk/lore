@@ -50,7 +50,7 @@ class PointyController extends Controller
     public function cancel(Booking $booking, BookingNotifier $notifier): RedirectResponse
     {
         if (! $booking->isCancelled()) {
-            $booking->update(['cancelled_at' => now()]);
+            $booking->cancel();
             $notifier->send($booking, 'cancelled');
         }
 

@@ -18,7 +18,7 @@ class Reminder extends Model
 
     protected $attributes = ['recurrence' => 'none'];
 
-    protected $fillable = ['page_id', 'task_id', 'title', 'notes', 'due_at', 'recurrence', 'notified_at', 'completed_at'];
+    protected $fillable = ['page_id', 'task_id', 'booking_id', 'title', 'notes', 'due_at', 'recurrence', 'notified_at', 'completed_at'];
 
     protected function casts(): array
     {

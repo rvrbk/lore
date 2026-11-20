@@ -25,6 +25,7 @@
             </a>
             <a href="{{ route('tags.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tags.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Tags</a>
             <a href="{{ route('pointy.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('pointy.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Pointy</a>
+            <a href="{{ route('settings.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('settings.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">System settings</a>
             <a href="{{ route('deploy.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('deploy.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Deploy</a>
             <a href="{{ route('analytics.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('analytics.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Analytics</a>
             <a href="{{ route('monitors.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('monitors.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Mail\BookingMail;
 use App\Models\Booking;
 use App\Models\BookingType;
+use App\Models\Reminder;
 use App\Models\User;
 use App\Services\SlotFinder;
 use Carbon\Carbon;
@@ -103,5 +104,22 @@ class PointyTest extends TestCase
         $this->assertDatabaseHas('booking_types', ['slug' => 'intro-call', 'name' => 'Intro call']);
         $this->get(route('pointy.index'))->assertOk()->assertSee('/pointy/intro-call');
         $this->post(route('pointy.types.store'), ['name' => 'Bad', 'duration_minutes' => 30, 'timezone' => 'Nowhere/City', 'days' => [1], 'start_time' => '17:00', 'end_time' => '09:00', 'buffer_minutes' => 0, 'min_notice_hours' => 4, 'max_days_ahead' => 30])->assertSessionHasErrors(['timezone', 'end_time']);
+    }
+
+    public function test_booking_puts_a_reminder_in_lore_shortly_before_and_cancelling_removes_it(): void
+    {
+        Mail::fake();
+        $type = BookingType::factory()->create(['name' => 'Intro call', 'timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
+
+        $this->post(route('pointy.book', $type->slug), ['starts_at' => '2026-11-23T09:00:00Z', 'guest_name' => 'Ann', 'guest_email' => 'ann@example.test', 'guest_timezone' => 'Asia/Tokyo']);
+
+        $reminder = Reminder::firstOrFail();
+        $this->assertSame('Meeting: Intro call with Ann', $reminder->title);
+        $this->assertSame('2026-11-23 08:45:00', $reminder->due_at->copy()->utc()->format('Y-m-d H:i:s'));
+        $this->assertStringContainsString('ann@example.test', $reminder->notes);
+
+        $this->post(route('pointy.cancel', Booking::firstOrFail()->token));
+
+        $this->assertDatabaseCount('reminders', 0);
     }
 }

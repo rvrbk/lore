@@ -14,6 +14,7 @@ use App\Http\Controllers\PointyBookingController;
 use App\Http\Controllers\PointyController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TagController;
@@ -47,6 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::put('scheduling/types/{bookingType}', [PointyController::class, 'update'])->name('pointy.types.update');
     Route::delete('scheduling/types/{bookingType}', [PointyController::class, 'destroy'])->name('pointy.types.destroy');
     Route::post('scheduling/bookings/{booking}/cancel', [PointyController::class, 'cancel'])->name('pointy.bookings.cancel');
+    Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::get('/search', SearchController::class)->name('search');
     Route::get('palette', [SearchController::class, 'palette'])->name('palette');
     Route::post('markdown/preview', MarkdownController::class)->name('markdown.preview');

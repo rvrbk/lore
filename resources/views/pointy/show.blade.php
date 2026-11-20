@@ -34,7 +34,7 @@
                 @foreach($days[$date] as $slot)
                     <label class="cursor-pointer">
                         <input type="radio" name="starts_at" value="{{ $slot->utc()->toIso8601String() }}" required class="peer sr-only" @checked(old('starts_at') === $slot->utc()->toIso8601String())>
-                        <span class="block rounded border border-zinc-700 px-2 py-1.5 text-center text-sm peer-checked:border-indigo-500 peer-checked:bg-indigo-600 peer-checked:text-white hover:bg-zinc-800 peer-focus-visible:ring-2">{{ $slot->format('H:i') }}</span>
+                        <span class="block rounded border border-zinc-700 px-2 py-1.5 text-center text-sm peer-checked:border-indigo-500 peer-checked:bg-indigo-600 peer-checked:text-white hover:bg-zinc-800 peer-focus-visible:ring-2">{{ $slot->format(\App\Models\Setting::timePattern()) }}</span>
                     </label>
                 @endforeach
             </div>

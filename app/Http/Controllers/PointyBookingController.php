@@ -66,6 +66,7 @@ class PointyBookingController extends Controller
             ]);
         });
 
+        $booking->scheduleReminder();
         $notifier->send($booking, 'confirmed');
 
         return redirect()->route('pointy.booking', $booking->token);
@@ -82,7 +83,7 @@ class PointyBookingController extends Controller
     {
         $booking = Booking::where('token', $token)->firstOrFail();
         if (! $booking->isCancelled() && $booking->starts_at->isFuture()) {
-            $booking->update(['cancelled_at' => now()]);
+            $booking->cancel();
             $notifier->send($booking, 'cancelled');
         }
 
