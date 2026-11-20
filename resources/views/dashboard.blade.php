@@ -34,7 +34,12 @@
 
     @if($analytics)
         <section class="mt-12">
-            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days · daily users</span> <a href="{{ route('analytics.index') }}" class="ml-2 normal-case text-zinc-400 hover:text-zinc-100">Manage</a></h2>
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-400">Analytics <span class="ml-2 normal-case">last 7 days · daily users</span></h2>
+                <div class="flex items-center gap-3 text-sm">
+                    <a href="{{ route('analytics.index') }}" class="text-zinc-400 hover:text-zinc-100">Manage</a>
+                </div>
+            </div>
             <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 @foreach($analytics as $site)
                     <li class="border border-zinc-800 bg-zinc-900 p-3">@include('partials.analytics-tile', ['site' => $site])</li>
