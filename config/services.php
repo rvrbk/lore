@@ -48,6 +48,11 @@ return [
         'credentials' => env('GA_CREDENTIALS'),
     ],
 
+    'nwsfd' => [
+        // Shared bearer token the nwsfd app uses to push the news it has harvested to Lore.
+        'token' => env('NWSFD_TOKEN'),
+    ],
+
     'news' => [
         // RSS feed whose headlines flash in the corner of the dashboard map.
         'feed' => env('NEWS_FEED_URL', 'https://feeds.bbci.co.uk/news/world/rss.xml'),

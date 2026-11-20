@@ -1051,7 +1051,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         bar.append(label, lane);
         sea.append(bar);
 
-        let headlines = [];
+        let items = [];
         let loadedAt = 0;
         let index = 0;
 
@@ -1059,7 +1059,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             try {
                 const response = await fetch(newsUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
                 if (response.ok) {
-                    headlines = (await response.json()).headlines ?? [];
+                    items = (await response.json()).items ?? [];
                     loadedAt = Date.now();
                 }
             } catch {
@@ -1067,26 +1067,62 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             }
         };
 
+        const chip = (text, background, color) => {
+            const span = document.createElement('span');
+            span.textContent = text;
+            span.style.cssText = `display:inline-block;margin-right:6px;padding:0 6px;font-weight:700;letter-spacing:0.06em;background:${background};color:${color}`;
+
+            return span;
+        };
+
+        const renderItem = (item) => {
+            const line = document.createElement('span');
+            if (item.kind === 'alert') {
+                const warning = chip('⚠ ALERT', '#ff2d55', '#fff');
+                if (animateSun) {
+                    warning.animate([{ opacity: 1 }, { opacity: 0.25 }, { opacity: 1 }], { duration: 900, iterations: Infinity });
+                }
+                const text = document.createElement('span');
+                text.textContent = item.text;
+                text.style.cssText = 'font-weight:700;color:#ff6b86;text-shadow:0 0 6px #ff2d55';
+                line.append(warning, text);
+            } else if (item.kind === 'news') {
+                const text = document.createElement('span');
+                text.textContent = item.text;
+                text.style.cssText = 'font-weight:700;color:#7ee8ff';
+                line.append(chip((item.tag || 'NEWS').toUpperCase().slice(0, 14), '#00e5ff', '#000'), text);
+            } else {
+                line.textContent = item.text;
+            }
+
+            return line;
+        };
+
         const run = async () => {
             if (!sea.isConnected) {
                 return;
             }
-            if (Date.now() - loadedAt > 600000) {
+            if (Date.now() - loadedAt > 120000) {
                 await load();
             }
-            if (!headlines.length) {
+            if (!items.length) {
                 bar.style.display = 'none';
                 setTimeout(run, 30000);
 
                 return;
             }
 
+            const alerting = items.some((item) => item.kind === 'alert');
+            labelText.textContent = alerting ? 'ALERT' : 'NEWS';
+            label.style.background = alerting ? '#ff2d55' : 'currentColor';
+            labelText.style.color = alerting ? '#fff' : '#000';
             bar.style.display = 'flex';
             bar.style.color = styleName === 'terminal' ? '#39ff14' : '#e4e4e7';
+            bar.style.borderTopColor = alerting ? '#ff2d55' : 'currentColor';
             track.style.color = bar.style.color;
 
             if (!animateSun) {
-                track.textContent = headlines[index % headlines.length];
+                track.replaceChildren(renderItem(items[index % items.length]));
                 index++;
                 track.style.transform = 'translateX(8px)';
                 setTimeout(run, 8000);
@@ -1094,7 +1130,14 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 return;
             }
 
-            track.textContent = headlines.join('   ◆   ');
+            const nodes = [];
+            items.forEach((item, position) => {
+                if (position > 0) {
+                    nodes.push('   ◆   ');
+                }
+                nodes.push(renderItem(item));
+            });
+            track.replaceChildren(...nodes);
             const distance = lane.clientWidth + track.scrollWidth;
             track.animate(
                 [{ transform: `translateX(${lane.clientWidth}px)` }, { transform: `translateX(-${track.scrollWidth}px)` }],
