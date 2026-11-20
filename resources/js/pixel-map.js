@@ -924,27 +924,50 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         { x: 0.88, y: 0.52, radius: 0.23, seconds: 18, sway: 0.04, strength: 0.3 },
     ];
 
+    const mistLayer = document.createElement('canvas');
+    mistLayer.setAttribute('aria-hidden', 'true');
+    mistLayer.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:1;display:none';
+    sea.append(mistLayer);
+    const mist = mistLayer.getContext('2d');
+
     const drawMist = (time) => {
+        if (!mistOn()) {
+            mistLayer.style.display = 'none';
+
+            return;
+        }
+        const width = sea.clientWidth;
+        const height = sea.clientHeight;
+        if (!width || !height) {
+            return;
+        }
+        const ratio = window.devicePixelRatio || 1;
+        if (mistLayer.width !== Math.round(width * ratio) || mistLayer.height !== Math.round(height * ratio)) {
+            mistLayer.width = Math.round(width * ratio);
+            mistLayer.height = Math.round(height * ratio);
+        }
+        mistLayer.style.display = 'block';
+        mist.setTransform(ratio, 0, 0, ratio, 0, 0);
+        mist.clearRect(0, 0, width, height);
+
         const moment = animateSun ? time : 0;
-        view.save();
         MIST.forEach((puff, index) => {
-            const radius = puff.radius * H;
+            const radius = puff.radius * height;
             const reach = radius * MIST_STRETCH;
-            const span = W + reach * 2;
+            const span = width + reach * 2;
             const x = ((puff.x * span + (moment / (puff.seconds * 1000)) * span) % span) - reach;
-            const y = (puff.y + Math.sin(moment / 4000 + index * 1.9) * puff.sway) * H;
-            view.save();
-            view.translate(x, y);
-            view.scale(MIST_STRETCH, 1);
-            const fog = view.createRadialGradient(0, 0, 0, 0, 0, radius);
+            const y = (puff.y + Math.sin(moment / 4000 + index * 1.9) * puff.sway) * height;
+            mist.save();
+            mist.translate(x, y);
+            mist.scale(MIST_STRETCH, 1);
+            const fog = mist.createRadialGradient(0, 0, 0, 0, 0, radius);
             fog.addColorStop(0, `rgba(215, 228, 255, ${puff.strength})`);
             fog.addColorStop(0.55, `rgba(175, 195, 245, ${puff.strength * 0.5})`);
             fog.addColorStop(1, 'rgba(150, 170, 230, 0)');
-            view.fillStyle = fog;
-            view.fillRect(-radius, -radius, radius * 2, radius * 2);
-            view.restore();
+            mist.fillStyle = fog;
+            mist.fillRect(-radius, -radius, radius * 2, radius * 2);
+            mist.restore();
         });
-        view.restore();
     };
 
     const drawRadar = (time) => {
@@ -1001,9 +1024,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         if (radarOn()) {
             drawRadar(time);
         }
-        if (mistOn()) {
-            drawMist(time);
-        }
+        drawMist(time);
 
         for (let i = actors.length - 1; i >= 0; i--) {
             if (actors[i].update(time)) {
@@ -1096,7 +1117,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     if (newsUrl) {
         const bar = document.createElement('div');
         bar.setAttribute('aria-hidden', 'true');
-        bar.style.cssText = 'position:absolute;left:0;right:0;bottom:0;display:none;align-items:center;height:22px;overflow:hidden;pointer-events:none;font:12px/22px ui-monospace,monospace;background:rgba(0,0,0,0.7);border-top:1px solid currentColor';
+        bar.style.cssText = 'position:absolute;z-index:2;left:0;right:0;bottom:0;display:none;align-items:center;height:22px;overflow:hidden;pointer-events:none;font:12px/22px ui-monospace,monospace;background:rgba(0,0,0,0.7);border-top:1px solid currentColor';
         const label = document.createElement('span');
         label.style.cssText = 'flex:none;padding:0 8px;font-weight:700;letter-spacing:0.08em;background:#f4f4f5';
         const labelText = document.createElement('span');
