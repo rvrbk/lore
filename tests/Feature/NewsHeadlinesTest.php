@@ -42,21 +42,24 @@ class NewsHeadlinesTest extends TestCase
         $this->getJson(route('news.headlines'))->assertOk()->assertExactJson(['items' => [['kind' => 'headline', 'tag' => null, 'text' => 'Back online']]]);
     }
 
-    public function test_pushed_nwsfd_news_replaces_the_public_feed_with_alerts_first(): void
+    public function test_pushed_nwsfd_news_is_mixed_with_the_public_feed_and_needs_relevance_eight(): void
     {
         Cache::flush();
-        Http::fake();
-        NewsItem::factory()->create(['title' => 'Strike at Schiphol', 'category' => 'Travel', 'source_name' => 'NOS', 'relevance' => 7]);
+        config(['services.news.feed' => 'https://news.example/rss.xml']);
+        Http::fake(['news.example/*' => Http::response($this->feed('BBC one', 'BBC two', 'BBC three'))]);
+        NewsItem::factory()->create(['title' => 'Strike at Schiphol', 'category' => 'Travel', 'source_name' => 'NOS', 'relevance' => 8]);
+        NewsItem::factory()->create(['title' => 'Too low', 'relevance' => 7]);
         NewsItem::factory()->alert()->create(['title' => 'Ebola outbreak in Kampala', 'source_name' => 'Reuters']);
         NewsItem::factory()->create(['title' => 'Too old', 'published_at' => now()->subDays(3)]);
         $this->actingAs(User::factory()->create());
 
         $this->getJson(route('news.headlines'))->assertOk()->assertExactJson(['items' => [
             ['kind' => 'alert', 'tag' => null, 'text' => 'Ebola outbreak in Kampala (Reuters)'],
+            ['kind' => 'headline', 'tag' => null, 'text' => 'BBC one'],
             ['kind' => 'news', 'tag' => 'Travel', 'text' => 'Strike at Schiphol (NOS)'],
+            ['kind' => 'headline', 'tag' => null, 'text' => 'BBC two'],
+            ['kind' => 'headline', 'tag' => null, 'text' => 'BBC three'],
         ]]);
-
-        Http::assertNothingSent();
     }
 
     public function test_nwsfd_can_push_items_with_the_shared_token(): void

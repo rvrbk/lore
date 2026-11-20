@@ -21,6 +21,9 @@ class NewsItem extends Model
     /** The ticker only shows items published within this many hours. */
     public const TICKER_HOURS = 48;
 
+    /** The ticker only shows items scored at least this high (alerts always show). */
+    public const TICKER_MIN_RELEVANCE = 8;
+
     protected $fillable = ['external_id', 'title', 'source_name', 'region', 'category', 'url', 'relevance', 'is_alert', 'published_at'];
 
     protected function casts(): array
@@ -32,6 +35,7 @@ class NewsItem extends Model
     public function scopeForTicker(Builder $query): void
     {
         $query->where('published_at', '>=', now()->subHours(self::TICKER_HOURS))
+            ->where(fn (Builder $q) => $q->where('relevance', '>=', self::TICKER_MIN_RELEVANCE)->orWhere('is_alert', true))
             ->orderByDesc('is_alert')
             ->orderByDesc('relevance')
             ->orderByDesc('published_at');
