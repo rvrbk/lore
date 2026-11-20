@@ -41,9 +41,40 @@ class GoogleAnalyticsTest extends TestCase
 
         $this->get(route('dashboard'))->assertOk()
             ->assertSee('Verbeek')->assertSee('1,234')->assertSee('9,876')
-            ->assertSee('Daily users for Verbeek')->assertSee('Visitors by country')->assertSee('Netherlands: 9 users', false)->assertSee('Uganda: 3 users', false)->assertSee('Broken')->assertSee('Could not load')->assertSee('7 live now');
+            ->assertSee('Daily users for Verbeek')->assertSee('Visitors by country')->assertSee('Netherlands: 9 users', false)->assertSee('Uganda: 3 users', false)->assertSee('Broken')->assertSee('Could not load')->assertSee('7 live now')->assertSee('Verbeek 4')->assertSee('Broken 3');
 
         unlink($path);
+    }
+
+    public function test_the_live_endpoint_lists_the_sites_with_active_users(): void
+    {
+        $key = openssl_pkey_new(['private_key_bits' => 2048]);
+        openssl_pkey_export($key, $pem);
+        $path = tempnam(sys_get_temp_dir(), 'ga');
+        file_put_contents($path, json_encode(['client_email' => 'ga@example.iam.gserviceaccount.com', 'private_key' => $pem]));
+        config(['services.google_analytics' => ['credentials' => $path]]);
+        AnalyticsSite::create(['name' => 'Quiet', 'property_id' => '111']);
+        AnalyticsSite::create(['name' => 'Busy', 'property_id' => '222']);
+        Cache::flush();
+        Http::fake([
+            'oauth2.googleapis.com/*' => Http::response(['access_token' => 'tok']),
+            '*properties/111:runRealtimeReport' => Http::response([]),
+            '*properties/222:runRealtimeReport' => Http::response(['rows' => [['metricValues' => [['value' => '5']]]]]),
+        ]);
+
+        $this->get(route('analytics.live'))->assertRedirect(route('login'));
+
+        $this->actingAs(User::factory()->create());
+        $this->getJson(route('analytics.live'))->assertOk()->assertExactJson(['total' => 5, 'sites' => [['name' => 'Busy', 'users' => 5]]]);
+
+        unlink($path);
+    }
+
+    public function test_the_live_endpoint_reports_null_when_not_configured(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->getJson(route('analytics.live'))->assertOk()->assertExactJson(['total' => null, 'sites' => []]);
     }
 
     public function test_a_failed_fetch_is_not_cached_so_the_next_request_recovers(): void

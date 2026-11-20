@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AnalyticsSite;
 use App\Models\Monitor;
 use App\Services\GoogleAnalytics;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -18,6 +19,16 @@ class AnalyticsController extends Controller
             'analytics' => $analytics->summary(),
             'configured' => $analytics->isConfigured(),
             'hasCredentials' => $analytics->hasCredentials(),
+        ]);
+    }
+
+    public function live(GoogleAnalytics $analytics): JsonResponse
+    {
+        $sites = $analytics->liveBySite();
+
+        return response()->json([
+            'total' => $sites === null ? null : array_sum($sites),
+            'sites' => collect($sites ?? [])->filter()->map(fn (int $users, string $name) => ['name' => $name, 'users' => $users])->values(),
         ]);
     }
 

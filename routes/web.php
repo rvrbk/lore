@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::post('deploy', [DeployController::class, 'store'])->name('deploy.store');
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('analytics/live', [AnalyticsController::class, 'live'])->name('analytics.live');
     Route::post('analytics', [AnalyticsController::class, 'store'])->name('analytics.store');
     Route::delete('analytics/{site}', [AnalyticsController::class, 'destroy'])->name('analytics.destroy');
 

@@ -27,7 +27,7 @@ class GoogleAnalytics
     public function forget(): void
     {
         Cache::forget('google-analytics.summary');
-        Cache::forget('google-analytics.live');
+        Cache::forget('google-analytics.live-sites');
     }
 
     /**
@@ -92,27 +92,40 @@ class GoogleAnalytics
      */
     public function liveUsers(): ?int
     {
+        $sites = $this->liveBySite();
+
+        return $sites === null ? null : array_sum($sites);
+    }
+
+    /**
+     * Users active in the last five minutes per site name (GA4 Realtime API), busiest first; sites that did not answer are left out, null when none did.
+     *
+     * @return array<string, int>|null
+     */
+    public function liveBySite(): ?array
+    {
         if (! $this->isConfigured()) {
             return null;
         }
 
-        $result = $this->rememberUnlessFailed('google-analytics.live', now()->addSeconds(60), function (): int|false {
+        $result = $this->rememberUnlessFailed('google-analytics.live-sites', now()->addSeconds(30), function (): array|false {
             try {
                 $token = $this->accessToken();
-                $total = 0;
+                $sites = [];
                 $answered = false;
-                foreach (AnalyticsSite::pluck('property_id') as $id) {
+                foreach (AnalyticsSite::orderBy('name')->pluck('property_id', 'name') as $name => $id) {
                     $response = Http::withToken($token)->timeout(8)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$id}:runRealtimeReport", [
                         'metrics' => [['name' => 'activeUsers']],
                         'minuteRanges' => [['startMinutesAgo' => 4, 'endMinutesAgo' => 0]],
                     ]);
                     if ($response->successful()) {
                         $answered = true;
-                        $total += (int) collect($response->json('rows') ?? [])->sum(fn (array $row) => (int) ($row['metricValues'][0]['value'] ?? 0));
+                        $sites[$name] = (int) collect($response->json('rows') ?? [])->sum(fn (array $row) => (int) ($row['metricValues'][0]['value'] ?? 0));
                     }
                 }
+                arsort($sites);
 
-                return $answered ? $total : false;
+                return $answered ? $sites : false;
             } catch (Throwable) {
                 return false;
             }
