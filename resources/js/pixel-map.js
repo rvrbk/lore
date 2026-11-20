@@ -49,7 +49,11 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const canvas = document.createElement('canvas');
     const W = cols * SCALE;
     const H = rows * SCALE;
-    canvas.className = svg.getAttribute('class') ?? '';
+    canvas.className = `${(svg.getAttribute('class') ?? '').replace('mt-2', '')} block`;
+    const sea = document.createElement('div');
+    sea.className = 'mt-2';
+    sea.style.background = 'linear-gradient(to bottom, #12062b, #2a0a3d)';
+    sea.appendChild(canvas);
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', svg.getAttribute('aria-label') ?? '');
 
@@ -131,6 +135,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         ctx.setTransform(res, 0, 0, res, 0, 0);
         view.setTransform(res, 0, 0, res, 0, 0);
         paint();
+
+        const scanlineStep = Math.max(3, Math.round(res * 3)) / (window.devicePixelRatio || 1);
+        sea.style.backgroundImage = `repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px ${scanlineStep}px), linear-gradient(to bottom, #12062b, #2a0a3d)`;
 
         return true;
     };
@@ -367,7 +374,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         canvas.title = index >= 0 ? countries[index].title : '';
     });
 
-    svg.replaceWith(canvas);
+    svg.replaceWith(sea);
     new ResizeObserver(() => {
         if (resize()) {
             render(performance.now());
