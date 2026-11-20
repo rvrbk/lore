@@ -10,6 +10,8 @@ use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PointyBookingController;
+use App\Http\Controllers\PointyController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpaceController;
@@ -27,6 +29,11 @@ Route::middleware('guest')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
 });
 
+Route::get('pointy/booking/{token}', [PointyBookingController::class, 'booking'])->name('pointy.booking');
+Route::post('pointy/booking/{token}/cancel', [PointyBookingController::class, 'cancel'])->middleware('throttle:10,1')->name('pointy.cancel');
+Route::get('pointy/{slug}', [PointyBookingController::class, 'show'])->name('pointy.show');
+Route::post('pointy/{slug}', [PointyBookingController::class, 'book'])->middleware('throttle:10,1')->name('pointy.book');
+
 Route::get('status/{token}', StatusPageController::class)->name('status.show');
 
 Route::middleware('auth')->group(function () {
@@ -35,6 +42,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::post('world-clocks', [WorldClockController::class, 'store'])->name('world-clocks.store');
     Route::delete('world-clocks/{worldClock}', [WorldClockController::class, 'destroy'])->name('world-clocks.destroy');
+    Route::get('scheduling', [PointyController::class, 'index'])->name('pointy.index');
+    Route::post('scheduling/types', [PointyController::class, 'store'])->name('pointy.types.store');
+    Route::put('scheduling/types/{bookingType}', [PointyController::class, 'update'])->name('pointy.types.update');
+    Route::delete('scheduling/types/{bookingType}', [PointyController::class, 'destroy'])->name('pointy.types.destroy');
+    Route::post('scheduling/bookings/{booking}/cancel', [PointyController::class, 'cancel'])->name('pointy.bookings.cancel');
     Route::get('/search', SearchController::class)->name('search');
     Route::get('palette', [SearchController::class, 'palette'])->name('palette');
     Route::post('markdown/preview', MarkdownController::class)->name('markdown.preview');

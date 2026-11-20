@@ -60,6 +60,14 @@ return [
         'ufo_feed' => env('NEWS_UFO_FEED_URL', 'https://news.google.com/rss/search?q=UFO+sighting+OR+UAP&hl=en-US&gl=US&ceid=US:en'),
     ],
 
+    'pointy' => [
+        // Pointy's scheduling emails go out from this address (the mail transport itself is set with the MAIL_* variables).
+        'from' => env('POINTY_FROM_ADDRESS', 'pointy@verbeek.ug'),
+        'from_name' => env('POINTY_FROM_NAME', 'Pointy'),
+        // Where new and cancelled bookings are announced; leave empty to only email the guest.
+        'owner_email' => env('POINTY_OWNER_EMAIL'),
+    ],
+
     'deploy' => [
         // Lets the Deploy page queue a git pull + rebuild that the scheduler runs. Only enable on the server.
         'enabled' => env('DEPLOY_ENABLED', false),
