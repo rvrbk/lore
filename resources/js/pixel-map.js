@@ -76,9 +76,9 @@ const readStyle = () => {
     try {
         const saved = localStorage.getItem(STYLE_KEY);
 
-        return saved && THEMES[saved] ? saved : 'ocean';
+        return saved && THEMES[saved] ? saved : 'terminal';
     } catch {
-        return 'ocean';
+        return 'terminal';
     }
 };
 
