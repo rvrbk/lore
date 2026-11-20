@@ -15,7 +15,7 @@ const PALETTE = {
     V: '#9b5de5',
 };
 
-const FLY = 3;
+const FLY = 2;
 
 const XWING = ['S........', 'SS.......', '.SSS.....', 'RSSSSSSSW', '.SSS.....', 'SS.......', 'S........'];
 const TIE = ['D.....D', 'D.....D', 'D..S..D', 'DSSCSSD', 'D..S..D', 'D.....D', 'D.....D'];
@@ -25,8 +25,6 @@ const FLYERS = [
     { name: 'ufo', speed: 11, bob: 1.5, bitmap: ['....C....', '...CCC...', '.GGGGGGG.', 'GYGYGYGYG', '.GG...GG.'] },
     { name: 'santa', speed: 13, bob: 1, bitmap: ['.....RW...B.B.', 'BBBBBRRR.YBBBB', '.B.B.B.B......'] },
     { name: 'rocket', speed: 26, bob: 0, bitmap: ['..R.......', '.RRWWWWW..', 'OYWWWCWWWR', '.RRWWWWW..', '..R.......'] },
-    { name: 'comet', speed: 30, bob: 0, bitmap: ['O.O.....WW.', '.OOYYYYWWWW', 'O.O.....WW.'] },
-    { name: 'satellite', speed: 7, bob: 0, bitmap: ['CCC...CCC', 'CCC.W.CCC', 'CCCWWWCCC', 'CCC.W.CCC', 'CCC...CCC'] },
     { name: 'helicopter', speed: 9, bob: 0.5, rotor: 10, bitmap: ['R...RRRR..', 'RRRRRRRRWC', '....RRRR..', '..DDDDDDD.'] },
     { name: 'tie-fighter', speed: 18, bob: 0, bitmap: TIE },
     { name: 'x-wing', speed: 20, bob: 0, bitmap: XWING },
@@ -35,17 +33,9 @@ const FLYERS = [
     { name: 'death-star', speed: 4, bob: 0, upright: true, bitmap: ['..SSSSS..', '.SSSSDDS.', 'SSSSDDDSS', 'DDDDDDDDD', 'SSSSSSSSS', 'SSSSSSSSS', '.SSSSSSS.', '..SSSSS..'] },
     { name: 'blimp', speed: 5, bob: 0.5, bitmap: ['...WWWWWWW..', 'R.WRRRRRRRW.', 'RRRRRRRRRRRC', 'R.WRRRRRRRW.', '...WWWWWWW..', '.....DD.....'] },
     { name: 'hot-air-balloon', speed: 4, bob: 1, upright: true, bitmap: ['.RRRRR.', 'RRYRYRR', 'RRRYRRR', 'RRRRRRR', '.RRRRR.', '..RRR..', '...B...', '..BBB..'] },
-    { name: 'witch', speed: 10, bob: 1, bitmap: ['.......V..', '......VVV.', 'BBBBBBBVGV', 'BBB...VV..'] },
-    { name: 'dragon', speed: 12, bob: 1, bitmap: ['..GG.......', '.GGGG......', 'GGGGGGGGGGY', 'G..GGGGGG.O', '...G..G....'] },
-    { name: 'nyan', speed: 12, bob: 0.5, bitmap: ['RRRPPPPP..D.D', 'YYYPSPSPDDDDD', 'GGGPPPPPDWDWD', 'CCC.P.P.PDDD.'] },
-    { name: 'shuttle', speed: 22, bob: 0, bitmap: ['...D.......', 'WWWWWWWWWWW', 'OWWWWWWWWWC', '...D.......'] },
-    { name: 'space-station', speed: 6, bob: 0, bitmap: ['CC.CC...CC.CC', 'CC.CC...CC.CC', 'CCCCCWWWCCCCC', 'CC.CC...CC.CC', 'CC.CC...CC.CC'] },
-    { name: 'geese', speed: 8, bob: 1, bitmap: ['W...W.......W', '.W.W..W...W.W', '..W....W.W...'] },
-    { name: 'flying-pig', speed: 9, bob: 1.5, bitmap: ['.WWW......', 'WWWW.P..P.', '.PPPPPPPPP', '.PPPPPPPRR', '..P.P.P.P.'] },
     { name: 'mothership', speed: 4, bob: 0.5, bitmap: ['.....GGGGG.....', '...GGGGGGGGG...', 'GGGGGGGGGGGGGGG', 'GCYCYCYCYCYCYCG', '.GGGGGGGGGGGGG.', '...Y...Y...Y...'] },
-    { name: 'superman', speed: 17, bob: 0, bitmap: ['RR........', 'RRRCCCCCWW', 'RR..RR....'] },
 ];
-['plane', 'ufo', 'santa', 'rocket', 'helicopter', 'tie-fighter', 'x-wing', 'falcon', 'blimp', 'hot-air-balloon', 'witch', 'dragon', 'shuttle'].forEach((name) => {
+['plane', 'ufo', 'santa', 'rocket', 'helicopter', 'tie-fighter', 'x-wing', 'falcon', 'blimp', 'hot-air-balloon'].forEach((name) => {
     FLYERS.find((kind) => kind.name === name).crashable = true;
 });
 
@@ -440,12 +430,12 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const createBattle = (now) => {
         const centerX = W * (0.25 + Math.random() * 0.5);
         const centerY = H * (0.3 + Math.random() * 0.3);
-        const gap = 64;
+        const gap = 52;
         const sides = Math.random() < 0.5 ? STAR_WARS_SIDES : SIDES;
         const ships = sides.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
             side: sideIndex,
             x: centerX + (sideIndex === 0 ? -gap : gap) + (Math.random() - 0.5) * 20,
-            y: centerY + (i - 1) * 24 + (Math.random() - 0.5) * 10,
+            y: centerY + (i - 1) * 18 + (Math.random() - 0.5) * 10,
             phase: Math.random() * 6,
             hp: 2,
             alive: true,
