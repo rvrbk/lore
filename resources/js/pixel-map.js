@@ -41,6 +41,61 @@ const STAR_WARS_SIDES = [
     { bitmap: ['D...D', 'D.S.D', 'DSCSD', 'D.S.D', 'D...D'], colors: {}, laser: '#5bff5b', facing: Math.PI },
 ];
 
+const mix = (from, to, amount) => `rgb(${from.map((value, index) => Math.round(value + (to[index] - value) * amount)).join(', ')})`;
+
+const THEMES = {
+    solid: {
+        label: 'Solid',
+        kind: 'shape',
+        sea: ['#09090b', '#0f1020'],
+        land: '#27272a',
+        visited: (heat) => mix([67, 56, 202], [165, 180, 252], heat),
+        stroke: '#09090b',
+    },
+    amber: {
+        label: 'Amber pixels',
+        kind: 'square',
+        sea: ['#0a1020', '#131c33'],
+        land: 'rgb(75, 106, 136)',
+        landFill: 0.6,
+        visited: (heat) => mix([217, 119, 6], [253, 224, 71], heat),
+        visitedFill: 0.8,
+    },
+    terminal: {
+        label: 'Terminal',
+        kind: 'square',
+        sea: ['#020a04', '#04140a'],
+        land: 'rgb(20, 83, 45)',
+        landFill: 0.6,
+        visited: (heat) => mix([34, 197, 94], [190, 255, 170], heat),
+        visitedFill: 0.8,
+        scanlines: true,
+    },
+    neon: {
+        label: 'Neon dots',
+        kind: 'dot',
+        sea: ['#12062b', '#2a0a3d'],
+        land: 'rgb(0, 180, 205)',
+        landFill: 0.64,
+        visited: (heat) => mix([255, 90, 190], [255, 140, 255], heat),
+        visitedFill: 0.84,
+        seaDots: true,
+        scanlines: true,
+    },
+};
+
+const STYLE_KEY = 'lore.map-style';
+
+const readStyle = () => {
+    try {
+        const saved = localStorage.getItem(STYLE_KEY);
+
+        return saved && THEMES[saved] ? saved : 'solid';
+    } catch {
+        return 'solid';
+    }
+};
+
 document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const { width, height } = svg.viewBox.baseVal;
     const cols = Math.ceil(width / CELL);
@@ -51,7 +106,6 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const H = rows * SCALE;
     canvas.className = `${(svg.getAttribute('class') ?? '').replace('mt-2', '')} block`;
     const sea = document.createElement('div');
-    sea.className = 'mt-2';
     sea.appendChild(canvas);
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', svg.getAttribute('aria-label') ?? '');
@@ -69,7 +123,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const box = path.getBBox();
         const shape = new Path2D(path.getAttribute('d'));
         const title = path.querySelector('title')?.textContent ?? '';
-        countries.push({ title, visited: title.includes(':'), opacity: parseFloat(style.fillOpacity) });
+        countries.push({ shape, title, visited: title.includes(':'), opacity: parseFloat(style.fillOpacity) });
 
         const fromX = Math.max(0, Math.floor(box.x / CELL));
         const toX = Math.min(cols - 1, Math.floor((box.x + box.width) / CELL));
@@ -85,19 +139,34 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
     });
 
+    let styleName = readStyle();
+    const scanlines = document.createElement('div');
+    scanlines.className = 'pointer-events-none absolute inset-0';
+    sea.className = 'relative mt-2';
+    sea.appendChild(scanlines);
+
     const paint = () => {
+        const theme = THEMES[styleName];
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, layer.width, layer.height);
 
-        const cell = SCALE * res;
-        const square = (x, y, color, fill) => {
-            const size = Math.max(1, Math.round(cell * fill));
-            ctx.fillStyle = color;
-            ctx.fillRect(Math.round(x * cell + (cell - size) / 2), Math.round(y * cell + (cell - size) / 2), size, size);
-        };
-        const mix = (from, to, amount) => `rgb(${from.map((value, index) => Math.round(value + (to[index] - value) * amount)).join(', ')})`;
+        if (theme.kind === 'shape') {
+            const scale = (SCALE / CELL) * res;
+            ctx.setTransform(scale, 0, 0, scale, 0, 0);
+            ctx.lineWidth = 0.25;
+            ctx.strokeStyle = theme.stroke;
+            countries.forEach((country) => {
+                ctx.fillStyle = country.visited ? theme.visited(country.opacity) : theme.land;
+                ctx.fill(country.shape);
+                ctx.stroke(country.shape);
+            });
+            ctx.restore();
 
+            return;
+        }
+
+        const cell = SCALE * res;
         for (let position = 0; position < owner.length; position++) {
             const country = countries[owner[position]];
 
@@ -107,18 +176,47 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
             const x = position % cols;
             const y = Math.floor(position / cols);
+            const fill = country.visited ? theme.visitedFill : theme.landFill;
+            ctx.fillStyle = country.visited ? theme.visited(country.opacity) : theme.land;
 
-            if (country.visited) {
-                square(x, y, mix([217, 119, 6], [253, 224, 71], country.opacity), 0.8);
+            if (theme.kind === 'dot') {
+                ctx.beginPath();
+                ctx.arc((x + 0.5) * cell, (y + 0.5) * cell, (cell * fill) / 2, 0, Math.PI * 2);
+                ctx.fill();
             } else {
-                square(x, y, 'rgb(75, 106, 136)', 0.6);
+                const size = Math.max(1, Math.round(cell * fill));
+                ctx.fillRect(Math.round(x * cell + (cell - size) / 2), Math.round(y * cell + (cell - size) / 2), size, size);
             }
         }
         ctx.restore();
     };
 
     const paintSea = () => {
-        sea.style.background = 'linear-gradient(to bottom, #0a1020, #131c33)';
+        const theme = THEMES[styleName];
+        const ratio = window.devicePixelRatio || 1;
+        const layers = [];
+        const sizes = [];
+        const positions = [];
+
+        if (theme.seaDots) {
+            const cell = (SCALE * res) / ratio;
+            const radius = (SCALE * 0.1 * res) / ratio;
+            layers.push(`radial-gradient(circle at center, rgba(150, 110, 230, 0.22) ${radius}px, transparent ${radius + 0.5}px)`);
+            sizes.push(`${cell}px ${cell}px`);
+            positions.push(`${(sea.clientWidth - canvas.clientWidth) / 2}px 0`);
+        }
+
+        layers.push(`linear-gradient(to bottom, ${theme.sea[0]}, ${theme.sea[1]})`);
+        sizes.push('100% 100%');
+        positions.push('0 0');
+        sea.style.backgroundImage = layers.join(', ');
+        sea.style.backgroundSize = sizes.join(', ');
+        sea.style.backgroundPosition = positions.join(', ');
+
+        const step = Math.max(3, Math.round(res * 3)) / ratio;
+        scanlines.style.backgroundImage = theme.scanlines
+            ? `repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 ${1 / ratio}px, transparent ${1 / ratio}px ${step}px)`
+            : 'none';
     };
 
     const resize = () => {
@@ -370,6 +468,25 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     });
 
     svg.replaceWith(sea);
+
+    const selector = sea.parentElement.querySelector('select[data-map-style]');
+    if (selector) {
+        selector.innerHTML = Object.entries(THEMES)
+            .map(([name, theme]) => `<option value="${name}">${theme.label}</option>`)
+            .join('');
+        selector.value = styleName;
+        selector.addEventListener('change', () => {
+            styleName = selector.value;
+            try {
+                localStorage.setItem(STYLE_KEY, styleName);
+            } catch {
+                // the choice just won't be remembered
+            }
+            paint();
+            paintSea();
+            render(performance.now());
+        });
+    }
     const observer = new ResizeObserver(() => {
         if (resize()) {
             render(performance.now());
@@ -377,4 +494,5 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         paintSea();
     });
     observer.observe(canvas);
+    observer.observe(sea);
 });
