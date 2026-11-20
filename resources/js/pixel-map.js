@@ -116,6 +116,21 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
     };
 
+    const paintSea = () => {
+        const ratio = window.devicePixelRatio || 1;
+        const cell = (SCALE * res) / ratio;
+        const radius = (SCALE * 0.1 * res) / ratio;
+        const scanlineStep = Math.max(3, Math.round(res * 3)) / ratio;
+        const offset = (sea.clientWidth - canvas.clientWidth) / 2;
+        sea.style.backgroundImage = [
+            `repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px ${scanlineStep}px)`,
+            `radial-gradient(circle at center, rgba(150, 110, 230, 0.22) ${radius}px, transparent ${radius + 0.5}px)`,
+            'linear-gradient(to bottom, #12062b, #2a0a3d)',
+        ].join(', ');
+        sea.style.backgroundSize = `100% 100%, ${cell}px ${cell}px, 100% 100%`;
+        sea.style.backgroundPosition = `0 0, ${offset}px 0, 0 0`;
+    };
+
     const resize = () => {
         const cssWidth = canvas.clientWidth;
         if (!cssWidth) {
@@ -135,9 +150,6 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         ctx.setTransform(res, 0, 0, res, 0, 0);
         view.setTransform(res, 0, 0, res, 0, 0);
         paint();
-
-        const scanlineStep = Math.max(3, Math.round(res * 3)) / (window.devicePixelRatio || 1);
-        sea.style.backgroundImage = `repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px ${scanlineStep}px), linear-gradient(to bottom, #12062b, #2a0a3d)`;
 
         return true;
     };
@@ -375,9 +387,12 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     });
 
     svg.replaceWith(sea);
-    new ResizeObserver(() => {
+    const observer = new ResizeObserver(() => {
         if (resize()) {
             render(performance.now());
         }
-    }).observe(canvas);
+        paintSea();
+    });
+    observer.observe(canvas);
+    observer.observe(sea);
 });
