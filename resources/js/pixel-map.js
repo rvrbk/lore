@@ -146,8 +146,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             }
         };
 
-        const landDiameter = Math.max(2, Math.round(cell * 0.64));
-        const visitedDiameter = Math.max(2, Math.round(cell * 0.84));
+        const landDiameter = Math.max(2, Math.round(cell * 0.46));
+        const visitedDiameter = Math.max(2, Math.round(cell * 0.62));
 
         for (let position = 0; position < owner.length; position++) {
             const country = countries[owner[position]];
