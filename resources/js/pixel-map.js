@@ -13,7 +13,7 @@ const PALETTE = {
     D: '#6c7090',
 };
 
-const FLY = 3;
+const FLY = 2;
 
 const FLYERS = [
     { name: 'plane', speed: 16, bob: 0, bitmap: ['...W...', 'W..W...', 'WWWWWWC', 'W..W...', '...W...'] },
@@ -22,7 +22,7 @@ const FLYERS = [
     { name: 'rocket', speed: 26, bob: 0, bitmap: ['.R....', 'OYWWWC', '.R....'] },
     { name: 'comet', speed: 30, bob: 0, bitmap: ['.OOY...', 'OOYYYWW', '.OOY...'] },
     { name: 'satellite', speed: 7, bob: 0, bitmap: ['C...C', 'CCWCC', 'C...C'] },
-    { name: 'helicopter', speed: 9, bob: 0.5, rotor: 12, bitmap: ['....WW.', 'RRRRWWC', '....WW.'] },
+    { name: 'helicopter', speed: 9, bob: 0.5, rotor: 8, bitmap: ['....WW.', 'RRRRWWC', '....WW.'] },
     { name: 'tie-fighter', speed: 18, bob: 0, bitmap: ['D...D', 'D.S.D', 'DSCSD', 'D.S.D', 'D...D'] },
     { name: 'x-wing', speed: 20, bob: 0, bitmap: ['S.S....', '.SSS...', 'RSSSSSW', '.SSS...', 'S.S....'] },
     { name: 'falcon', speed: 14, bob: 0, bitmap: ['.SSSSSSS', 'SSDDDSS.', 'SDDCDDSS', 'SSDDDSS.', '.SSSSSSS'] },
@@ -47,17 +47,16 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const rows = Math.ceil(height / CELL);
 
     const canvas = document.createElement('canvas');
-    canvas.width = cols * SCALE;
-    canvas.height = rows * SCALE;
+    const W = cols * SCALE;
+    const H = rows * SCALE;
     canvas.className = svg.getAttribute('class') ?? '';
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', svg.getAttribute('aria-label') ?? '');
 
     const layer = document.createElement('canvas');
-    layer.width = canvas.width;
-    layer.height = canvas.height;
     const ctx = layer.getContext('2d');
     const view = canvas.getContext('2d');
+    let res = 1;
     const probe = document.createElement('canvas').getContext('2d');
     const owner = new Array(cols * rows).fill(-1);
     const countries = [];
@@ -83,35 +82,58 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
     });
 
-    const background = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    background.addColorStop(0, '#12062b');
-    background.addColorStop(1, '#2a0a3d');
-    ctx.fillStyle = background;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const paint = () => {
+        const background = ctx.createLinearGradient(0, 0, 0, H);
+        background.addColorStop(0, '#12062b');
+        background.addColorStop(1, '#2a0a3d');
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, W, H);
 
-    const dot = (x, y, color, radius, glow) => {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = glow;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc((x + 0.5) * SCALE, (y + 0.5) * SCALE, radius, 0, Math.PI * 2);
-        ctx.fill();
+        const dot = (x, y, color, radius) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc((x + 0.5) * SCALE, (y + 0.5) * SCALE, radius, 0, Math.PI * 2);
+            ctx.fill();
+        };
+
+        for (let position = 0; position < owner.length; position++) {
+            const x = position % cols;
+            const y = Math.floor(position / cols);
+            const country = countries[owner[position]];
+
+            if (!country) {
+                dot(x, y, 'rgba(150, 110, 230, 0.22)', SCALE * 0.1);
+            } else if (country.visited) {
+                const heat = Math.round(180 + 75 * country.opacity);
+                dot(x, y, `rgb(255, ${255 - heat + 60}, ${heat})`, SCALE * 0.42);
+            } else {
+                dot(x, y, 'rgb(0, 180, 205)', SCALE * 0.32);
+            }
+        }
     };
 
-    for (let position = 0; position < owner.length; position++) {
-        const x = position % cols;
-        const y = Math.floor(position / cols);
-        const country = countries[owner[position]];
-
-        if (!country) {
-            dot(x, y, 'rgba(120, 80, 200, 0.12)', 0.7, 0);
-        } else if (country.visited) {
-            const heat = Math.round(180 + 75 * country.opacity);
-            dot(x, y, `rgb(255, ${255 - heat + 60}, ${heat})`, SCALE * 0.42, 8);
-        } else {
-            dot(x, y, 'rgba(0, 229, 255, 0.45)', SCALE * 0.3, 3);
+    const resize = () => {
+        const cssWidth = canvas.clientWidth;
+        if (!cssWidth) {
+            return false;
         }
-    }
+        const width = Math.round(cssWidth * (window.devicePixelRatio || 1));
+        const height = Math.round((width * H) / W);
+        if (width === canvas.width && height === canvas.height) {
+            return false;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        layer.width = width;
+        layer.height = height;
+        res = width / W;
+        ctx.setTransform(res, 0, 0, res, 0, 0);
+        view.setTransform(res, 0, 0, res, 0, 0);
+        paint();
+
+        return true;
+    };
 
     const drawBitmap = (bitmap, x, y, angle, colors = {}) => {
         const bitmapHeight = bitmap.length;
@@ -126,7 +148,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 }
                 const color = colors[symbol] ?? PALETTE[symbol];
                 view.shadowColor = color;
-                view.shadowBlur = 6;
+                view.shadowBlur = 6 * res;
                 view.fillStyle = color;
                 view.beginPath();
                 view.arc((columnIndex - bitmapWidth / 2 + 0.5) * FLY, (rowIndex - bitmapHeight / 2 + 0.5) * FLY, FLY * 0.5, 0, Math.PI * 2);
@@ -138,10 +160,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const createFlyer = (kind, now) => {
         const forward = Math.random() < 0.5 ? 1 : -1;
-        const margin = 40;
-        const travel = canvas.width + margin * 2;
-        const baseY = canvas.height * (0.4 + Math.random() * 0.3);
-        const lift = canvas.height * (0.14 + Math.random() * 0.16);
+        const margin = 30;
+        const travel = W + margin * 2;
+        const baseY = H * (0.4 + Math.random() * 0.3);
+        const lift = H * (0.14 + Math.random() * 0.16);
         const duration = (travel / (kind.speed * SCALE)) * 1000;
 
         return {
@@ -150,7 +172,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 const t = (time - now) / duration;
                 const dx = forward * travel;
                 const dy = lift * 4 * (2 * t - 1);
-                const x = forward > 0 ? -margin + t * travel : canvas.width + margin - t * travel;
+                const x = forward > 0 ? -margin + t * travel : W + margin - t * travel;
                 const y = baseY - lift * (1 - (2 * t - 1) ** 2) + Math.sin(t * 40) * kind.bob * FLY;
                 drawBitmap(kind.bitmap, x, y, kind.upright ? 0 : Math.atan2(dy, dx));
 
@@ -173,14 +195,14 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     };
 
     const createBattle = (now) => {
-        const centerX = canvas.width * (0.25 + Math.random() * 0.5);
-        const centerY = canvas.height * (0.3 + Math.random() * 0.3);
-        const gap = 70;
+        const centerX = W * (0.25 + Math.random() * 0.5);
+        const centerY = H * (0.3 + Math.random() * 0.3);
+        const gap = 48;
         const sides = Math.random() < 0.5 ? STAR_WARS_SIDES : SIDES;
         const ships = sides.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
             side: sideIndex,
             x: centerX + (sideIndex === 0 ? -gap : gap) + (Math.random() - 0.5) * 20,
-            y: centerY + (i - 1) * 21 + (Math.random() - 0.5) * 10,
+            y: centerY + (i - 1) * 14 + (Math.random() - 0.5) * 10,
             phase: Math.random() * 6,
             hp: 2,
             alive: true,
@@ -190,7 +212,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         let nextShot = now + 600;
         let endedAt = null;
 
-        const explode = (x, y, time, big) => blasts.push({ x, y, start: time, duration: big ? 700 : 350, radius: big ? 16 : 7 });
+        const explode = (x, y, time, big) => blasts.push({ x, y, start: time, duration: big ? 700 : 350, radius: big ? 11 : 5 });
 
         return {
             update: (time) => {
@@ -240,7 +262,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             draw: (time) => {
                 ships.filter((ship) => ship.alive).forEach((ship) => {
                     const side = sides[ship.side];
-                    drawBitmap(side.bitmap, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 3, side.facing, side.colors);
+                    drawBitmap(side.bitmap, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 2, side.facing, side.colors);
                 });
                 lasers.forEach((laser) => {
                     const t = (time - laser.start) / laser.duration;
@@ -249,8 +271,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     const tail = Math.max(0, t - 0.12);
                     view.strokeStyle = sides[laser.from.side].laser;
                     view.shadowColor = sides[laser.from.side].laser;
-                    view.shadowBlur = 8;
-                    view.lineWidth = 1.5;
+                    view.shadowBlur = 8 * res;
+                    view.lineWidth = 1;
                     view.beginPath();
                     view.moveTo(laser.from.x + (laser.target.x - laser.from.x) * tail, laser.from.y + (laser.target.y - laser.from.y) * tail);
                     view.lineTo(x, y);
@@ -261,11 +283,11 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     view.globalAlpha = 1 - t;
                     view.fillStyle = t < 0.5 ? '#ffe600' : '#ff8a00';
                     view.shadowColor = '#ff8a00';
-                    view.shadowBlur = 10;
+                    view.shadowBlur = 10 * res;
                     for (let i = 0; i < 8; i++) {
                         const angle = (i / 8) * Math.PI * 2;
                         view.beginPath();
-                        view.arc(blast.x + Math.cos(angle) * blast.radius * t, blast.y + Math.sin(angle) * blast.radius * t, 1.5, 0, Math.PI * 2);
+                        view.arc(blast.x + Math.cos(angle) * blast.radius * t, blast.y + Math.sin(angle) * blast.radius * t, 1, 0, Math.PI * 2);
                         view.fill();
                     }
                     view.globalAlpha = 1;
@@ -279,7 +301,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     let running = false;
 
     const render = (time = 0) => {
+        view.save();
+        view.setTransform(1, 0, 0, 1, 0, 0);
         view.drawImage(layer, 0, 0);
+        view.restore();
 
         for (let i = actors.length - 1; i >= 0; i--) {
             if (actors[i].update(time)) {
@@ -290,10 +315,14 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
         view.shadowBlur = 0;
 
-        view.fillStyle = 'rgba(0, 0, 0, 0.28)';
-        for (let y = 0; y < canvas.height; y += 3) {
+        view.save();
+        view.setTransform(1, 0, 0, 1, 0, 0);
+        view.fillStyle = 'rgba(0, 0, 0, 0.22)';
+        const step = Math.max(3, Math.round(res * 3));
+        for (let y = 0; y < canvas.height; y += step) {
             view.fillRect(0, y, canvas.width, 1);
         }
+        view.restore();
     };
 
     const frame = (time) => {
@@ -309,7 +338,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const now = performance.now();
         if (!document.hidden && actors.length < 4) {
             const battleActive = actors.some((actor) => actor.isBattle);
-            if (!battleActive && Math.random() < 0.2) {
+            if (!battleActive && Math.random() < 0.15) {
                 const battle = createBattle(now);
                 battle.isBattle = true;
                 actors.push(battle);
@@ -322,11 +351,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             }
         }
         if (canvas.isConnected) {
-            setTimeout(spawn, 5000 + Math.random() * 8000);
+            setTimeout(spawn, 12000 + Math.random() * 18000);
         }
     };
-
-    render();
 
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         setTimeout(spawn, 2000 + Math.random() * 2000);
@@ -341,4 +368,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     });
 
     svg.replaceWith(canvas);
+    new ResizeObserver(() => {
+        if (resize()) {
+            render(performance.now());
+        }
+    }).observe(canvas);
 });
