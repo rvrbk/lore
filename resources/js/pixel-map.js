@@ -25,14 +25,12 @@ const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW..
 const UFO = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
 
 const JET = ['..L....', '..WW...', 'WWWWWWC', '..WW...', '..M....'];
-const SPACE_STATION = ['CD.CD..W..CD.CD', 'CD.CD..W..CD.CD', 'SSSSSSSLSSSSSSS', 'CD.CD..W..CD.CD', 'CD.CD..W..CD.CD'];
 
 const COW = ['.WW.', 'WWWW', 'W..W'];
 const UFO_KIND = { name: 'ufo', speed: 11, bob: 1.5, upright: true, blink: true, bitmap: UFO };
 
 const FLYERS = [
     { name: 'plane', speed: 16, bob: 0, blink: true, crashable: true, bitmap: PLANE },
-    { name: 'space-station', speed: 7, bob: 0, upright: true, blink: true, drift: true, bitmap: SPACE_STATION },
 ];
 
 const ROSWELL = { longitude: -104.52, latitude: 33.39 };
@@ -380,8 +378,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const forward = Math.random() < 0.5 ? 1 : -1;
         const margin = 30;
         const travel = W + margin * 2;
-        const baseY = kind.drift ? H * (0.08 + Math.random() * 0.22) : H * (0.4 + Math.random() * 0.3);
-        const lift = kind.drift ? H * 0.02 : H * (0.14 + Math.random() * 0.16);
+        const baseY = H * (0.4 + Math.random() * 0.3);
+        const lift = H * (0.14 + Math.random() * 0.16);
         const duration = (travel / (kind.speed * SCALE)) * 1000;
 
         return {
@@ -806,6 +804,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 const events = [
                     () => createCrash(UFO_KIND, now),
                     () => createCrash(UFO_KIND, now, true),
+                    () => createChase(now),
+                    () => createChase(now),
                     () => createChase(now),
                     () => createAbduction(now),
                     () => createWarp(now),
