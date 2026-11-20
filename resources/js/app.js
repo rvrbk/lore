@@ -1,6 +1,7 @@
 import './board.js';
 import './editor.js';
 import './palette.js';
+import './pixel-map.js';
 
 const sidebar = document.getElementById('sidebar');
 const navToggle = document.querySelector('[data-nav-toggle]');
