@@ -914,15 +914,23 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const mistOn = () => Boolean(THEMES[styleName].mist);
 
-    const MIST_STRETCH = 2.4;
     const MIST = [
-        { x: 0.0, y: 0.22, radius: 0.2, seconds: 16, sway: 0.04, strength: 0.3 },
-        { x: 0.17, y: 0.62, radius: 0.24, seconds: 22, sway: 0.05, strength: 0.26 },
-        { x: 0.38, y: 0.4, radius: 0.18, seconds: 14, sway: 0.03, strength: 0.32 },
-        { x: 0.55, y: 0.78, radius: 0.22, seconds: 19, sway: 0.04, strength: 0.28 },
-        { x: 0.74, y: 0.15, radius: 0.19, seconds: 25, sway: 0.05, strength: 0.27 },
-        { x: 0.88, y: 0.52, radius: 0.23, seconds: 18, sway: 0.04, strength: 0.3 },
-    ];
+        { x: 0.0, y: 0.24, radius: 0.19, seconds: 70, sway: 0.03 },
+        { x: 0.17, y: 0.64, radius: 0.22, seconds: 95, sway: 0.04 },
+        { x: 0.38, y: 0.4, radius: 0.17, seconds: 60, sway: 0.025 },
+        { x: 0.55, y: 0.8, radius: 0.2, seconds: 82, sway: 0.035 },
+        { x: 0.74, y: 0.16, radius: 0.18, seconds: 105, sway: 0.04 },
+        { x: 0.88, y: 0.52, radius: 0.21, seconds: 75, sway: 0.03 },
+    ].map((cloud, index) => ({
+        ...cloud,
+        lobes: Array.from({ length: 10 }, (_, lobe) => ({
+            dx: (((lobe * 0.61 + index * 0.37) % 1) * 2 - 1) * 1.7,
+            dy: (((lobe * 0.43 + index * 0.29) % 1) * 2 - 1) * 0.45,
+            size: 0.6 + ((lobe * 0.27 + index * 0.11) % 0.6),
+            drift: 3000 + lobe * 900 + index * 400,
+            phase: lobe * 2.1 + index,
+        })),
+    }));
 
     const mistLayer = document.createElement('canvas');
     mistLayer.setAttribute('aria-hidden', 'true');
@@ -951,22 +959,23 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         mist.clearRect(0, 0, width, height);
 
         const moment = animateSun ? time : 0;
-        MIST.forEach((puff, index) => {
-            const radius = puff.radius * height;
-            const reach = radius * MIST_STRETCH;
+        MIST.forEach((cloud) => {
+            const radius = cloud.radius * height;
+            const reach = radius * 2.6;
             const span = width + reach * 2;
-            const x = ((puff.x * span + (moment / (puff.seconds * 1000)) * span) % span) - reach;
-            const y = (puff.y + Math.sin(moment / 4000 + index * 1.9) * puff.sway) * height;
-            mist.save();
-            mist.translate(x, y);
-            mist.scale(MIST_STRETCH, 1);
-            const fog = mist.createRadialGradient(0, 0, 0, 0, 0, radius);
-            fog.addColorStop(0, `rgba(215, 228, 255, ${puff.strength})`);
-            fog.addColorStop(0.55, `rgba(175, 195, 245, ${puff.strength * 0.5})`);
-            fog.addColorStop(1, 'rgba(150, 170, 230, 0)');
-            mist.fillStyle = fog;
-            mist.fillRect(-radius, -radius, radius * 2, radius * 2);
-            mist.restore();
+            const centerX = ((cloud.x * span + (moment / (cloud.seconds * 1000)) * span) % span) - reach;
+            const centerY = (cloud.y + Math.sin(moment / 9000 + cloud.x * 9) * cloud.sway) * height;
+            cloud.lobes.forEach((lobe) => {
+                const size = radius * lobe.size * (1 + Math.sin(moment / lobe.drift + lobe.phase) * 0.12);
+                const x = centerX + lobe.dx * radius + Math.sin(moment / (lobe.drift * 1.7) + lobe.phase) * radius * 0.15;
+                const y = centerY + lobe.dy * radius;
+                const puff = mist.createRadialGradient(x, y, 0, x, y, size);
+                puff.addColorStop(0, 'rgba(225, 235, 255, 0.1)');
+                puff.addColorStop(0.5, 'rgba(190, 205, 250, 0.055)');
+                puff.addColorStop(1, 'rgba(170, 185, 240, 0)');
+                mist.fillStyle = puff;
+                mist.fillRect(x - size, y - size, size * 2, size * 2);
+            });
         });
     };
 
