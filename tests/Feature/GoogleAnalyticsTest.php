@@ -46,6 +46,26 @@ class GoogleAnalyticsTest extends TestCase
         unlink($path);
     }
 
+    public function test_a_failed_fetch_is_not_cached_so_the_next_request_recovers(): void
+    {
+        $key = openssl_pkey_new(['private_key_bits' => 2048]);
+        openssl_pkey_export($key, $pem);
+        $path = tempnam(sys_get_temp_dir(), 'ga');
+        file_put_contents($path, json_encode(['client_email' => 'ga@example.iam.gserviceaccount.com', 'private_key' => $pem]));
+        config(['services.google_analytics' => ['credentials' => $path]]);
+        AnalyticsSite::create(['name' => 'Verbeek', 'property_id' => '111']);
+        Cache::flush();
+
+        Http::fake([
+            'oauth2.googleapis.com/*' => Http::sequence()->push('down', 500)->push(['access_token' => 'tok']),
+            '*runReport' => Http::response(['totals' => [['metricValues' => [['value' => '8'], ['value' => '9'], ['value' => '10']]]]]),
+        ]);
+        $this->assertNull(app(GoogleAnalytics::class)->summary());
+        $this->assertSame(8, app(GoogleAnalytics::class)->summary()[0]['users']);
+
+        unlink($path);
+    }
+
     public function test_it_stays_hidden_when_not_configured(): void
     {
         $this->assertNull(app(GoogleAnalytics::class)->summary());

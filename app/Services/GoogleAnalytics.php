@@ -39,7 +39,7 @@ class GoogleAnalytics
             return null;
         }
 
-        $result = Cache::remember('google-analytics.summary', now()->addMinutes(15), function (): array|false {
+        $result = $this->rememberUnlessFailed('google-analytics.summary', now()->addMinutes(15), function (): array|false {
             try {
                 $token = $this->accessToken();
                 $rows = [];
@@ -96,7 +96,7 @@ class GoogleAnalytics
             return null;
         }
 
-        $result = Cache::remember('google-analytics.live', now()->addSeconds(60), function (): int|false {
+        $result = $this->rememberUnlessFailed('google-analytics.live', now()->addSeconds(60), function (): int|false {
             try {
                 $token = $this->accessToken();
                 $total = 0;
@@ -150,6 +150,29 @@ class GoogleAnalytics
         static $map = null;
 
         return $map ??= json_decode((string) file_get_contents(resource_path('data/world-map.json')), true);
+    }
+
+    /**
+     * Like Cache::remember, but a failed fetch (false) is never cached, so one transient error cannot blank the dashboard.
+     *
+     * @template T
+     *
+     * @param  callable(): (T|false)  $callback
+     * @return T|false
+     */
+    private function rememberUnlessFailed(string $key, \DateTimeInterface $ttl, callable $callback): mixed
+    {
+        $cached = Cache::get($key);
+        if ($cached !== null && $cached !== false) {
+            return $cached;
+        }
+
+        $value = $callback();
+        if ($value !== false) {
+            Cache::put($key, $value, $ttl);
+        }
+
+        return $value;
     }
 
     private function accessToken(): string
