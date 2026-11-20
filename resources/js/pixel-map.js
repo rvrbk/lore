@@ -1032,14 +1032,26 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const newsUrl = svg.dataset.newsUrl;
     if (newsUrl) {
-        const ticker = document.createElement('div');
-        ticker.setAttribute('aria-live', 'off');
-        ticker.style.cssText = 'position:absolute;left:8px;bottom:8px;max-width:70%;padding:3px 8px;font:12px/1.35 ui-monospace,monospace;pointer-events:none;opacity:0;transition:opacity 0.35s;background:rgba(0,0,0,0.55);border-left:2px solid currentColor;text-shadow:0 0 6px currentColor';
-        sea.append(ticker);
+        const bar = document.createElement('div');
+        bar.setAttribute('aria-hidden', 'true');
+        bar.style.cssText = 'position:absolute;left:0;right:0;bottom:0;display:none;align-items:center;height:22px;overflow:hidden;pointer-events:none;font:12px/22px ui-monospace,monospace;background:rgba(0,0,0,0.7);border-top:1px solid currentColor';
+        const label = document.createElement('span');
+        label.style.cssText = 'flex:none;padding:0 8px;font-weight:700;letter-spacing:0.08em;background:currentColor';
+        const labelText = document.createElement('span');
+        labelText.textContent = 'NEWS';
+        labelText.style.color = '#000';
+        label.append(labelText);
+        const lane = document.createElement('div');
+        lane.style.cssText = 'position:relative;flex:1;height:100%;overflow:hidden';
+        const track = document.createElement('div');
+        track.style.cssText = 'position:absolute;left:0;top:0;white-space:nowrap;will-change:transform';
+        lane.append(track);
+        bar.append(label, lane);
+        sea.append(bar);
 
         let headlines = [];
-        let index = 0;
         let loadedAt = 0;
+        let index = 0;
 
         const load = async () => {
             try {
@@ -1049,32 +1061,46 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     loadedAt = Date.now();
                 }
             } catch {
-                // keep showing the last headlines
+                // keep scrolling the last headlines
             }
         };
 
-        const showNext = async () => {
+        const run = async () => {
             if (!sea.isConnected) {
                 return;
             }
-            if (!document.hidden) {
-                if (Date.now() - loadedAt > 600000) {
-                    await load();
-                }
-                if (headlines.length) {
-                    ticker.style.color = styleName === 'terminal' ? '#39ff14' : '#e4e4e7';
-                    ticker.textContent = `▌NEWS ${headlines[index % headlines.length]}`;
-                    index++;
-                    ticker.style.opacity = '1';
-                    setTimeout(() => {
-                        ticker.style.opacity = '0';
-                    }, 6500);
-                }
+            if (Date.now() - loadedAt > 600000) {
+                await load();
             }
-            setTimeout(showNext, 9000);
+            if (!headlines.length) {
+                bar.style.display = 'none';
+                setTimeout(run, 30000);
+
+                return;
+            }
+
+            bar.style.display = 'flex';
+            bar.style.color = styleName === 'terminal' ? '#39ff14' : '#e4e4e7';
+            track.style.color = bar.style.color;
+
+            if (!animateSun) {
+                track.textContent = headlines[index % headlines.length];
+                index++;
+                track.style.transform = 'translateX(8px)';
+                setTimeout(run, 8000);
+
+                return;
+            }
+
+            track.textContent = headlines.join('   ◆   ');
+            const distance = lane.clientWidth + track.scrollWidth;
+            track.animate(
+                [{ transform: `translateX(${lane.clientWidth}px)` }, { transform: `translateX(-${track.scrollWidth}px)` }],
+                { duration: (distance / 70) * 1000, easing: 'linear' },
+            ).onfinish = run;
         };
 
-        setTimeout(showNext, 4000);
+        setTimeout(run, 2000);
     }
 
     svg.replaceWith(sea);
