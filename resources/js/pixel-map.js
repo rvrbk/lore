@@ -83,6 +83,7 @@ const sound = {
     context: null,
     master: null,
     noiseBuffer: null,
+    onchange: null,
 
     ready() {
         return this.wanted && this.context !== null && this.context.state === 'running' && !document.hidden;
@@ -98,6 +99,7 @@ const sound = {
                 return false;
             }
             this.context = new Context();
+            this.context.onstatechange = () => this.onchange?.();
             this.master = this.context.createGain();
             this.master.gain.value = 1;
             this.master.connect(this.context.destination);
@@ -1108,10 +1110,13 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const soundButton = sea.parentElement.querySelector('button[data-map-sound]');
     if (soundButton) {
+        const running = () => sound.wanted && sound.context?.state === 'running';
         const label = () => {
-            soundButton.textContent = sound.wanted ? 'Sound on' : 'Sound off';
+            soundButton.textContent = !sound.wanted ? 'Sound off' : (running() ? 'Sound on' : 'Sound: click to resume');
             soundButton.setAttribute('aria-pressed', String(sound.wanted));
         };
+        sound.onchange = label;
+
         let remembered = false;
         try {
             remembered = localStorage.getItem(SOUND_KEY) === 'on';
@@ -1119,18 +1124,25 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             // sound just starts off
         }
         if (remembered) {
-            sound.wanted = true;
-            const unlock = () => {
-                sound.enable().then(label);
-                document.removeEventListener('pointerdown', unlock);
-                document.removeEventListener('keydown', unlock);
+            // Browsers only start audio after a click or key press, so resume on the first one anywhere but the button itself.
+            sound.enable();
+            const unlock = (event) => {
+                if (soundButton.contains(event.target)) {
+                    return;
+                }
+                sound.context?.resume();
             };
-            document.addEventListener('pointerdown', unlock);
-            document.addEventListener('keydown', unlock);
+            const stop = () => {
+                if (running()) {
+                    ['pointerdown', 'keydown', 'touchend'].forEach((name) => document.removeEventListener(name, unlock));
+                }
+            };
+            ['pointerdown', 'keydown', 'touchend'].forEach((name) => document.addEventListener(name, unlock));
+            sound.context?.addEventListener('statechange', stop);
         }
         label();
         soundButton.addEventListener('click', async () => {
-            if (sound.wanted && sound.context?.state === 'running') {
+            if (running()) {
                 sound.disable();
             } else if (await sound.enable()) {
                 sound.play('ping');
