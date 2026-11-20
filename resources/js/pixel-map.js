@@ -11,7 +11,7 @@ const PALETTE = {
     B: '#b5651d',
 };
 
-const FLY = 4;
+const FLY = 3;
 
 const FLYERS = [
     { name: 'plane', speed: 16, bob: 0, bitmap: ['...W...', 'W..W...', 'WWWWWWC', 'W..W...', '...W...'] },
@@ -164,11 +164,11 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const createBattle = (now) => {
         const centerX = canvas.width * (0.25 + Math.random() * 0.5);
         const centerY = canvas.height * (0.3 + Math.random() * 0.3);
-        const gap = 90;
+        const gap = 70;
         const ships = SIDES.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
             side: sideIndex,
             x: centerX + (sideIndex === 0 ? -gap : gap) + (Math.random() - 0.5) * 20,
-            y: centerY + (i - 1) * 28 + (Math.random() - 0.5) * 10,
+            y: centerY + (i - 1) * 21 + (Math.random() - 0.5) * 10,
             phase: Math.random() * 6,
             hp: 2,
             alive: true,
@@ -178,7 +178,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         let nextShot = now + 600;
         let endedAt = null;
 
-        const explode = (x, y, time, big) => blasts.push({ x, y, start: time, duration: big ? 700 : 350, radius: big ? 22 : 9 });
+        const explode = (x, y, time, big) => blasts.push({ x, y, start: time, duration: big ? 700 : 350, radius: big ? 16 : 7 });
 
         return {
             update: (time) => {
@@ -238,7 +238,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     view.strokeStyle = SIDES[laser.from.side].laser;
                     view.shadowColor = SIDES[laser.from.side].laser;
                     view.shadowBlur = 8;
-                    view.lineWidth = 2;
+                    view.lineWidth = 1.5;
                     view.beginPath();
                     view.moveTo(laser.from.x + (laser.target.x - laser.from.x) * tail, laser.from.y + (laser.target.y - laser.from.y) * tail);
                     view.lineTo(x, y);
@@ -253,7 +253,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     for (let i = 0; i < 8; i++) {
                         const angle = (i / 8) * Math.PI * 2;
                         view.beginPath();
-                        view.arc(blast.x + Math.cos(angle) * blast.radius * t, blast.y + Math.sin(angle) * blast.radius * t, 2, 0, Math.PI * 2);
+                        view.arc(blast.x + Math.cos(angle) * blast.radius * t, blast.y + Math.sin(angle) * blast.radius * t, 1.5, 0, Math.PI * 2);
                         view.fill();
                     }
                     view.globalAlpha = 1;
@@ -310,7 +310,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             }
         }
         if (canvas.isConnected) {
-            setTimeout(spawn, 2500 + Math.random() * 5000);
+            setTimeout(spawn, 5000 + Math.random() * 8000);
         }
     };
 
