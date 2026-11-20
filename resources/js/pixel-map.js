@@ -99,7 +99,7 @@ const sound = {
             }
             this.context = new Context();
             this.master = this.context.createGain();
-            this.master.gain.value = 0.5;
+            this.master.gain.value = 1;
             this.master.connect(this.context.destination);
             this.noiseBuffer = this.context.createBuffer(1, this.context.sampleRate, this.context.sampleRate);
             const data = this.noiseBuffer.getChannelData(0);
@@ -175,32 +175,35 @@ const sound = {
             return;
         }
         switch (name) {
+            case 'ping':
+                this.tone('sine', 660, 990, 0.3, 0.4, position);
+                break;
             case 'laser':
-                this.tone('square', 1100, 180, 0.2, 0.05, position);
+                this.tone('square', 1100, 180, 0.2, 0.16, position);
                 break;
             case 'boom':
-                this.noise(1400, 70, 0.6, 0.3, position);
-                this.tone('sine', 110, 30, 0.5, 0.35, position);
+                this.noise(1400, 70, 0.7, 0.8, position);
+                this.tone('sine', 110, 30, 0.6, 0.8, position);
                 break;
             case 'pop':
-                this.noise(2200, 200, 0.25, 0.14, position);
+                this.noise(2200, 200, 0.3, 0.4, position);
                 break;
             case 'whine':
-                this.tone('sawtooth', 1300, 140, 1.4, 0.04, position);
+                this.tone('sawtooth', 1300, 140, 1.4, 0.12, position);
                 break;
             case 'ufo':
-                this.tone('sine', 330, 300, 1.8, 0.06, position, 40);
+                this.tone('sine', 330, 300, 1.8, 0.25, position, 40);
                 break;
             case 'beam':
-                this.tone('sine', 180, 700, 0.6, 0.07, position, 25);
-                this.tone('triangle', 90, 95, 3.2, 0.04, position, 8);
+                this.tone('sine', 180, 700, 0.6, 0.25, position, 25);
+                this.tone('triangle', 90, 95, 3.2, 0.2, position, 8);
                 break;
             case 'zap':
-                this.tone('sawtooth', 180, 3000, 0.35, 0.07, position);
-                this.noise(6000, 300, 0.4, 0.06, position);
+                this.tone('sawtooth', 180, 3000, 0.35, 0.2, position);
+                this.noise(6000, 300, 0.4, 0.2, position);
                 break;
             case 'jet':
-                this.noise(300, 2200, 1.2, 0.07, position);
+                this.noise(300, 2200, 1.2, 0.3, position);
                 break;
             default:
                 break;
@@ -1055,8 +1058,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         soundButton.addEventListener('click', async () => {
             if (sound.wanted && sound.context?.state === 'running') {
                 sound.disable();
-            } else {
-                await sound.enable();
+            } else if (await sound.enable()) {
+                sound.play('ping');
             }
             try {
                 localStorage.setItem(SOUND_KEY, sound.wanted ? 'on' : 'off');
