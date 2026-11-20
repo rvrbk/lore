@@ -1107,7 +1107,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             if (!sea.isConnected) {
                 return;
             }
-            if (Date.now() - loadedAt > 120000) {
+            if (!loadedAt || !items.length || (!animateSun && Date.now() - loadedAt > 120000)) {
                 await load();
             }
             if (!items.length) {
@@ -1130,19 +1130,43 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 return;
             }
 
-            const nodes = [];
-            items.forEach((item, position) => {
-                if (position > 0) {
-                    nodes.push('   ◆   ');
-                }
-                nodes.push(renderItem(item));
-            });
-            track.replaceChildren(...nodes);
-            const distance = lane.clientWidth + track.scrollWidth;
+            const signature = JSON.stringify(items);
+            const buildCopy = () => {
+                const copy = document.createElement('span');
+                items.forEach((item) => {
+                    copy.append(renderItem(item), '   ◆   ');
+                });
+
+                return copy;
+            };
+            const copies = [buildCopy()];
+            track.replaceChildren(copies[0]);
+            const width = copies[0].getBoundingClientRect().width;
+            const repeats = width > 0 ? Math.max(1, Math.ceil(lane.clientWidth / width)) : 1;
+            const loopWidth = width * repeats;
+            for (let count = 1; count < repeats * 2; count++) {
+                track.append(buildCopy());
+            }
+            const cycle = (loopWidth / 70) * 1000;
+            track.getAnimations().forEach((animation) => animation.cancel());
             track.animate(
-                [{ transform: `translateX(${lane.clientWidth}px)` }, { transform: `translateX(-${track.scrollWidth}px)` }],
-                { duration: (distance / 70) * 1000, easing: 'linear' },
-            ).onfinish = run;
+                [{ transform: 'translateX(0)' }, { transform: `translateX(-${loopWidth}px)` }],
+                { duration: cycle, easing: 'linear', iterations: Infinity },
+            );
+
+            const refresh = async () => {
+                if (!sea.isConnected) {
+                    return;
+                }
+                await load();
+                if (JSON.stringify(items) !== signature) {
+                    run();
+
+                    return;
+                }
+                setTimeout(refresh, 120000);
+            };
+            setTimeout(refresh, 120000);
         };
 
         setTimeout(run, 2000);

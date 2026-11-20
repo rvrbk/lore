@@ -56,6 +56,8 @@ return [
     'news' => [
         // RSS feed whose headlines flash in the corner of the dashboard map.
         'feed' => env('NEWS_FEED_URL', 'https://feeds.bbci.co.uk/news/world/rss.xml'),
+        // RSS feed with UFO sighting news, mixed into the same ticker.
+        'ufo_feed' => env('NEWS_UFO_FEED_URL', 'https://news.google.com/rss/search?q=UFO+sighting+OR+UAP&hl=en-US&gl=US&ceid=US:en'),
     ],
 
     'deploy' => [

@@ -11,21 +11,37 @@ use Throwable;
  */
 class NewsHeadlines
 {
-    private const CACHE_KEY = 'news.headlines';
-
     /**
      * @return array<int, string>
      */
     public function latest(): array
     {
-        $cached = Cache::get(self::CACHE_KEY);
+        return $this->cached('news.headlines', 'services.news.feed', 20);
+    }
+
+    /**
+     * Recent UFO sighting news from a public RSS feed.
+     *
+     * @return array<int, string>
+     */
+    public function ufo(): array
+    {
+        return $this->cached('news.ufo', 'services.news.ufo_feed', 10);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function cached(string $cacheKey, string $configKey, int $limit): array
+    {
+        $cached = Cache::get($cacheKey);
         if (is_array($cached)) {
             return $cached;
         }
 
-        $headlines = $this->fetch();
+        $headlines = $this->fetch(config($configKey), $limit);
         if ($headlines !== []) {
-            Cache::put(self::CACHE_KEY, $headlines, now()->addMinutes(10));
+            Cache::put($cacheKey, $headlines, now()->addMinutes(10));
         }
 
         return $headlines;
@@ -34,9 +50,8 @@ class NewsHeadlines
     /**
      * @return array<int, string>
      */
-    private function fetch(): array
+    private function fetch(mixed $url, int $limit): array
     {
-        $url = config('services.news.feed');
         if (! is_string($url) || $url === '') {
             return [];
         }
@@ -62,7 +77,7 @@ class NewsHeadlines
                 }
             }
 
-            return array_slice($titles, 0, 20);
+            return array_slice($titles, 0, $limit);
         } catch (Throwable) {
             return [];
         }

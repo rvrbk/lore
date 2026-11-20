@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 class NewsController extends Controller
 {
     /**
-     * Ticker lines: the news nwsfd has harvested (alerts first) with the public feed's headlines mixed in between.
+     * Ticker lines: the news nwsfd has harvested (alerts first) with the public feed's headlines and UFO sighting news mixed in between.
      */
     public function __invoke(NewsHeadlines $fallback): JsonResponse
     {
@@ -20,10 +20,11 @@ class NewsController extends Controller
         ]);
 
         $headlines = collect($fallback->latest())->map(fn (string $text) => ['kind' => 'headline', 'tag' => null, 'text' => $text]);
+        $ufo = collect($fallback->ufo())->map(fn (string $text) => ['kind' => 'news', 'tag' => 'UFO', 'text' => $text]);
 
         $mixed = [];
-        foreach (range(0, max($items->count(), $headlines->count()) - 1) as $index) {
-            foreach ([$items->get($index), $headlines->get($index)] as $line) {
+        foreach (range(0, max($items->count(), $headlines->count(), $ufo->count()) - 1) as $index) {
+            foreach ([$items->get($index), $headlines->get($index), $ufo->get($index)] as $line) {
                 if ($line !== null) {
                     $mixed[] = $line;
                 }
