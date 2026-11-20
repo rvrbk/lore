@@ -21,38 +21,19 @@ const blinkColors = (time) => (Math.floor(time / 300) % 2 === 0 ? { L: '#ff2d55'
 
 const FLY = 2;
 
-const XWING = ['S........', 'SS.......', '.SSS.....', 'RSSSSSSSW', '.SSS.....', 'SS.......', 'S........'];
-const TIE = ['D.....D', 'D.....D', 'D..S..D', 'DSSCSSD', 'D..S..D', 'D.....D', 'D.....D'];
+const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW...WW....', '....WW.....', '....M......'];
+const UFO = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
 
 const FLYERS = [
-    { name: 'plane', speed: 16, bob: 0, bitmap: ['....W......', '....WW.....', 'WW...WW....', 'WWWWWWWWWWC', 'WW...WW....', '....WW.....', '....W......'] },
-    { name: 'ufo', speed: 11, bob: 1.5, upright: true, blink: true, bitmap: ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'] },
-    { name: 'santa', speed: 13, bob: 1, bitmap: ['.....RW...B.B.', 'BBBBBRRR.YBBBB', '.B.B.B.B......'] },
-    { name: 'rocket', speed: 26, bob: 0, bitmap: ['..R.......', '.RRWWWWW..', 'OYWWWCWWWR', '.RRWWWWW..', '..R.......'] },
-    { name: 'helicopter', speed: 9, bob: 0.5, rotor: 10, bitmap: ['R...RRRR..', 'RRRRRRRRWC', '....RRRR..', '..DDDDDDD.'] },
-    { name: 'tie-fighter', speed: 18, bob: 0, bitmap: TIE },
-    { name: 'x-wing', speed: 20, bob: 0, bitmap: XWING },
-    { name: 'falcon', speed: 14, bob: 0, bitmap: ['..SSSSSS...', '.SSSSSSSSSS', 'SSSDDDCSS..', '.SSSSSSSSSS', '..SSSSSS...'] },
-    { name: 'star-destroyer', speed: 6, bob: 0, bitmap: ['C..............', 'CSS............', 'CSSSSS.........', 'CSSSDSSSSSSSSSS', 'CSSSSS.........', 'CSS............', 'C..............'] },
-    { name: 'death-star', speed: 4, bob: 0, upright: true, bitmap: ['..SSSSS..', '.SSSSDDS.', 'SSSSDDDSS', 'DDDDDDDDD', 'SSSSSSSSS', 'SSSSSSSSS', '.SSSSSSS.', '..SSSSS..'] },
-    { name: 'blimp', speed: 5, bob: 0.5, bitmap: ['...WWWWWWW..', 'R.WRRRRRRRW.', 'RRRRRRRRRRRC', 'R.WRRRRRRRW.', '...WWWWWWW..', '.....DD.....'] },
-    { name: 'hot-air-balloon', speed: 4, bob: 1, upright: true, bitmap: ['.RRRRR.', 'RRYRYRR', 'RRRYRRR', 'RRRRRRR', '.RRRRR.', '..RRR..', '...B...', '..BBB..'] },
-    { name: 'mothership', speed: 4, bob: 0.5, blink: true, bitmap: ['.....SSSSS.....', '...SSSSSSSSS...', 'SSSSSSSSSSSSSSS', 'SLDMDLDMDLDMDLS', '.SSSSSSSSSSSSS.', '...D...D...D...'] },
+    { name: 'plane', speed: 16, bob: 0, blink: true, crashable: true, bitmap: PLANE },
+    { name: 'ufo', speed: 11, bob: 1.5, upright: true, blink: true, crashable: true, bitmap: UFO },
 ];
-['plane', 'ufo', 'santa', 'rocket', 'helicopter', 'tie-fighter', 'x-wing', 'falcon', 'blimp', 'hot-air-balloon'].forEach((name) => {
-    FLYERS.find((kind) => kind.name === name).crashable = true;
-});
 
 const ROSWELL = { longitude: -104.52, latitude: 33.39 };
 
-const FIGHTER = ['XX..', 'XXXW', 'XX..'];
 const SIDES = [
-    { bitmap: FIGHTER, colors: { X: '#ff2d55' }, laser: '#ff5577', facing: 0 },
-    { bitmap: FIGHTER, colors: { X: '#39ff14' }, laser: '#aaff66', facing: Math.PI },
-];
-const STAR_WARS_SIDES = [
-    { bitmap: XWING, colors: {}, laser: '#ff4040', facing: 0 },
-    { bitmap: TIE, colors: {}, laser: '#5bff5b', facing: Math.PI },
+    { bitmap: PLANE, laser: '#ff5577', facing: 0 },
+    { bitmap: UFO, laser: '#aaff66', facing: 0 },
 ];
 
 const mix = (from, to, amount) => `rgb(${from.map((value, index) => Math.round(value + (to[index] - value) * amount)).join(', ')})`;
@@ -269,21 +250,6 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         view.restore();
     };
 
-    const drawRotor = (kind, x, y, elapsed) => {
-        view.save();
-        view.translate(x, y);
-        view.rotate((elapsed / 40) % (Math.PI * 2));
-        view.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-        view.lineWidth = 1.5;
-        view.beginPath();
-        view.moveTo(-kind.rotor, 0);
-        view.lineTo(kind.rotor, 0);
-        view.moveTo(0, -kind.rotor);
-        view.lineTo(0, kind.rotor);
-        view.stroke();
-        view.restore();
-    };
-
     const drawBlasts = (blasts, time) => {
         blasts.forEach((blast) => {
             const t = (time - blast.start) / blast.duration;
@@ -387,9 +353,6 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 if (impactAt === null) {
                     const at = position(time);
                     drawBitmap(kind.bitmap, at.x, at.y, at.angle, kind.blink ? blinkColors(time) : {});
-                    if (kind.rotor) {
-                        drawRotor(kind, at.x, at.y, time - now);
-                    }
                 } else {
                     drawBlasts(blasts, time);
                     const glow = Math.max(0, 1 - (time - impactAt) / 4000);
@@ -424,10 +387,6 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 const x = forward > 0 ? -margin + t * travel : W + margin - t * travel;
                 const y = baseY - lift * (1 - (2 * t - 1) ** 2) + Math.sin(t * 40) * kind.bob * FLY;
                 drawBitmap(kind.bitmap, x, y, kind.upright ? 0 : Math.atan2(dy, dx), kind.blink ? blinkColors(time) : {});
-
-                if (kind.rotor) {
-                    drawRotor(kind, x, y, time - now);
-                }
             },
         };
     };
@@ -436,7 +395,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const centerX = W * (0.25 + Math.random() * 0.5);
         const centerY = H * (0.3 + Math.random() * 0.3);
         const gap = 52;
-        const sides = Math.random() < 0.5 ? STAR_WARS_SIDES : SIDES;
+        const sides = SIDES;
         const ships = sides.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
             side: sideIndex,
             x: centerX + (sideIndex === 0 ? -gap : gap) + (Math.random() - 0.5) * 20,
@@ -500,7 +459,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             draw: (time) => {
                 ships.filter((ship) => ship.alive).forEach((ship) => {
                     const side = sides[ship.side];
-                    drawBitmap(side.bitmap, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 2, side.facing, side.colors);
+                    drawBitmap(side.bitmap, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 2, side.facing, blinkColors(time));
                 });
                 lasers.forEach((laser) => {
                     const t = (time - laser.start) / laser.duration;
