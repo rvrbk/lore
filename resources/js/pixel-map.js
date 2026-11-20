@@ -24,9 +24,14 @@ const FLY = 2;
 const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW...WW....', '....WW.....', '....M......'];
 const UFO = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
 
+const SATELLITE = ['CDCD..L..CDCD', 'CDCDWWWWWCDCD', 'CDCDWWDWWCDCD', 'CDCDWWWWWCDCD', 'CDCD..W..CDCD'];
+const SPACE_STATION = ['CD.CD..W..CD.CD', 'CD.CD..W..CD.CD', 'SSSSSSSLSSSSSSS', 'CD.CD..W..CD.CD', 'CD.CD..W..CD.CD'];
+
 const FLYERS = [
     { name: 'plane', speed: 16, bob: 0, blink: true, crashable: true, bitmap: PLANE },
     { name: 'ufo', speed: 11, bob: 1.5, upright: true, blink: true, crashable: true, bitmap: UFO },
+    { name: 'satellite', speed: 5, bob: 0, upright: true, blink: true, drift: true, bitmap: SATELLITE },
+    { name: 'space-station', speed: 7, bob: 0, upright: true, blink: true, drift: true, bitmap: SPACE_STATION },
 ];
 
 const ROSWELL = { longitude: -104.52, latitude: 33.39 };
@@ -374,8 +379,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const forward = Math.random() < 0.5 ? 1 : -1;
         const margin = 30;
         const travel = W + margin * 2;
-        const baseY = H * (0.4 + Math.random() * 0.3);
-        const lift = H * (0.14 + Math.random() * 0.16);
+        const baseY = kind.drift ? H * (0.08 + Math.random() * 0.22) : H * (0.4 + Math.random() * 0.3);
+        const lift = kind.drift ? H * 0.02 : H * (0.14 + Math.random() * 0.16);
         const duration = (travel / (kind.speed * SCALE)) * 1000;
 
         return {
