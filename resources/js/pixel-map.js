@@ -44,38 +44,29 @@ const STAR_WARS_SIDES = [
 const mix = (from, to, amount) => `rgb(${from.map((value, index) => Math.round(value + (to[index] - value) * amount)).join(', ')})`;
 
 const THEMES = {
-    night: {
-        label: 'Night lights',
-        sea: ['#03050b', '#070b16'],
-        land: '#10151f',
-        landStroke: '#1b2231',
-        visited: (heat) => mix([180, 110, 30], [255, 232, 160], heat),
-        visitedStroke: 'rgba(255, 214, 120, 0.5)',
-        glow: 'rgba(255, 190, 80, 0.55)',
+    ocean: {
+        label: 'Ocean',
+        sea: ['#12062b', '#2a0a3d'],
+        land: 'rgb(0, 180, 205)',
+        visited: (heat) => mix([255, 150, 20], [255, 235, 90], heat),
     },
-    blueprint: {
-        label: 'Blueprint',
-        sea: ['#0b2a52', '#0e3366'],
-        land: 'rgba(0, 0, 0, 0)',
-        landStroke: 'rgba(190, 220, 255, 0.55)',
-        visited: (heat) => `rgba(210, 235, 255, ${0.25 + heat * 0.6})`,
-        visitedStroke: '#ffffff',
+    amber: {
+        label: 'Amber',
+        sea: ['#0a1020', '#131c33'],
+        land: 'rgb(75, 106, 136)',
+        visited: (heat) => mix([217, 119, 6], [253, 224, 71], heat),
     },
-    paper: {
-        label: 'Paper',
-        sea: ['#e8e2d2', '#ded6c1'],
-        land: '#f7f3e8',
-        landStroke: '#b8ae94',
-        visited: (heat) => mix([250, 190, 150], [190, 60, 30], heat),
-        visitedStroke: '#7a2a12',
+    terminal: {
+        label: 'Terminal',
+        sea: ['#020a04', '#04140a'],
+        land: 'rgb(20, 105, 55)',
+        visited: (heat) => mix([34, 197, 94], [190, 255, 170], heat),
     },
     mono: {
         label: 'Mono',
         sea: ['#09090b', '#09090b'],
-        land: '#27272a',
-        landStroke: '#09090b',
+        land: 'rgb(63, 63, 70)',
         visited: (heat) => mix([113, 113, 122], [250, 250, 250], heat),
-        visitedStroke: '#09090b',
     },
 };
 
@@ -85,9 +76,9 @@ const readStyle = () => {
     try {
         const saved = localStorage.getItem(STYLE_KEY);
 
-        return saved && THEMES[saved] ? saved : 'night';
+        return saved && THEMES[saved] ? saved : 'ocean';
     } catch {
-        return 'night';
+        return 'ocean';
     }
 };
 
@@ -139,23 +130,35 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const paint = () => {
         const theme = THEMES[styleName];
-        const scale = (SCALE / CELL) * res;
+        const cell = SCALE * res;
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, layer.width, layer.height);
-        ctx.setTransform(scale, 0, 0, scale, 0, 0);
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = 0.3;
 
-        countries.forEach((country) => {
+        const disc = (x, y, diameter) => {
+            const radius = diameter / 2;
+            const left = Math.round((x + 0.5) * cell - radius);
+            const top = Math.round((y + 0.5) * cell - radius);
+            for (let row = 0; row < diameter; row++) {
+                const offset = row + 0.5 - radius;
+                const inset = Math.round(radius - Math.sqrt(Math.max(0, radius * radius - offset * offset)));
+                ctx.fillRect(left + inset, top + row, diameter - inset * 2, 1);
+            }
+        };
+
+        const landDiameter = Math.max(2, Math.round(cell * 0.64));
+        const visitedDiameter = Math.max(2, Math.round(cell * 0.84));
+
+        for (let position = 0; position < owner.length; position++) {
+            const country = countries[owner[position]];
+
+            if (!country) {
+                continue;
+            }
+
             ctx.fillStyle = country.visited ? theme.visited(country.opacity) : theme.land;
-            ctx.strokeStyle = country.visited ? theme.visitedStroke : theme.landStroke;
-            ctx.shadowBlur = country.visited && theme.glow ? 14 * res : 0;
-            ctx.shadowColor = theme.glow ?? 'transparent';
-            ctx.fill(country.shape);
-            ctx.shadowBlur = 0;
-            ctx.stroke(country.shape);
-        });
+            disc(position % cols, Math.floor(position / cols), country.visited ? visitedDiameter : landDiameter);
+        }
         ctx.restore();
     };
 
