@@ -13,7 +13,11 @@ const PALETTE = {
     D: '#6c7090',
     P: '#ff7ac8',
     V: '#9b5de5',
+    L: '#ff2d55',
+    M: '#ffe600',
 };
+
+const blinkColors = (time) => (Math.floor(time / 300) % 2 === 0 ? { L: '#ff2d55', M: '#ffe600' } : { L: '#ffe600', M: '#ff2d55' });
 
 const FLY = 2;
 
@@ -22,7 +26,7 @@ const TIE = ['D.....D', 'D.....D', 'D..S..D', 'DSSCSSD', 'D..S..D', 'D.....D', '
 
 const FLYERS = [
     { name: 'plane', speed: 16, bob: 0, bitmap: ['....W......', '....WW.....', 'WW...WW....', 'WWWWWWWWWWC', 'WW...WW....', '....WW.....', '....W......'] },
-    { name: 'ufo', speed: 11, bob: 1.5, bitmap: ['....C....', '...CCC...', '.GGGGGGG.', 'GYGYGYGYG', '.GG...GG.'] },
+    { name: 'ufo', speed: 11, bob: 1.5, upright: true, blink: true, bitmap: ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'] },
     { name: 'santa', speed: 13, bob: 1, bitmap: ['.....RW...B.B.', 'BBBBBRRR.YBBBB', '.B.B.B.B......'] },
     { name: 'rocket', speed: 26, bob: 0, bitmap: ['..R.......', '.RRWWWWW..', 'OYWWWCWWWR', '.RRWWWWW..', '..R.......'] },
     { name: 'helicopter', speed: 9, bob: 0.5, rotor: 10, bitmap: ['R...RRRR..', 'RRRRRRRRWC', '....RRRR..', '..DDDDDDD.'] },
@@ -33,7 +37,7 @@ const FLYERS = [
     { name: 'death-star', speed: 4, bob: 0, upright: true, bitmap: ['..SSSSS..', '.SSSSDDS.', 'SSSSDDDSS', 'DDDDDDDDD', 'SSSSSSSSS', 'SSSSSSSSS', '.SSSSSSS.', '..SSSSS..'] },
     { name: 'blimp', speed: 5, bob: 0.5, bitmap: ['...WWWWWWW..', 'R.WRRRRRRRW.', 'RRRRRRRRRRRC', 'R.WRRRRRRRW.', '...WWWWWWW..', '.....DD.....'] },
     { name: 'hot-air-balloon', speed: 4, bob: 1, upright: true, bitmap: ['.RRRRR.', 'RRYRYRR', 'RRRYRRR', 'RRRRRRR', '.RRRRR.', '..RRR..', '...B...', '..BBB..'] },
-    { name: 'mothership', speed: 4, bob: 0.5, bitmap: ['.....GGGGG.....', '...GGGGGGGGG...', 'GGGGGGGGGGGGGGG', 'GCYCYCYCYCYCYCG', '.GGGGGGGGGGGGG.', '...Y...Y...Y...'] },
+    { name: 'mothership', speed: 4, bob: 0.5, blink: true, bitmap: ['.....SSSSS.....', '...SSSSSSSSS...', 'SSSSSSSSSSSSSSS', 'SLDMDLDMDLDMDLS', '.SSSSSSSSSSSSS.', '...D...D...D...'] },
 ];
 ['plane', 'ufo', 'santa', 'rocket', 'helicopter', 'tie-fighter', 'x-wing', 'falcon', 'blimp', 'hot-air-balloon'].forEach((name) => {
     FLYERS.find((kind) => kind.name === name).crashable = true;
@@ -381,7 +385,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
                 if (impactAt === null) {
                     const at = position(time);
-                    drawBitmap(kind.bitmap, at.x, at.y, at.angle);
+                    drawBitmap(kind.bitmap, at.x, at.y, at.angle, kind.blink ? blinkColors(time) : {});
                     if (kind.rotor) {
                         drawRotor(kind, at.x, at.y, time - now);
                     }
@@ -418,7 +422,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 const dy = lift * 4 * (2 * t - 1);
                 const x = forward > 0 ? -margin + t * travel : W + margin - t * travel;
                 const y = baseY - lift * (1 - (2 * t - 1) ** 2) + Math.sin(t * 40) * kind.bob * FLY;
-                drawBitmap(kind.bitmap, x, y, kind.upright ? 0 : Math.atan2(dy, dx));
+                drawBitmap(kind.bitmap, x, y, kind.upright ? 0 : Math.atan2(dy, dx), kind.blink ? blinkColors(time) : {});
 
                 if (kind.rotor) {
                     drawRotor(kind, x, y, time - now);
