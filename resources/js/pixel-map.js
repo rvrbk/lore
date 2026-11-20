@@ -25,13 +25,13 @@ const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW..
 const UFO = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
 
 const JET = ['..L....', '..WW...', 'WWWWWWC', '..WW...', '..M....'];
-const SATELLITE = ['CDCD..L..CDCD', 'CDCDWWWWWCDCD', 'CDCDWWDWWCDCD', 'CDCDWWWWWCDCD', 'CDCD..W..CDCD'];
 const SPACE_STATION = ['CD.CD..W..CD.CD', 'CD.CD..W..CD.CD', 'SSSSSSSLSSSSSSS', 'CD.CD..W..CD.CD', 'CD.CD..W..CD.CD'];
+
+const COW = ['.WW.', 'WWWW', 'W..W'];
+const UFO_KIND = { name: 'ufo', speed: 11, bob: 1.5, upright: true, blink: true, bitmap: UFO };
 
 const FLYERS = [
     { name: 'plane', speed: 16, bob: 0, blink: true, crashable: true, bitmap: PLANE },
-    { name: 'ufo', speed: 11, bob: 1.5, upright: true, blink: true, crashable: true, bitmap: UFO },
-    { name: 'satellite', speed: 5, bob: 0, upright: true, blink: true, drift: true, bitmap: SATELLITE },
     { name: 'space-station', speed: 7, bob: 0, upright: true, blink: true, drift: true, bitmap: SPACE_STATION },
 ];
 
@@ -611,6 +611,101 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         };
     };
 
+    const createAbduction = (now) => {
+        const forward = Math.random() < 0.5 ? 1 : -1;
+        const margin = 30;
+        const startX = forward > 0 ? -margin : W + margin;
+        const hover = { x: W * (0.2 + Math.random() * 0.6), y: H * (0.2 + Math.random() * 0.15) };
+        const ground = Math.min(H * 0.86, hover.y + H * 0.3);
+        const arrive = (Math.abs(hover.x - startX) / (18 * SCALE)) * 1000;
+        const linger = 3400;
+        const leave = 1300;
+
+        const position = (time) => {
+            const elapsed = time - now;
+            if (elapsed < arrive) {
+                const t = elapsed / arrive;
+
+                return { x: startX + (hover.x - startX) * t, y: hover.y - (1 - t) * 14 + Math.sin(elapsed / 90) * 1.5 };
+            }
+            if (elapsed < arrive + linger) {
+                return { x: hover.x, y: hover.y + Math.sin(elapsed / 220) * 1.5 };
+            }
+            const t = Math.min(1, (elapsed - arrive - linger) / leave);
+
+            return { x: hover.x + forward * 520 * t * t, y: hover.y - 260 * t * t };
+        };
+
+        return {
+            update: (time) => time - now < arrive + linger + leave,
+            draw: (time) => {
+                const elapsed = time - now;
+                const at = position(time);
+                const lifting = elapsed - arrive;
+                if (lifting > 0 && lifting < linger) {
+                    const beam = Math.min(1, lifting / 500) * Math.min(1, (linger - lifting) / 400);
+                    view.globalAlpha = beam * (0.22 + Math.sin(time / 60) * 0.06);
+                    view.fillStyle = '#b6ff8a';
+                    view.beginPath();
+                    view.moveTo(at.x - 3, at.y + 6);
+                    view.lineTo(at.x + 3, at.y + 6);
+                    view.lineTo(at.x + 15, ground);
+                    view.lineTo(at.x - 15, ground);
+                    view.fill();
+                    view.globalAlpha = 1;
+
+                    const rise = Math.min(1, lifting / (linger - 300));
+                    drawBitmap(COW, at.x, ground - (ground - at.y - 8) * rise * rise, Math.sin(time / 250) * 0.4, {});
+                }
+                drawBitmap(UFO, at.x, at.y, 0, blinkColors(time));
+            },
+        };
+    };
+
+    const createWarp = (now) => {
+        const forward = Math.random() < 0.5 ? 1 : -1;
+        const margin = 30;
+        const startX = forward > 0 ? -margin : W + margin;
+        const baseY = H * (0.25 + Math.random() * 0.4);
+        const warpX = W * (0.3 + Math.random() * 0.4);
+        const cruise = (Math.abs(warpX - startX) / (16 * SCALE)) * 1000;
+        const flash = 900;
+
+        return {
+            update: (time) => time - now < cruise + flash,
+            draw: (time) => {
+                const elapsed = time - now;
+                if (elapsed < cruise) {
+                    const t = elapsed / cruise;
+                    drawBitmap(UFO, startX + (warpX - startX) * t, baseY + Math.sin(t * 18) * 8, 0, blinkColors(time));
+
+                    return;
+                }
+                const t = (elapsed - cruise) / flash;
+                view.strokeStyle = '#bfefff';
+                view.fillStyle = '#ffffff';
+                view.shadowColor = '#7fdfff';
+                view.shadowBlur = 10 * res;
+                view.globalAlpha = 1 - t;
+                view.lineWidth = 1.5;
+                view.beginPath();
+                view.arc(warpX, baseY, 3 + t * 34, 0, Math.PI * 2);
+                view.stroke();
+                for (let i = 0; i < 10; i++) {
+                    const angle = (i / 10) * Math.PI * 2;
+                    view.beginPath();
+                    view.arc(warpX + Math.cos(angle) * t * 46, baseY + Math.sin(angle) * t * 46, 1.2, 0, Math.PI * 2);
+                    view.fill();
+                }
+                view.beginPath();
+                view.arc(warpX, baseY, Math.max(0, 7 * (1 - t * 3)), 0, Math.PI * 2);
+                view.fill();
+                view.globalAlpha = 1;
+                view.shadowBlur = 0;
+            },
+        };
+    };
+
     const actors = [];
     let running = false;
 
@@ -702,14 +797,20 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const now = performance.now();
         if (!document.hidden && actors.length < 4) {
             const battleActive = actors.some((actor) => actor.isBattle);
-            if (!battleActive && Math.random() < 0.3) {
+            const roll = Math.random();
+            if (!battleActive && roll < 0.15) {
                 const battle = createBattle(now);
                 battle.isBattle = true;
                 actors.push(battle);
-            } else if (Math.random() < 0.2) {
-                actors.push(createCrash(FLYERS.find((kind) => kind.name === 'ufo'), now, true));
-            } else if (Math.random() < 0.2) {
-                actors.push(createChase(now));
+            } else if (roll < 0.6) {
+                const events = [
+                    () => createCrash(UFO_KIND, now),
+                    () => createCrash(UFO_KIND, now, true),
+                    () => createChase(now),
+                    () => createAbduction(now),
+                    () => createWarp(now),
+                ];
+                actors.push(events[Math.floor(Math.random() * events.length)]());
             } else {
                 const kind = FLYERS[Math.floor(Math.random() * FLYERS.length)];
                 actors.push(kind.crashable && Math.random() < 0.5 ? createCrash(kind, now) : createFlyer(kind, now));
