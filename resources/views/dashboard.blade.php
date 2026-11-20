@@ -49,6 +49,24 @@
         </section>
     @endif
 
+    @if($siteUsers)
+        <section class="mt-12">
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Users <span class="ml-2 normal-case">rows in each site's users table</span></h2>
+            <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach($siteUsers as $site)
+                    <li class="flex items-center justify-between border border-zinc-800 bg-zinc-900 p-3">
+                        <span class="truncate text-sm font-medium text-zinc-100">{{ $site['name'] }}</span>
+                        @if($site['users'] === null)
+                            <span class="text-sm text-zinc-500" title="Not a Laravel app, or its users table could not be read">n/a</span>
+                        @else
+                            <span class="text-2xl font-semibold text-indigo-400">{{ number_format($site['users']) }}</span>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Due now</h2>
         @if($due->isEmpty())

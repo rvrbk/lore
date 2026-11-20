@@ -15,3 +15,4 @@ Schedule::command('lore:backup')->dailyAt('03:15');
 Schedule::command('monitors:check-expiry')->hourly()->withoutOverlapping();
 Schedule::command('server:measure')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('lore:digest')->dailyAt('07:30');
+Schedule::command('sites:count-users')->everyFifteenMinutes()->withoutOverlapping();
