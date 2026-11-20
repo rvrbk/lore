@@ -60,6 +60,7 @@ class PointyBookingController extends Controller
                 'guest_name' => $data['guest_name'],
                 'guest_email' => $data['guest_email'],
                 'guest_timezone' => $data['guest_timezone'],
+                'meeting_url' => $type->meetingUrl(),
                 'guest_hour12' => (bool) ($data['guest_hour12'] ?? false),
                 'notes' => $data['notes'] ?? null,
                 'starts_at' => $start,

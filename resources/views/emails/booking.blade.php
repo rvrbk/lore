@@ -9,6 +9,7 @@
     <p>Hi {{ $booking->guest_name }}, your <strong>{{ $booking->type->name }}</strong> {{ $cancelled ? 'has been cancelled' : 'is confirmed' }}.</p>
 @endif
 <p style="font-size: 16px;"><strong>{{ $when }}</strong></p>
+@if($booking->meeting_url && ! $cancelled)<p>Google Meet: <a href="{{ $booking->meeting_url }}">{{ $booking->meeting_url }}</a></p>@endif
 @if($booking->notes)<p style="color: #52525b;">Notes: {{ $booking->notes }}</p>@endif
 @if(! $cancelled && ! $forOwner)
     <p>Need to change plans? <a href="{{ route('pointy.booking', $booking->token) }}">Cancel or view your booking</a>.</p>

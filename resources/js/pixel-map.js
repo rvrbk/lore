@@ -914,14 +914,15 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const mistOn = () => Boolean(THEMES[styleName].mist);
 
-    const MIST = Array.from({ length: 9 }, (_, index) => ({
-        x: (index * 0.37 + 0.11) % 1,
-        y: 0.12 + ((index * 0.29) % 0.76),
-        radius: 0.16 + ((index * 0.13) % 0.16),
-        speed: 0.000004 + (index % 4) * 0.0000025,
+    const MIST_PUFFS = 14;
+    const MIST = Array.from({ length: MIST_PUFFS }, (_, index) => ({
+        x: index / MIST_PUFFS,
+        y: 0.1 + ((index * 0.37) % 0.8),
+        radius: 0.17 + ((index * 0.13) % 0.14),
+        speed: 1 / (28000 + (index % 5) * 9000),
         sway: 0.03 + (index % 3) * 0.02,
         phase: index * 1.7,
-        strength: 0.1 + (index % 3) * 0.04,
+        strength: 0.11 + (index % 3) * 0.04,
     }));
 
     const drawMist = (time) => {

@@ -14,6 +14,10 @@
         <div class="mt-2 text-lg {{ $booking->isCancelled() ? 'text-zinc-500 line-through' : 'text-indigo-400' }}">{{ $start->format('l j F Y') }}, <span data-local-time="{{ $booking->starts_at->copy()->utc()->toIso8601String() }}" data-zone="{{ $booking->guest_timezone }}">{{ $start->format('H:i') }}</span> – <span data-local-time="{{ $booking->ends_at->copy()->utc()->toIso8601String() }}" data-zone="{{ $booking->guest_timezone }}">{{ $booking->ends_at->copy()->setTimezone($booking->guest_timezone)->format('H:i') }}</span></div>
         <div class="text-sm text-zinc-400">{{ str_replace('_', ' ', $booking->guest_timezone) }}</div>
     </div>
+    @if($booking->meeting_url && ! $booking->isCancelled())
+        <a href="{{ $booking->meeting_url }}" target="_blank" rel="noopener" class="mt-4 inline-block rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">Join with Google Meet</a>
+        <div class="mt-1 text-xs text-zinc-500">{{ $booking->meeting_url }}</div>
+    @endif
     @unless($booking->isCancelled())
         <p class="mt-3 text-sm text-zinc-400">A confirmation with a calendar invite was sent to {{ $booking->guest_email }}.</p>
         @if($booking->starts_at->isFuture())

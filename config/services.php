@@ -66,6 +66,8 @@ return [
         'from_name' => env('POINTY_FROM_NAME', 'Pointy'),
         // Where new and cancelled bookings are announced; leave empty to only email the guest.
         'owner_email' => env('POINTY_OWNER_EMAIL'),
+        // Your permanent Google Meet room, used by every meeting type that does not have its own link.
+        'meet_url' => env('POINTY_MEET_URL'),
     ],
 
     'deploy' => [

@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PointyController extends Controller
 {
@@ -75,10 +76,15 @@ class PointyController extends Controller
             'buffer_minutes' => ['required', 'integer', 'min:0', 'max:240'],
             'min_notice_hours' => ['required', 'integer', 'min:0', 'max:720'],
             'max_days_ahead' => ['required', 'integer', 'min:1', 'max:365'],
-        ], ['slug.regex' => 'Use lowercase letters, numbers and dashes for the link.']);
+            'meet_url' => ['nullable', 'url:https', 'max:255', 'regex:#^https://meet\.google\.com/[a-z0-9-]+(\?.*)?$#i'],
+        ], ['slug.regex' => 'Use lowercase letters, numbers and dashes for the link.', 'meet_url.regex' => 'Use a Google Meet link, like https://meet.google.com/abc-defg-hij.']);
 
         $data['days'] = array_map('intval', $data['days']);
         $data['is_active'] = $request->boolean('is_active');
+        $data['include_meet'] = $request->boolean('include_meet');
+        if ($data['include_meet'] && blank($data['meet_url'] ?? null) && blank(config('services.pointy.meet_url'))) {
+            throw ValidationException::withMessages(['meet_url' => 'Add your Google Meet link, or switch the Meet link off.']);
+        }
 
         return $data;
     }

@@ -24,6 +24,8 @@
     <label class="text-xs text-zinc-400">Until<input type="time" name="end_time" value="{{ old('end_time', $type?->end_time ?? '17:00') }}" required class="{{ $field }} mt-1 w-full"></label>
     <label class="text-xs text-zinc-400">Minimum notice (hours)<input type="number" name="min_notice_hours" value="{{ old('min_notice_hours', $type?->min_notice_hours ?? 4) }}" min="0" max="720" required class="{{ $field }} mt-1 w-full"></label>
     <label class="text-xs text-zinc-400">Bookable this many days ahead<input type="number" name="max_days_ahead" value="{{ old('max_days_ahead', $type?->max_days_ahead ?? 30) }}" min="1" max="365" required class="{{ $field }} mt-1 w-full"></label>
+    <label class="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="include_meet" value="1" @checked(old('include_meet', $type?->include_meet ?? true))>Include a Google Meet link</label>
+    <input name="meet_url" value="{{ old('meet_url', $type?->meet_url) }}" placeholder="Your Meet link, e.g. https://meet.google.com/abc-defg-hij{{ config('services.pointy.meet_url') ? ' (empty = '.config('services.pointy.meet_url').')' : '' }}" aria-label="Google Meet link" class="{{ $field }} sm:col-span-2">
     <label class="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="is_active" value="1" @checked(old('is_active', $type?->is_active ?? true))>Accepting bookings</label>
     @if($errors->any())<p class="text-sm text-red-400 sm:col-span-2">{{ $errors->first() }}</p>@endif
     <div class="sm:col-span-2"><button class="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">{{ $type ? 'Save' : 'Add meeting type' }}</button></div>

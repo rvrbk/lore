@@ -75,6 +75,7 @@ class BookingMail extends Mailable
             'DTSTART:'.$stamp($this->booking->starts_at),
             'DTEND:'.$stamp($this->booking->ends_at),
             "SUMMARY:{$summary}",
+            ...($this->booking->meeting_url ? ["LOCATION:{$this->booking->meeting_url}", "URL:{$this->booking->meeting_url}", "DESCRIPTION:Join with Google Meet: {$this->booking->meeting_url}"] : []),
             'END:VEVENT',
             'END:VCALENDAR',
         ])."\r\n";

@@ -134,4 +134,34 @@ class PointyTest extends TestCase
         Mail::assertSent(BookingMail::class, fn (BookingMail $mail) => $mail->hasTo('ann@example.test') && str_contains($mail->whenText(), '3:00 PM'));
         Mail::assertSent(BookingMail::class, fn (BookingMail $mail) => $mail->hasTo('owner@example.test') && str_contains($mail->whenText(), '15:00'));
     }
+
+    public function test_bookings_get_the_meet_link_by_default_and_not_when_it_is_switched_off(): void
+    {
+        Mail::fake();
+        $guest = ['guest_name' => 'Ann', 'guest_email' => 'ann@example.test', 'guest_timezone' => 'UTC'];
+        $on = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0, 'meet_url' => 'https://meet.google.com/abc-defg-hij']);
+        $off = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0, 'meet_url' => 'https://meet.google.com/abc-defg-hij', 'include_meet' => false]);
+
+        $this->post(route('pointy.book', $on->slug), $guest + ['starts_at' => '2026-11-23T09:00:00Z']);
+        $this->post(route('pointy.book', $off->slug), $guest + ['starts_at' => '2026-11-23T10:00:00Z']);
+
+        $this->assertSame('https://meet.google.com/abc-defg-hij', Booking::where('booking_type_id', $on->id)->firstOrFail()->meeting_url);
+        $this->assertNull(Booking::where('booking_type_id', $off->id)->firstOrFail()->meeting_url);
+        $this->get(route('pointy.booking', Booking::where('booking_type_id', $on->id)->firstOrFail()->token))->assertSee('Join with Google Meet');
+        $this->assertStringContainsString('https://meet.google.com/abc-defg-hij', Reminder::firstOrFail()->notes);
+    }
+
+    public function test_a_type_with_meet_on_needs_a_meet_link_somewhere(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $type = ['name' => 'Call', 'duration_minutes' => 30, 'timezone' => 'UTC', 'days' => [1], 'start_time' => '09:00', 'end_time' => '17:00', 'buffer_minutes' => 0, 'min_notice_hours' => 4, 'max_days_ahead' => 30];
+
+        $this->post(route('pointy.types.store'), $type + ['include_meet' => 1])->assertSessionHasErrors('meet_url');
+        $this->post(route('pointy.types.store'), $type + ['include_meet' => 1, 'meet_url' => 'https://example.com/x'])->assertSessionHasErrors('meet_url');
+        $this->post(route('pointy.types.store'), $type)->assertSessionHasNoErrors();
+        config(['services.pointy.meet_url' => 'https://meet.google.com/zzz-zzzz-zzz']);
+        $this->post(route('pointy.types.store'), $type + ['name' => 'Call two', 'include_meet' => 1])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('booking_types', 2);
+    }
 }
