@@ -1,6 +1,65 @@
 const CELL = 2;
 const SCALE = 6;
 
+const PALETTE = {
+    W: '#ffffff',
+    C: '#00e5ff',
+    G: '#39ff14',
+    R: '#ff2d55',
+    Y: '#ffe600',
+    O: '#ff8a00',
+    B: '#b5651d',
+};
+
+const FLYERS = [
+    {
+        name: 'plane',
+        speed: 16,
+        bob: 0,
+        bitmap: [
+            'WW.....W....',
+            '.WWWWWWWWWW.',
+            '..WWWWWWWWWC',
+            '.....WW.....',
+        ],
+    },
+    {
+        name: 'ufo',
+        speed: 11,
+        bob: 3,
+        bitmap: [
+            '....GGG....',
+            '...GCCCG...',
+            '.GGGGGGGGG.',
+            'GGYGGYGGYGG',
+            '..G.....G..',
+        ],
+    },
+    {
+        name: 'santa',
+        speed: 13,
+        bob: 1.5,
+        bitmap: [
+            '...RR...............B.B',
+            '..RRRR..............BBB',
+            '..RWWR..........BBBBBBB',
+            '.RRRRRRR........B.B..B.',
+            'YYYYYYYYYY..............',
+            'R........R..............',
+        ],
+    },
+    {
+        name: 'rocket',
+        speed: 26,
+        bob: 0,
+        bitmap: [
+            '..RR......',
+            'OYWWWWWWC.',
+            '..RR......',
+        ],
+    },
+];
+
 document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const { width, height } = svg.viewBox.baseVal;
     const cols = Math.ceil(width / CELL);
@@ -13,7 +72,11 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', svg.getAttribute('aria-label') ?? '');
 
-    const ctx = canvas.getContext('2d');
+    const layer = document.createElement('canvas');
+    layer.width = canvas.width;
+    layer.height = canvas.height;
+    const ctx = layer.getContext('2d');
+    const view = canvas.getContext('2d');
     const probe = document.createElement('canvas').getContext('2d');
     const owner = new Array(cols * rows).fill(-1);
     const countries = [];
@@ -69,10 +132,68 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
     }
 
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
-    for (let y = 0; y < canvas.height; y += 3) {
-        ctx.fillRect(0, y, canvas.width, 1);
+    const render = (flyer = null, now = 0) => {
+        view.drawImage(layer, 0, 0);
+
+        if (flyer) {
+            const elapsed = (now - flyer.start) / 1000;
+            const offset = elapsed * flyer.kind.speed;
+            const bitmapWidth = Math.max(...flyer.kind.bitmap.map((row) => row.length));
+            const head = flyer.leftToRight ? offset - bitmapWidth : cols - offset;
+            const lift = Math.sin(elapsed * 2.2) * flyer.kind.bob;
+
+            flyer.kind.bitmap.forEach((row, rowIndex) => {
+                [...row].forEach((symbol, columnIndex) => {
+                    if (symbol === '.') {
+                        return;
+                    }
+                    const column = flyer.leftToRight ? columnIndex : row.length - 1 - columnIndex;
+                    const x = Math.round(head + column + (flyer.leftToRight ? 0 : bitmapWidth - row.length));
+                    const y = Math.round(flyer.row + lift + rowIndex);
+                    view.shadowColor = PALETTE[symbol];
+                    view.shadowBlur = 10;
+                    view.fillStyle = PALETTE[symbol];
+                    view.beginPath();
+                    view.arc((x + 0.5) * SCALE, (y + 0.5) * SCALE, SCALE * 0.42, 0, Math.PI * 2);
+                    view.fill();
+                });
+            });
+            view.shadowBlur = 0;
+            flyer.finished = head > cols || head < -bitmapWidth - 1;
+        }
+
+        view.fillStyle = 'rgba(0, 0, 0, 0.28)';
+        for (let y = 0; y < canvas.height; y += 3) {
+            view.fillRect(0, y, canvas.width, 1);
+        }
+    };
+
+    render();
+
+    const launch = () => {
+        const kind = FLYERS[Math.floor(Math.random() * FLYERS.length)];
+        const flyer = {
+            kind,
+            leftToRight: Math.random() < 0.5,
+            row: 4 + Math.floor(Math.random() * Math.max(1, rows * 0.5 - kind.bitmap.length)),
+            start: performance.now(),
+            finished: false,
+        };
+        const frame = (now) => {
+            render(flyer, now);
+            if (flyer.finished) {
+                schedule();
+            } else {
+                requestAnimationFrame(frame);
+            }
+        };
+        requestAnimationFrame(frame);
+    };
+
+    const schedule = () => setTimeout(launch, 12000 + Math.random() * 18000);
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setTimeout(launch, 3000 + Math.random() * 3000);
     }
 
     canvas.addEventListener('mousemove', (event) => {
