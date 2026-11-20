@@ -51,7 +51,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const H = rows * SCALE;
     canvas.className = `${(svg.getAttribute('class') ?? '').replace('mt-2', '')} block`;
     const sea = document.createElement('div');
-    sea.className = 'mt-2';
+    sea.className = 'relative mt-2';
+    const scanlines = document.createElement('div');
+    scanlines.className = 'pointer-events-none absolute inset-0';
+    sea.appendChild(scanlines);
     sea.style.background = 'linear-gradient(to bottom, #12062b, #2a0a3d)';
     sea.appendChild(canvas);
     canvas.setAttribute('role', 'img');
@@ -87,11 +90,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     });
 
     const paint = () => {
-        const background = ctx.createLinearGradient(0, 0, 0, H);
-        background.addColorStop(0, '#12062b');
-        background.addColorStop(1, '#2a0a3d');
-        ctx.fillStyle = background;
-        ctx.fillRect(0, 0, W, H);
+        ctx.clearRect(0, 0, W, H);
 
         const dot = (x, y, color, radius) => {
             ctx.fillStyle = color;
@@ -106,8 +105,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             const country = countries[owner[position]];
 
             if (!country) {
-                dot(x, y, 'rgba(150, 110, 230, 0.22)', SCALE * 0.1);
-            } else if (country.visited) {
+                continue;
+            }
+
+            if (country.visited) {
                 const heat = Math.round(180 + 75 * country.opacity);
                 dot(x, y, `rgb(255, ${255 - heat + 60}, ${heat})`, SCALE * 0.42);
             } else {
@@ -122,13 +123,13 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const radius = (SCALE * 0.1 * res) / ratio;
         const scanlineStep = Math.max(3, Math.round(res * 3)) / ratio;
         const offset = (sea.clientWidth - canvas.clientWidth) / 2;
+        scanlines.style.backgroundImage = `repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 ${1 / ratio}px, transparent ${1 / ratio}px ${scanlineStep}px)`;
         sea.style.backgroundImage = [
-            `repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px ${scanlineStep}px)`,
             `radial-gradient(circle at center, rgba(150, 110, 230, 0.22) ${radius}px, transparent ${radius + 0.5}px)`,
             'linear-gradient(to bottom, #12062b, #2a0a3d)',
         ].join(', ');
-        sea.style.backgroundSize = `100% 100%, ${cell}px ${cell}px, 100% 100%`;
-        sea.style.backgroundPosition = `0 0, ${offset}px 0, 0 0`;
+        sea.style.backgroundSize = `${cell}px ${cell}px, 100% 100%`;
+        sea.style.backgroundPosition = `${offset}px 0, 0 0`;
     };
 
     const resize = () => {
@@ -322,6 +323,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const render = (time = 0) => {
         view.save();
         view.setTransform(1, 0, 0, 1, 0, 0);
+        view.clearRect(0, 0, canvas.width, canvas.height);
         view.drawImage(layer, 0, 0);
         view.restore();
 
@@ -334,14 +336,6 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
         view.shadowBlur = 0;
 
-        view.save();
-        view.setTransform(1, 0, 0, 1, 0, 0);
-        view.fillStyle = 'rgba(0, 0, 0, 0.22)';
-        const step = Math.max(3, Math.round(res * 3));
-        for (let y = 0; y < canvas.height; y += step) {
-            view.fillRect(0, y, canvas.width, 1);
-        }
-        view.restore();
     };
 
     const frame = (time) => {
