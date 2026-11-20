@@ -8,6 +8,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
+use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
@@ -73,6 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::post('deploy', [DeployController::class, 'store'])->name('deploy.store');
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('news', NewsController::class)->name('news.headlines');
     Route::get('analytics/live', [AnalyticsController::class, 'live'])->name('analytics.live');
     Route::post('analytics', [AnalyticsController::class, 'store'])->name('analytics.store');
     Route::delete('analytics/{site}', [AnalyticsController::class, 'destroy'])->name('analytics.destroy');

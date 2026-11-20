@@ -48,6 +48,11 @@ return [
         'credentials' => env('GA_CREDENTIALS'),
     ],
 
+    'news' => [
+        // RSS feed whose headlines flash in the corner of the dashboard map.
+        'feed' => env('NEWS_FEED_URL', 'https://feeds.bbci.co.uk/news/world/rss.xml'),
+    ],
+
     'deploy' => [
         // Lets the Deploy page queue a git pull + rebuild that the scheduler runs. Only enable on the server.
         'enabled' => env('DEPLOY_ENABLED', false),

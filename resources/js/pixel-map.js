@@ -266,6 +266,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     let styleName = readStyle();
     sea.className = 'mt-2';
+    sea.style.position = 'relative';
 
     const sinLatitude = new Float32Array(cols * rows);
     const cosLatitude = new Float32Array(cols * rows);
@@ -1028,6 +1029,53 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const index = owner[y * cols + x] ?? -1;
         canvas.title = index >= 0 ? countries[index].title : '';
     });
+
+    const newsUrl = svg.dataset.newsUrl;
+    if (newsUrl) {
+        const ticker = document.createElement('div');
+        ticker.setAttribute('aria-live', 'off');
+        ticker.style.cssText = 'position:absolute;left:8px;bottom:8px;max-width:70%;padding:3px 8px;font:12px/1.35 ui-monospace,monospace;pointer-events:none;opacity:0;transition:opacity 0.35s;background:rgba(0,0,0,0.55);border-left:2px solid currentColor;text-shadow:0 0 6px currentColor';
+        sea.append(ticker);
+
+        let headlines = [];
+        let index = 0;
+        let loadedAt = 0;
+
+        const load = async () => {
+            try {
+                const response = await fetch(newsUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                if (response.ok) {
+                    headlines = (await response.json()).headlines ?? [];
+                    loadedAt = Date.now();
+                }
+            } catch {
+                // keep showing the last headlines
+            }
+        };
+
+        const showNext = async () => {
+            if (!sea.isConnected) {
+                return;
+            }
+            if (!document.hidden) {
+                if (Date.now() - loadedAt > 600000) {
+                    await load();
+                }
+                if (headlines.length) {
+                    ticker.style.color = styleName === 'terminal' ? '#39ff14' : '#e4e4e7';
+                    ticker.textContent = `▌NEWS ${headlines[index % headlines.length]}`;
+                    index++;
+                    ticker.style.opacity = '1';
+                    setTimeout(() => {
+                        ticker.style.opacity = '0';
+                    }, 6500);
+                }
+            }
+            setTimeout(showNext, 9000);
+        };
+
+        setTimeout(showNext, 4000);
+    }
 
     svg.replaceWith(sea);
     startLoop();
