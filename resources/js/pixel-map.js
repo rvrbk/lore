@@ -9,6 +9,8 @@ const PALETTE = {
     Y: '#ffe600',
     O: '#ff8a00',
     B: '#b5651d',
+    S: '#c4c8e0',
+    D: '#6c7090',
 };
 
 const FLY = 3;
@@ -21,13 +23,22 @@ const FLYERS = [
     { name: 'comet', speed: 30, bob: 0, bitmap: ['.OOY...', 'OOYYYWW', '.OOY...'] },
     { name: 'satellite', speed: 7, bob: 0, bitmap: ['C...C', 'CCWCC', 'C...C'] },
     { name: 'helicopter', speed: 9, bob: 0.5, rotor: 12, bitmap: ['....WW.', 'RRRRWWC', '....WW.'] },
+    { name: 'tie-fighter', speed: 18, bob: 0, bitmap: ['D...D', 'D.S.D', 'DSCSD', 'D.S.D', 'D...D'] },
+    { name: 'x-wing', speed: 20, bob: 0, bitmap: ['S.S....', '.SSS...', 'RSSSSSW', '.SSS...', 'S.S....'] },
+    { name: 'falcon', speed: 14, bob: 0, bitmap: ['.SSSSSSS', 'SSDDDSS.', 'SDDCDDSS', 'SSDDDSS.', '.SSSSSSS'] },
+    { name: 'star-destroyer', speed: 6, bob: 0, bitmap: ['CS.........', 'CSSSSS.....', 'CSSDSSSSSSS', 'CSSSSS.....', 'CS.........'] },
+    { name: 'death-star', speed: 4, bob: 0, upright: true, bitmap: ['..SSS..', '.SSSSS.', 'SSSSDDS', 'SSSSSSS', 'SSSSSSS', '.SSSSS.', '..SSS..'] },
     { name: 'blimp', speed: 5, bob: 0.5, bitmap: ['.WWWWWW.', 'WRRRRRRC', '.WWWWWW.'] },
 ];
 
 const FIGHTER = ['XX..', 'XXXW', 'XX..'];
 const SIDES = [
-    { color: '#ff2d55', laser: '#ff5577', facing: 0 },
-    { color: '#39ff14', laser: '#aaff66', facing: Math.PI },
+    { bitmap: FIGHTER, colors: { X: '#ff2d55' }, laser: '#ff5577', facing: 0 },
+    { bitmap: FIGHTER, colors: { X: '#39ff14' }, laser: '#aaff66', facing: Math.PI },
+];
+const STAR_WARS_SIDES = [
+    { bitmap: ['S.S....', '.SSS...', 'RSSSSSW', '.SSS...', 'S.S....'], colors: {}, laser: '#ff4040', facing: 0 },
+    { bitmap: ['D...D', 'D.S.D', 'DSCSD', 'D.S.D', 'D...D'], colors: {}, laser: '#5bff5b', facing: Math.PI },
 ];
 
 document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
@@ -141,7 +152,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 const dy = lift * 4 * (2 * t - 1);
                 const x = forward > 0 ? -margin + t * travel : canvas.width + margin - t * travel;
                 const y = baseY - lift * (1 - (2 * t - 1) ** 2) + Math.sin(t * 40) * kind.bob * FLY;
-                drawBitmap(kind.bitmap, x, y, Math.atan2(dy, dx));
+                drawBitmap(kind.bitmap, x, y, kind.upright ? 0 : Math.atan2(dy, dx));
 
                 if (kind.rotor) {
                     view.save();
@@ -165,7 +176,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const centerX = canvas.width * (0.25 + Math.random() * 0.5);
         const centerY = canvas.height * (0.3 + Math.random() * 0.3);
         const gap = 70;
-        const ships = SIDES.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
+        const sides = Math.random() < 0.5 ? STAR_WARS_SIDES : SIDES;
+        const ships = sides.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
             side: sideIndex,
             x: centerX + (sideIndex === 0 ? -gap : gap) + (Math.random() - 0.5) * 20,
             y: centerY + (i - 1) * 21 + (Math.random() - 0.5) * 10,
@@ -227,16 +239,16 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             },
             draw: (time) => {
                 ships.filter((ship) => ship.alive).forEach((ship) => {
-                    const side = SIDES[ship.side];
-                    drawBitmap(FIGHTER, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 3, side.facing, { X: side.color });
+                    const side = sides[ship.side];
+                    drawBitmap(side.bitmap, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 3, side.facing, side.colors);
                 });
                 lasers.forEach((laser) => {
                     const t = (time - laser.start) / laser.duration;
                     const x = laser.from.x + (laser.target.x - laser.from.x) * t;
                     const y = laser.from.y + (laser.target.y - laser.from.y) * t;
                     const tail = Math.max(0, t - 0.12);
-                    view.strokeStyle = SIDES[laser.from.side].laser;
-                    view.shadowColor = SIDES[laser.from.side].laser;
+                    view.strokeStyle = sides[laser.from.side].laser;
+                    view.shadowColor = sides[laser.from.side].laser;
                     view.shadowBlur = 8;
                     view.lineWidth = 1.5;
                     view.beginPath();
