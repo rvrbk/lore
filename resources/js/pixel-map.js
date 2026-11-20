@@ -69,8 +69,11 @@ const THEMES = {
     ghosty: {
         label: 'Ghosty',
         sea: ['#05060d', '#0d1020'],
-        land: 'rgb(120, 130, 160)',
-        visited: (heat) => mix([150, 160, 200], [245, 248, 255], heat),
+        land: 'rgb(105, 115, 150)',
+        visited: (heat) => mix([140, 150, 190], [235, 240, 255], heat),
+        fade: 0.55,
+        blur: 1.1,
+        mist: true,
     },
 };
 
@@ -333,7 +336,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
             const elevation = sinLatitude[position] * sinDeclination + cosLatitude[position] * cosDeclination * Math.cos(longitude[position] - sun.longitude);
             const light = Math.min(1, Math.max(0, (elevation + 0.08) / 0.2));
-            ctx.globalAlpha = Math.round((0.2 + 0.8 * light) * 16) / 16;
+            ctx.globalAlpha = (Math.round((0.2 + 0.8 * light) * 16) / 16) * (theme.fade ?? 1);
             const column = position % cols;
             ctx.fillStyle = country.visited
                 ? (theme.visitedAt ? theme.visitedAt(column, country.opacity) : theme.visited(country.opacity))
@@ -347,6 +350,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const paintSea = () => {
         const theme = THEMES[styleName];
         sea.style.backgroundImage = `linear-gradient(to bottom, ${theme.sea[0]}, ${theme.sea[1]})`;
+        canvas.style.filter = theme.blur ? `blur(${theme.blur}px)` : '';
     };
 
     const MAX_CSS_WIDTH = 1024;
@@ -908,6 +912,36 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const radarOn = () => animateSun && styleName === 'terminal';
 
+    const mistOn = () => Boolean(THEMES[styleName].mist);
+
+    const MIST = Array.from({ length: 9 }, (_, index) => ({
+        x: (index * 0.37 + 0.11) % 1,
+        y: 0.12 + ((index * 0.29) % 0.76),
+        radius: 0.16 + ((index * 0.13) % 0.16),
+        speed: 0.000004 + (index % 4) * 0.0000025,
+        sway: 0.03 + (index % 3) * 0.02,
+        phase: index * 1.7,
+        strength: 0.1 + (index % 3) * 0.04,
+    }));
+
+    const drawMist = (time) => {
+        const moment = animateSun ? time : 0;
+        view.save();
+        MIST.forEach((puff) => {
+            const radius = puff.radius * H * 1.6;
+            const span = W + radius * 2;
+            const x = ((puff.x * span + moment * puff.speed * span) % span) - radius;
+            const y = (puff.y + Math.sin(moment / 5200 + puff.phase) * puff.sway) * H;
+            const fog = view.createRadialGradient(x, y, 0, x, y, radius);
+            fog.addColorStop(0, `rgba(205, 220, 255, ${puff.strength})`);
+            fog.addColorStop(0.55, `rgba(170, 190, 240, ${puff.strength * 0.45})`);
+            fog.addColorStop(1, 'rgba(150, 170, 230, 0)');
+            view.fillStyle = fog;
+            view.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        });
+        view.restore();
+    };
+
     const drawRadar = (time) => {
         const centerX = W / 2;
         const centerY = H / 2;
@@ -962,6 +996,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         if (radarOn()) {
             drawRadar(time);
         }
+        if (mistOn()) {
+            drawMist(time);
+        }
 
         for (let i = actors.length - 1; i >= 0; i--) {
             if (actors[i].update(time)) {
@@ -976,7 +1013,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const frame = (time) => {
         render(time);
-        if ((actors.length || radarOn()) && canvas.isConnected) {
+        if ((actors.length || radarOn() || (mistOn() && animateSun)) && canvas.isConnected) {
             requestAnimationFrame(frame);
         } else {
             running = false;
