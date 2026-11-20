@@ -34,12 +34,14 @@ class GoogleAnalyticsTest extends TestCase
                     'totals' => [['metricValues' => [['value' => '1234'], ['value' => '2000'], ['value' => '9876']]]],
                 ]),
             '*properties/222:runReport' => Http::response('denied', 403),
+            '*properties/111:runRealtimeReport' => Http::response(['rows' => [['metricValues' => [['value' => '4']]]]]),
+            '*properties/222:runRealtimeReport' => Http::response(['rows' => [['metricValues' => [['value' => '3']]]]]),
         ]);
         $this->actingAs(User::factory()->create());
 
         $this->get(route('dashboard'))->assertOk()
             ->assertSee('Verbeek')->assertSee('1,234')->assertSee('9,876')
-            ->assertSee('Daily users for Verbeek')->assertSee('Visitors by country')->assertSee('Netherlands: 9 users', false)->assertSee('Uganda: 3 users', false)->assertSee('Broken')->assertSee('Could not load');
+            ->assertSee('Daily users for Verbeek')->assertSee('Visitors by country')->assertSee('Netherlands: 9 users', false)->assertSee('Uganda: 3 users', false)->assertSee('Broken')->assertSee('Could not load')->assertSee('7 live now');
 
         unlink($path);
     }

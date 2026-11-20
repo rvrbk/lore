@@ -27,6 +27,7 @@ class GoogleAnalytics
     public function forget(): void
     {
         Cache::forget('google-analytics.summary');
+        Cache::forget('google-analytics.live');
     }
 
     /**
@@ -84,6 +85,40 @@ class GoogleAnalytics
         });
 
         return $result ?: null;
+    }
+
+    /**
+     * Users active in the last five minutes, summed over all sites (GA4 Realtime API); null when unavailable.
+     */
+    public function liveUsers(): ?int
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        $result = Cache::remember('google-analytics.live', now()->addSeconds(60), function (): int|false {
+            try {
+                $token = $this->accessToken();
+                $total = 0;
+                $answered = false;
+                foreach (AnalyticsSite::pluck('property_id') as $id) {
+                    $response = Http::withToken($token)->timeout(8)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$id}:runRealtimeReport", [
+                        'metrics' => [['name' => 'activeUsers']],
+                        'minuteRanges' => [['startMinutesAgo' => 4, 'endMinutesAgo' => 0]],
+                    ]);
+                    if ($response->successful()) {
+                        $answered = true;
+                        $total += (int) collect($response->json('rows') ?? [])->sum(fn (array $row) => (int) ($row['metricValues'][0]['value'] ?? 0));
+                    }
+                }
+
+                return $answered ? $total : false;
+            } catch (Throwable) {
+                return false;
+            }
+        });
+
+        return $result === false ? null : $result;
     }
 
     /**

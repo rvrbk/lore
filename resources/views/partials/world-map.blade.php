@@ -2,12 +2,14 @@
     $map = app(\App\Services\GoogleAnalytics::class)->worldMap();
     $totals = app(\App\Services\GoogleAnalytics::class)->countryTotals($analytics);
     $max = max(1, max($totals ?: [0]));
+    $live = app(\App\Services\GoogleAnalytics::class)->liveUsers();
     $top = array_slice($totals, 0, 6, true);
 @endphp
 @if($totals)
     <div class="border border-zinc-800 bg-zinc-900 p-3">
         <div class="flex items-baseline justify-between text-xs text-zinc-400">
-            <span>Visitors by country</span><span>{{ count($totals) }} {{ \Illuminate\Support\Str::plural('country', count($totals)) }} · all sites</span>
+            <span>Visitors by country
+                @if($live !== null) · <span class="text-pink-400">● {{ number_format($live) }} live now</span> @endif</span><span>{{ count($totals) }} {{ \Illuminate\Support\Str::plural('country', count($totals)) }} · all sites</span>
         </div>
         <svg data-pixel-map viewBox="0 0 {{ $map['width'] }} {{ $map['height'] }}" class="mt-2 h-auto w-full" role="img" aria-label="World map of visitors by country">
             @foreach($map['countries'] as $code => $country)
