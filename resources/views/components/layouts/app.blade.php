@@ -72,7 +72,7 @@
         </form>
     </aside>
     <main class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <div class="mx-auto max-w-4xl">
+        <div>
             @if($openIncidents->isNotEmpty() && ! request()->routeIs('incidents.*'))
                 <div role="alert" class="mb-6 border border-red-500/60 bg-red-500/10 p-3 text-sm">
                     <div class="flex items-center justify-between gap-3">
