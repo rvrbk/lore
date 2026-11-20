@@ -11,6 +11,7 @@
         <div class="flex items-baseline justify-between text-xs text-zinc-400">
             <span>Visitors by country
                 <span data-live-users="{{ route('analytics.live') }}">@if($live !== null) · <span class="text-pink-400">● {{ number_format($live) }} live now</span>@foreach(array_filter($liveSites ?? []) as $name => $users) · <span class="text-zinc-300">{{ $name }} {{ number_format($users) }}</span>@endforeach @endif</span></span><span class="flex items-center gap-3">{{ count($totals) }} {{ \Illuminate\Support\Str::plural('country', count($totals)) }} · all sites
+                <button type="button" data-map-sound aria-pressed="false" class="border border-zinc-700 bg-zinc-950 px-1 py-0.5 text-xs text-zinc-300 hover:bg-zinc-800">Sound off</button>
                 <select data-map-style aria-label="Map style" class="border border-zinc-700 bg-zinc-950 px-1 py-0.5 text-xs text-zinc-300"></select></span>
         </div>
         <svg data-pixel-map viewBox="0 0 {{ $map['width'] }} {{ $map['height'] }}" class="mx-auto mt-2 h-auto w-full max-w-5xl" role="img" aria-label="World map of visitors by country">

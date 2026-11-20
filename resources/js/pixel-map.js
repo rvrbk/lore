@@ -76,6 +76,138 @@ const DEGREES = Math.PI / 180;
 
 const STYLE_KEY = 'lore.map-style';
 
+const SOUND_KEY = 'lore.map-sound';
+
+const sound = {
+    wanted: false,
+    context: null,
+    master: null,
+    noiseBuffer: null,
+
+    ready() {
+        return this.wanted && this.context !== null && this.context.state === 'running' && !document.hidden;
+    },
+
+    async enable() {
+        this.wanted = true;
+        if (this.context === null) {
+            const Context = window.AudioContext || window.webkitAudioContext;
+            if (!Context) {
+                this.wanted = false;
+
+                return false;
+            }
+            this.context = new Context();
+            this.master = this.context.createGain();
+            this.master.gain.value = 0.5;
+            this.master.connect(this.context.destination);
+            this.noiseBuffer = this.context.createBuffer(1, this.context.sampleRate, this.context.sampleRate);
+            const data = this.noiseBuffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+        }
+        await this.context.resume();
+
+        return true;
+    },
+
+    disable() {
+        this.wanted = false;
+    },
+
+    output(position, volume, duration) {
+        const gain = this.context.createGain();
+        const now = this.context.currentTime;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        let tail = gain;
+        if (this.context.createStereoPanner) {
+            const panner = this.context.createStereoPanner();
+            panner.pan.value = Math.max(-1, Math.min(1, position * 2 - 1));
+            gain.connect(panner);
+            tail = panner;
+        }
+        tail.connect(this.master);
+
+        return gain;
+    },
+
+    tone(type, from, to, duration, volume, position, wobble = 0) {
+        const now = this.context.currentTime;
+        const oscillator = this.context.createOscillator();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(from, now);
+        oscillator.frequency.exponentialRampToValueAtTime(to, now + duration);
+        oscillator.connect(this.output(position, volume, duration));
+        if (wobble > 0) {
+            const lfo = this.context.createOscillator();
+            const depth = this.context.createGain();
+            lfo.frequency.value = 6;
+            depth.gain.value = wobble;
+            lfo.connect(depth);
+            depth.connect(oscillator.frequency);
+            lfo.start(now);
+            lfo.stop(now + duration + 0.05);
+        }
+        oscillator.start(now);
+        oscillator.stop(now + duration + 0.05);
+    },
+
+    noise(from, to, duration, volume, position) {
+        const now = this.context.currentTime;
+        const source = this.context.createBufferSource();
+        source.buffer = this.noiseBuffer;
+        source.loop = true;
+        const filter = this.context.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(from, now);
+        filter.frequency.exponentialRampToValueAtTime(to, now + duration);
+        source.connect(filter);
+        filter.connect(this.output(position, volume, duration));
+        source.start(now);
+        source.stop(now + duration + 0.05);
+    },
+
+    play(name, position = 0.5) {
+        if (!this.ready()) {
+            return;
+        }
+        switch (name) {
+            case 'laser':
+                this.tone('square', 1100, 180, 0.2, 0.05, position);
+                break;
+            case 'boom':
+                this.noise(1400, 70, 0.6, 0.3, position);
+                this.tone('sine', 110, 30, 0.5, 0.35, position);
+                break;
+            case 'pop':
+                this.noise(2200, 200, 0.25, 0.14, position);
+                break;
+            case 'whine':
+                this.tone('sawtooth', 1300, 140, 1.4, 0.04, position);
+                break;
+            case 'ufo':
+                this.tone('sine', 330, 300, 1.8, 0.06, position, 40);
+                break;
+            case 'beam':
+                this.tone('sine', 180, 700, 0.6, 0.07, position, 25);
+                this.tone('triangle', 90, 95, 3.2, 0.04, position, 8);
+                break;
+            case 'zap':
+                this.tone('sawtooth', 180, 3000, 0.35, 0.07, position);
+                this.noise(6000, 300, 0.4, 0.06, position);
+                break;
+            case 'jet':
+                this.noise(300, 2200, 1.2, 0.07, position);
+                break;
+            default:
+                break;
+        }
+    },
+};
+
 const readStyle = () => {
     try {
         const saved = localStorage.getItem(STYLE_KEY);
@@ -231,6 +363,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         return true;
     };
 
+    const play = (name, x = W / 2) => sound.play(name, x / W);
+
     const drawBitmap = (bitmap, x, y, angle, colors = {}) => {
         const bitmapHeight = bitmap.length;
         const bitmapWidth = Math.max(...bitmap.map((row) => row.length));
@@ -296,6 +430,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const blasts = [];
         let nextPuff = now;
         let impactAt = null;
+        let whined = false;
+        play(kind.name === 'ufo' ? 'ufo' : 'jet', start.x);
 
         const position = (time) => {
             const elapsed = time - now;
@@ -322,8 +458,13 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
         return {
             update: (time) => {
+                if (!whined && time - now >= cruise) {
+                    whined = true;
+                    play('whine', peak.x);
+                }
                 if (impactAt === null && time - now >= cruise + fall) {
                     impactAt = time;
+                    play('boom', impact.x);
                     for (let i = 0; i < 5; i++) {
                         blasts.push({ x: impact.x + (Math.random() - 0.5) * 14, y: impact.y + (Math.random() - 0.5) * 8, start: time + i * 140, duration: 600, radius: 7 + Math.random() * 6 });
                     }
@@ -381,6 +522,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const baseY = H * (0.4 + Math.random() * 0.3);
         const lift = H * (0.14 + Math.random() * 0.16);
         const duration = (travel / (kind.speed * SCALE)) * 1000;
+        play('jet', forward > 0 ? 0 : W);
 
         return {
             update: (time) => time - now < duration,
@@ -411,9 +553,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const lasers = [];
         const blasts = [];
         let nextShot = now + 600;
+        play('ufo', centerX);
         let endedAt = null;
 
-        const explode = (x, y, time, big) => blasts.push({ x, y, start: time, duration: big ? 700 : 350, radius: big ? 11 : 5 });
+        const explode = (x, y, time, big) => (play(big ? 'boom' : 'pop', x), blasts.push({ x, y, start: time, duration: big ? 700 : 350, radius: big ? 11 : 5 }));
 
         return {
             update: (time) => {
@@ -437,6 +580,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     const enemies = living[1 - shooterShip.side];
                     const target = enemies[Math.floor(Math.random() * enemies.length)];
                     lasers.push({ from: shooterShip, target, start: time, duration: 380 });
+                    play('laser', shooterShip.x);
                 }
 
                 for (let i = lasers.length - 1; i >= 0; i--) {
@@ -503,6 +647,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         let downAt = null;
         let downFrom = null;
         let crashed = false;
+        play('jet', forward > 0 ? 0 : W);
+        play('ufo', forward > 0 ? 0 : W);
 
         const leadAt = (time) => {
             const t = (time - now) / duration;
@@ -532,7 +678,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 const ufo = ufoAt(time);
                 if (downAt === null && time >= nextShot && time - now < duration * 0.9) {
                     nextShot = time + 500 + Math.random() * 400;
-                    shots.push({ lag: lags[Math.floor(Math.random() * lags.length)], start: time, duration: 320 });
+                    const lag = lags[Math.floor(Math.random() * lags.length)];
+                    shots.push({ lag, start: time, duration: 320 });
+                    play('laser', jetAt(lag, time).x);
                 }
                 for (let i = shots.length - 1; i >= 0; i--) {
                     if (time - shots[i].start < shots[i].duration) {
@@ -541,8 +689,11 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     if (doomed && downAt === null && time >= hitAt) {
                         downAt = time;
                         downFrom = leadAt(time);
+                        play('boom', downFrom.x);
+                        play('whine', downFrom.x);
                         blasts.push({ x: downFrom.x, y: downFrom.y, start: time, duration: 500, radius: 9 });
                     } else if (downAt === null) {
+                        play('pop', ufo.x);
                         blasts.push({ x: ufo.x + (Math.random() - 0.5) * 30, y: ufo.y + (Math.random() - 0.5) * 30, start: time, duration: 350, radius: 5 });
                     }
                     shots.splice(i, 1);
@@ -554,6 +705,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     }
                     if (time - downAt >= 1300) {
                         crashed = true;
+                        play('boom', ufo.x);
                         for (let i = 0; i < 4; i++) {
                             blasts.push({ x: ufo.x + (Math.random() - 0.5) * 12, y: ufo.y + (Math.random() - 0.5) * 6, start: time + i * 130, duration: 600, radius: 7 + Math.random() * 5 });
                         }
@@ -618,6 +770,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const arrive = (Math.abs(hover.x - startX) / (18 * SCALE)) * 1000;
         const linger = 3400;
         const leave = 1300;
+        let beamed = false;
+        let left = false;
+        play('ufo', startX);
 
         const position = (time) => {
             const elapsed = time - now;
@@ -635,7 +790,18 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         };
 
         return {
-            update: (time) => time - now < arrive + linger + leave,
+            update: (time) => {
+                if (!beamed && time - now >= arrive) {
+                    beamed = true;
+                    play('beam', hover.x);
+                }
+                if (!left && time - now >= arrive + linger) {
+                    left = true;
+                    play('zap', hover.x);
+                }
+
+                return time - now < arrive + linger + leave;
+            },
             draw: (time) => {
                 const elapsed = time - now;
                 const at = position(time);
@@ -668,9 +834,18 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const warpX = W * (0.3 + Math.random() * 0.4);
         const cruise = (Math.abs(warpX - startX) / (16 * SCALE)) * 1000;
         const flash = 900;
+        let zapped = false;
+        play('ufo', startX);
 
         return {
-            update: (time) => time - now < cruise + flash,
+            update: (time) => {
+                if (!zapped && time - now >= cruise) {
+                    zapped = true;
+                    play('zap', warpX);
+                }
+
+                return time - now < cruise + flash;
+            },
             draw: (time) => {
                 const elapsed = time - now;
                 if (elapsed < cruise) {
@@ -853,6 +1028,44 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     svg.replaceWith(sea);
     startLoop();
+
+    const soundButton = sea.parentElement.querySelector('button[data-map-sound]');
+    if (soundButton) {
+        const label = () => {
+            soundButton.textContent = sound.wanted ? 'Sound on' : 'Sound off';
+            soundButton.setAttribute('aria-pressed', String(sound.wanted));
+        };
+        let remembered = false;
+        try {
+            remembered = localStorage.getItem(SOUND_KEY) === 'on';
+        } catch {
+            // sound just starts off
+        }
+        if (remembered) {
+            sound.wanted = true;
+            const unlock = () => {
+                sound.enable().then(label);
+                document.removeEventListener('pointerdown', unlock);
+                document.removeEventListener('keydown', unlock);
+            };
+            document.addEventListener('pointerdown', unlock);
+            document.addEventListener('keydown', unlock);
+        }
+        label();
+        soundButton.addEventListener('click', async () => {
+            if (sound.wanted && sound.context?.state === 'running') {
+                sound.disable();
+            } else {
+                await sound.enable();
+            }
+            try {
+                localStorage.setItem(SOUND_KEY, sound.wanted ? 'on' : 'off');
+            } catch {
+                // the choice just won't be remembered
+            }
+            label();
+        });
+    }
 
     const selector = sea.parentElement.querySelector('select[data-map-style]');
     if (selector) {
