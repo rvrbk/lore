@@ -12,6 +12,7 @@
                         <form method="POST" action="{{ route('pages.pin', $page) }}">@csrf<button class="rounded border px-3 py-1.5 hover:bg-zinc-800" title="{{ $page->pinned_at ? 'Remove from the pinned list' : 'Pin to the sidebar' }}">{{ $page->pinned_at ? 'Unpin' : 'Pin' }}</button></form>
                         <a href="{{ route('pages.create', [$space, 'parent' => $page->id]) }}" class="rounded border px-3 py-1.5 hover:bg-zinc-800">Add child</a>
                         <a href="{{ route('pages.history', $page) }}" class="rounded border px-3 py-1.5 hover:bg-zinc-800">History</a>
+                        <form method="POST" action="{{ route('pages.destroy', $page) }}" onsubmit="return confirm('Delete this page? Child pages move to the top level.')">@csrf @method('DELETE')<button class="rounded border border-red-500/40 px-3 py-1.5 text-red-400 hover:bg-red-500/10">Delete</button></form>
                         <button type="button" data-edit-trigger class="rounded bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700">Edit</button>
                     </div>
                 </div>

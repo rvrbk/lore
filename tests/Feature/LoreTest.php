@@ -36,6 +36,22 @@ class LoreTest extends TestCase
         $this->assertSame('# Hi <script>x</script>', $page->fresh()->body);
     }
 
+    public function test_a_page_can_be_deleted_and_its_children_move_to_the_top_level(): void
+    {
+        $space = Space::create(['name' => 'Ops']);
+        $parent = Page::create(['space_id' => $space->id, 'title' => 'Parent', 'body' => 'x']);
+        $child = Page::create(['space_id' => $space->id, 'parent_id' => $parent->id, 'title' => 'Child', 'body' => 'y']);
+        $this->put(route('pages.update', $parent), ['title' => 'Parent', 'body' => 'v2']);
+
+        $this->get(route('pages.show', $parent))->assertOk()->assertSee(route('pages.destroy', $parent), false);
+
+        $this->delete(route('pages.destroy', $parent))->assertRedirect(route('spaces.show', $space));
+
+        $this->assertModelMissing($parent);
+        $this->assertNull($child->fresh()->parent_id);
+        $this->assertDatabaseCount('page_revisions', 0);
+    }
+
     public function test_page_cannot_become_its_own_descendant(): void
     {
         $space = Space::create(['name' => 'Ops']);
