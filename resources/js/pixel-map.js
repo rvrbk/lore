@@ -914,31 +914,35 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const mistOn = () => Boolean(THEMES[styleName].mist);
 
-    const MIST_PUFFS = 14;
-    const MIST = Array.from({ length: MIST_PUFFS }, (_, index) => ({
-        x: index / MIST_PUFFS,
-        y: 0.1 + ((index * 0.37) % 0.8),
-        radius: 0.17 + ((index * 0.13) % 0.14),
-        speed: 1 / (28000 + (index % 5) * 9000),
-        sway: 0.03 + (index % 3) * 0.02,
-        phase: index * 1.7,
-        strength: 0.11 + (index % 3) * 0.04,
-    }));
+    const MIST_STRETCH = 2.4;
+    const MIST = [
+        { x: 0.0, y: 0.22, radius: 0.2, seconds: 16, sway: 0.04, strength: 0.3 },
+        { x: 0.17, y: 0.62, radius: 0.24, seconds: 22, sway: 0.05, strength: 0.26 },
+        { x: 0.38, y: 0.4, radius: 0.18, seconds: 14, sway: 0.03, strength: 0.32 },
+        { x: 0.55, y: 0.78, radius: 0.22, seconds: 19, sway: 0.04, strength: 0.28 },
+        { x: 0.74, y: 0.15, radius: 0.19, seconds: 25, sway: 0.05, strength: 0.27 },
+        { x: 0.88, y: 0.52, radius: 0.23, seconds: 18, sway: 0.04, strength: 0.3 },
+    ];
 
     const drawMist = (time) => {
         const moment = animateSun ? time : 0;
         view.save();
-        MIST.forEach((puff) => {
-            const radius = puff.radius * H * 1.6;
-            const span = W + radius * 2;
-            const x = ((puff.x * span + moment * puff.speed * span) % span) - radius;
-            const y = (puff.y + Math.sin(moment / 5200 + puff.phase) * puff.sway) * H;
-            const fog = view.createRadialGradient(x, y, 0, x, y, radius);
-            fog.addColorStop(0, `rgba(205, 220, 255, ${puff.strength})`);
-            fog.addColorStop(0.55, `rgba(170, 190, 240, ${puff.strength * 0.45})`);
+        MIST.forEach((puff, index) => {
+            const radius = puff.radius * H;
+            const reach = radius * MIST_STRETCH;
+            const span = W + reach * 2;
+            const x = ((puff.x * span + (moment / (puff.seconds * 1000)) * span) % span) - reach;
+            const y = (puff.y + Math.sin(moment / 4000 + index * 1.9) * puff.sway) * H;
+            view.save();
+            view.translate(x, y);
+            view.scale(MIST_STRETCH, 1);
+            const fog = view.createRadialGradient(0, 0, 0, 0, 0, radius);
+            fog.addColorStop(0, `rgba(215, 228, 255, ${puff.strength})`);
+            fog.addColorStop(0.55, `rgba(175, 195, 245, ${puff.strength * 0.5})`);
             fog.addColorStop(1, 'rgba(150, 170, 230, 0)');
             view.fillStyle = fog;
-            view.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+            view.fillRect(-radius, -radius, radius * 2, radius * 2);
+            view.restore();
         });
         view.restore();
     };
