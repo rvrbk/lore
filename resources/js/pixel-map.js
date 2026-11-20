@@ -1,4 +1,4 @@
-const CELL = 3;
+const CELL = 2;
 
 document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const { width, height } = svg.viewBox.baseVal;
