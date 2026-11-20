@@ -914,17 +914,14 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const mistOn = () => Boolean(THEMES[styleName].mist);
 
-    const MIST = [
-        { x: 0.0, y: 0.24, radius: 0.19, seconds: 70, sway: 0.03 },
-        { x: 0.17, y: 0.64, radius: 0.22, seconds: 95, sway: 0.04 },
-        { x: 0.38, y: 0.4, radius: 0.17, seconds: 60, sway: 0.025 },
-        { x: 0.55, y: 0.8, radius: 0.2, seconds: 82, sway: 0.035 },
-        { x: 0.74, y: 0.16, radius: 0.18, seconds: 105, sway: 0.04 },
-        { x: 0.88, y: 0.52, radius: 0.21, seconds: 75, sway: 0.03 },
-    ].map((cloud, index) => ({
-        ...cloud,
-        lobes: Array.from({ length: 10 }, (_, lobe) => ({
-            dx: (((lobe * 0.61 + index * 0.37) % 1) * 2 - 1) * 1.7,
+    const MIST = Array.from({ length: 13 }, (_, index) => ({
+        x: (index * 0.618) % 1,
+        y: 0.08 + ((index * 0.37) % 0.84),
+        radius: 0.11 + ((index * 0.07) % 0.12),
+        seconds: 38 + ((index * 53) % 170),
+        sway: 0.02 + ((index * 0.013) % 0.04),
+        lobes: Array.from({ length: 7 }, (_, lobe) => ({
+            dx: (((lobe * 0.61 + index * 0.37) % 1) * 2 - 1) * 1.6,
             dy: (((lobe * 0.43 + index * 0.29) % 1) * 2 - 1) * 0.45,
             size: 0.6 + ((lobe * 0.27 + index * 0.11) % 0.6),
             drift: 3000 + lobe * 900 + index * 400,
