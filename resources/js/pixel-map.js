@@ -70,15 +70,19 @@ const THEMES = {
     },
 };
 
+const DAY_SECONDS = 120;
+const EQUATOR_Y = 84;
+const DEGREES = Math.PI / 180;
+
 const STYLE_KEY = 'lore.map-style';
 
 const readStyle = () => {
     try {
         const saved = localStorage.getItem(STYLE_KEY);
 
-        return saved && THEMES[saved] ? saved : 'terminal';
+        return saved && THEMES[saved] ? saved : 'ocean';
     } catch {
-        return 'terminal';
+        return 'ocean';
     }
 };
 
@@ -128,8 +132,36 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     let styleName = readStyle();
     sea.className = 'mt-2';
 
+    const sinLatitude = new Float32Array(cols * rows);
+    const cosLatitude = new Float32Array(cols * rows);
+    const longitude = new Float32Array(cols * rows);
+    for (let position = 0; position < cols * rows; position++) {
+        const latitude = (EQUATOR_Y - ((Math.floor(position / cols) + 0.5) * CELL)) * DEGREES;
+        sinLatitude[position] = Math.sin(latitude);
+        cosLatitude[position] = Math.cos(latitude);
+        longitude[position] = (((position % cols) + 0.5) * CELL - 180) * DEGREES;
+    }
+
+    const startedAt = Date.now();
+    const startedPerf = performance.now();
+    const animateSun = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const sunPosition = () => {
+        const moment = new Date(startedAt + (animateSun ? (performance.now() - startedPerf) * (86400 / DAY_SECONDS) : 0));
+        const dayOfYear = (moment - Date.UTC(moment.getUTCFullYear(), 0, 0)) / 86400000;
+        const hours = moment.getUTCHours() + moment.getUTCMinutes() / 60 + moment.getUTCSeconds() / 3600;
+
+        return {
+            declination: -23.44 * DEGREES * Math.cos(((2 * Math.PI) / 365) * (dayOfYear + 10)),
+            longitude: (12 - hours) * 15 * DEGREES,
+        };
+    };
+
     const paint = () => {
         const theme = THEMES[styleName];
+        const sun = sunPosition();
+        const sinDeclination = Math.sin(sun.declination);
+        const cosDeclination = Math.cos(sun.declination);
         const cell = SCALE * res;
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -156,9 +188,13 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 continue;
             }
 
+            const elevation = sinLatitude[position] * sinDeclination + cosLatitude[position] * cosDeclination * Math.cos(longitude[position] - sun.longitude);
+            const light = Math.min(1, Math.max(0, (elevation + 0.08) / 0.2));
+            ctx.globalAlpha = Math.round((0.2 + 0.8 * light) * 16) / 16;
             ctx.fillStyle = country.visited ? theme.visited(country.opacity) : theme.land;
             disc(position % cols, Math.floor(position / cols), country.visited ? visitedDiameter : landDiameter);
         }
+        ctx.globalAlpha = 1;
         ctx.restore();
     };
 
@@ -408,7 +444,24 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
     };
 
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (animateSun) {
+        const sunTimer = setInterval(() => {
+            if (!canvas.isConnected) {
+                clearInterval(sunTimer);
+
+                return;
+            }
+            if (document.hidden || !canvas.width) {
+                return;
+            }
+            paint();
+            if (!running) {
+                render(performance.now());
+            }
+        }, 250);
+    }
+
+    if (animateSun) {
         setTimeout(spawn, 2000 + Math.random() * 2000);
     }
 
