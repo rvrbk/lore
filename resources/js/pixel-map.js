@@ -343,8 +343,13 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const MAX_CSS_WIDTH = 1024;
 
+    let fullscreen = false;
+    const TICKER_ROOM = 22;
+
     const resize = () => {
-        const available = Math.min(sea.clientWidth, MAX_CSS_WIDTH);
+        const available = fullscreen
+            ? Math.min(sea.clientWidth, ((sea.clientHeight - TICKER_ROOM) * cols) / rows)
+            : Math.min(sea.clientWidth, MAX_CSS_WIDTH);
         if (!available) {
             return false;
         }
@@ -1218,6 +1223,57 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             startLoop();
         });
     }
+    const compact = window.matchMedia('(orientation: landscape) and (max-height: 520px)');
+    let dismissed = false;
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.textContent = '✕';
+    closeButton.setAttribute('aria-label', 'Leave full screen');
+    closeButton.style.cssText = 'position:absolute;top:8px;right:8px;display:none;width:32px;height:32px;border:1px solid rgba(255,255,255,0.3);background:rgba(0,0,0,0.55);color:#e4e4e7;font-size:16px;line-height:1;z-index:2';
+    sea.append(closeButton);
+
+    const applyFullscreen = () => {
+        const want = compact.matches && !dismissed;
+        if (want === fullscreen) {
+            return;
+        }
+        fullscreen = want;
+        sea.style.position = want ? 'fixed' : 'relative';
+        sea.style.inset = want ? '0' : '';
+        sea.style.zIndex = want ? '100' : '';
+        sea.style.display = want ? 'flex' : '';
+        sea.style.alignItems = want ? 'center' : '';
+        sea.style.justifyContent = want ? 'center' : '';
+        sea.style.paddingBottom = want ? `${TICKER_ROOM}px` : '';
+        sea.style.marginTop = want ? '0' : '';
+        canvas.style.maxWidth = want ? 'none' : '';
+        closeButton.style.display = want ? 'block' : 'none';
+        document.documentElement.style.overflow = want ? 'hidden' : '';
+        if (!want && document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+        }
+        if (resize()) {
+            render(performance.now());
+        }
+        paintSea();
+    };
+
+    compact.addEventListener('change', () => {
+        dismissed = false;
+        applyFullscreen();
+    });
+    closeButton.addEventListener('click', () => {
+        dismissed = true;
+        applyFullscreen();
+    });
+    canvas.addEventListener('click', () => {
+        // The browser only allows real full screen after a tap, so rotating gets the map big and a tap hides the browser bars.
+        if (fullscreen && !document.fullscreenElement && sea.requestFullscreen) {
+            sea.requestFullscreen().catch(() => {});
+        }
+    });
+    applyFullscreen();
+
     const observer = new ResizeObserver(() => {
         if (resize()) {
             render(performance.now());
