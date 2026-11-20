@@ -1043,7 +1043,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         bar.setAttribute('aria-hidden', 'true');
         bar.style.cssText = 'position:absolute;left:0;right:0;bottom:0;display:none;align-items:center;height:22px;overflow:hidden;pointer-events:none;font:12px/22px ui-monospace,monospace;background:rgba(0,0,0,0.7);border-top:1px solid currentColor';
         const label = document.createElement('span');
-        label.style.cssText = 'flex:none;padding:0 8px;font-weight:700;letter-spacing:0.08em;background:currentColor';
+        label.style.cssText = 'flex:none;padding:0 8px;font-weight:700;letter-spacing:0.08em;background:#f4f4f5';
         const labelText = document.createElement('span');
         labelText.textContent = 'NEWS';
         labelText.style.color = '#000';
@@ -1117,13 +1117,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 return;
             }
 
-            const alerting = items.some((item) => item.kind === 'alert');
-            labelText.textContent = alerting ? 'ALERT' : 'NEWS';
-            label.style.background = alerting ? '#ff2d55' : 'currentColor';
-            labelText.style.color = alerting ? '#fff' : '#000';
             bar.style.display = 'flex';
             bar.style.color = styleName === 'terminal' ? '#39ff14' : '#e4e4e7';
-            bar.style.borderTopColor = alerting ? '#ff2d55' : 'currentColor';
             track.style.color = bar.style.color;
 
             if (!animateSun) {
