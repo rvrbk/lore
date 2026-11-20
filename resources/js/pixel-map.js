@@ -167,22 +167,27 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         sea.style.backgroundImage = `linear-gradient(to bottom, ${theme.sea[0]}, ${theme.sea[1]})`;
     };
 
+    const MAX_CSS_WIDTH = 1024;
+
     const resize = () => {
-        const cssWidth = canvas.clientWidth;
-        if (!cssWidth) {
+        const available = Math.min(sea.clientWidth, MAX_CSS_WIDTH);
+        if (!available) {
             return false;
         }
-        const width = Math.round(cssWidth * (window.devicePixelRatio || 1));
-        const height = Math.round((width * H) / W);
+        const ratio = window.devicePixelRatio || 1;
+        const cellPixels = Math.max(3, Math.floor((available * ratio) / cols));
+        const width = cols * cellPixels;
+        const height = rows * cellPixels;
         if (width === canvas.width && height === canvas.height) {
             return false;
         }
 
+        canvas.style.width = `${width / ratio}px`;
         canvas.width = width;
         canvas.height = height;
         layer.width = width;
         layer.height = height;
-        res = width / W;
+        res = cellPixels / SCALE;
         ctx.setTransform(res, 0, 0, res, 0, 0);
         view.setTransform(res, 0, 0, res, 0, 0);
         paint();
