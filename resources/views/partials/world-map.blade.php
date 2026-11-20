@@ -11,7 +11,7 @@
             <span>Visitors by country
                 @if($live !== null) · <span class="text-pink-400">● {{ number_format($live) }} live now</span> @endif</span><span>{{ count($totals) }} {{ \Illuminate\Support\Str::plural('country', count($totals)) }} · all sites</span>
         </div>
-        <svg data-pixel-map viewBox="0 0 {{ $map['width'] }} {{ $map['height'] }}" class="mt-2 h-auto w-full" role="img" aria-label="World map of visitors by country">
+        <svg data-pixel-map viewBox="0 0 {{ $map['width'] }} {{ $map['height'] }}" class="mx-auto mt-2 h-auto w-full max-w-5xl" role="img" aria-label="World map of visitors by country">
             @foreach($map['countries'] as $code => $country)
                 @php($users = $totals[$code] ?? 0)
                 <path d="{{ $country['d'] }}" fill="{{ $users ? 'var(--color-indigo-400)' : 'var(--color-zinc-800)' }}" fill-opacity="{{ $users ? round(0.35 + 0.65 * sqrt($users / $max), 2) : 1 }}" stroke="var(--color-zinc-950)" stroke-width="0.25"><title>{{ $country['name'] }}{{ $users ? ': '.number_format($users).' '.\Illuminate\Support\Str::plural('user', $users) : '' }}</title></path>
