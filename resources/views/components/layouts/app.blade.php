@@ -47,7 +47,7 @@
                 </div>
             @endif
         @endforeach
-        <div class="min-h-0 flex-1">
+        <div class="flex-1">
             <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 Spaces <a href="{{ route('spaces.create') }}" class="text-base leading-none hover:text-zinc-100" title="New space">+</a>
             </div>
@@ -64,7 +64,7 @@
                 @endforeach
             </nav>
         </div>
-        <form method="POST" action="{{ route('logout') }}" class="flex items-center gap-2 border-t border-zinc-800 pt-3 text-sm">
+        <form method="POST" action="{{ route('logout') }}" class="sticky bottom-0 -mb-4 flex shrink-0 items-center gap-2 border-t border-zinc-800 bg-zinc-900 pb-4 pt-3 text-sm">
             @csrf
             <span class="min-w-0 flex-1 truncate text-zinc-400" title="Signed in as {{ auth()->user()->username }}">{{ auth()->user()->username }}</span>
             <button type="button" data-palette-open class="border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-100" title="Quick switcher">Ctrl+K</button>
