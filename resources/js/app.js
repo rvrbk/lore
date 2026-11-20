@@ -3,6 +3,7 @@ import './editor.js';
 import './palette.js';
 import './pixel-map.js';
 import './live-users.js';
+import './world-clocks.js';
 
 const sidebar = document.getElementById('sidebar');
 const navToggle = document.querySelector('[data-nav-toggle]');

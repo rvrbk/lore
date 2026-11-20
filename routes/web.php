@@ -17,6 +17,7 @@ use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\WorldClockController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -32,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::post('world-clocks', [WorldClockController::class, 'store'])->name('world-clocks.store');
+    Route::delete('world-clocks/{worldClock}', [WorldClockController::class, 'destroy'])->name('world-clocks.destroy');
     Route::get('/search', SearchController::class)->name('search');
     Route::get('palette', [SearchController::class, 'palette'])->name('palette');
     Route::post('markdown/preview', MarkdownController::class)->name('markdown.preview');

@@ -24,6 +24,8 @@ const FLY = 2;
 const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW...WW....', '....WW.....', '....M......'];
 const UFO = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
 
+const UNICORN = ['.......Y.', '..L...YW.', '.LMLWWWWW', 'LMBWWWWW.', '.BBWWWWW.', '.W.W.W.W.', '.W.W.W.W.'];
+
 const JET = ['..L....', '..WW...', 'WWWWWWC', '..WW...', '..M....'];
 
 const COW = ['.WW.', 'WWWW', 'W..W'];
@@ -51,9 +53,12 @@ const THEMES = {
     },
     fluffy: {
         label: 'Fluffy',
-        sea: ['#ffd9ec', '#d9e8ff'],
+        sea: ['#2a1457', '#6a2fa8'],
         land: 'rgb(255, 255, 255)',
-        visited: (heat) => mix([255, 120, 190], [190, 120, 255], heat),
+        landAt: (x) => `hsl(${(x * 2.5) % 360}, 85%, 72%)`,
+        visited: (heat) => mix([255, 70, 170], [255, 240, 120], heat),
+        visitedAt: (x, heat) => `hsl(${(x * 2.5) % 360}, 100%, ${55 + heat * 15}%)`,
+        unicorns: true,
     },
     terminal: {
         label: 'Terminal',
@@ -329,7 +334,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             const elevation = sinLatitude[position] * sinDeclination + cosLatitude[position] * cosDeclination * Math.cos(longitude[position] - sun.longitude);
             const light = Math.min(1, Math.max(0, (elevation + 0.08) / 0.2));
             ctx.globalAlpha = Math.round((0.2 + 0.8 * light) * 16) / 16;
-            ctx.fillStyle = country.visited ? theme.visited(country.opacity) : theme.land;
+            const column = position % cols;
+            ctx.fillStyle = country.visited
+                ? (theme.visitedAt ? theme.visitedAt(column, country.opacity) : theme.visited(country.opacity))
+                : (theme.landAt ? theme.landAt(column) : theme.land);
             disc(position % cols, Math.floor(position / cols), country.visited ? visitedDiameter : landDiameter);
         }
         ctx.globalAlpha = 1;
@@ -377,6 +385,11 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const play = (name, x = W / 2) => sound.play(name, x / W);
 
     const drawBitmap = (bitmap, x, y, angle, colors = {}) => {
+        if (bitmap === UFO && THEMES[styleName].unicorns) {
+            const pink = colors.L === '#ff2d55';
+            bitmap = UNICORN;
+            colors = { L: pink ? '#ff7ac8' : '#7ad7ff', M: pink ? '#7ad7ff' : '#ff7ac8', B: '#ffb3e6', W: colors.S ? '#ffc2e6' : '#ffffff', Y: '#ffe600' };
+        }
         const bitmapHeight = bitmap.length;
         const bitmapWidth = Math.max(...bitmap.map((row) => row.length));
         view.save();

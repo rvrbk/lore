@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Reminder;
+use App\Models\WorldClock;
 use App\Services\GoogleAnalytics;
 use App\Services\JobScout;
 use App\Services\SiteUsers;
@@ -14,6 +15,8 @@ class DashboardController extends Controller
     public function __invoke()
     {
         return view('dashboard', [
+            'clocks' => WorldClock::orderBy('id')->get(),
+            'cities' => WorldClock::cities(),
             'jobScout' => app(JobScout::class)->newMatches(),
             'analytics' => app(GoogleAnalytics::class)->summary(),
             'siteUsers' => app(SiteUsers::class)->counts(),
