@@ -11,51 +11,23 @@ const PALETTE = {
     B: '#b5651d',
 };
 
+const FLY = 4;
+
 const FLYERS = [
-    {
-        name: 'plane',
-        speed: 16,
-        bob: 0,
-        bitmap: [
-            '...W...',
-            'W..W...',
-            'WWWWWWC',
-            'W..W...',
-            '...W...',
-        ],
-    },
-    {
-        name: 'ufo',
-        speed: 11,
-        bob: 1.5,
-        bitmap: [
-            '.GGG.',
-            'GCYCG',
-            'GYCYG',
-            'GCYCG',
-            '.GGG.',
-        ],
-    },
-    {
-        name: 'santa',
-        speed: 13,
-        bob: 1,
-        bitmap: [
-            'RRR...B.B',
-            'RWRYYYBBB',
-            'RRR...B.B',
-        ],
-    },
-    {
-        name: 'rocket',
-        speed: 26,
-        bob: 0,
-        bitmap: [
-            '.R....',
-            'OYWWWC',
-            '.R....',
-        ],
-    },
+    { name: 'plane', speed: 16, bob: 0, bitmap: ['...W...', 'W..W...', 'WWWWWWC', 'W..W...', '...W...'] },
+    { name: 'ufo', speed: 11, bob: 1.5, bitmap: ['.GGG.', 'GCYCG', 'GYCYG', 'GCYCG', '.GGG.'] },
+    { name: 'santa', speed: 13, bob: 1, bitmap: ['RRR...B.B', 'RWRYYYBBB', 'RRR...B.B'] },
+    { name: 'rocket', speed: 26, bob: 0, bitmap: ['.R....', 'OYWWWC', '.R....'] },
+    { name: 'comet', speed: 30, bob: 0, bitmap: ['.OOY...', 'OOYYYWW', '.OOY...'] },
+    { name: 'satellite', speed: 7, bob: 0, bitmap: ['C...C', 'CCWCC', 'C...C'] },
+    { name: 'helicopter', speed: 9, bob: 0.5, rotor: 12, bitmap: ['....WW.', 'RRRRWWC', '....WW.'] },
+    { name: 'blimp', speed: 5, bob: 0.5, bitmap: ['.WWWWWW.', 'WRRRRRRC', '.WWWWWW.'] },
+];
+
+const FIGHTER = ['XX..', 'XXXW', 'XX..'];
+const SIDES = [
+    { color: '#ff2d55', laser: '#ff5577', facing: 0 },
+    { color: '#39ff14', laser: '#aaff66', facing: Math.PI },
 ];
 
 document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
@@ -130,35 +102,181 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
     }
 
-    const render = (flyer = null, now = 0) => {
+    const drawBitmap = (bitmap, x, y, angle, colors = {}) => {
+        const bitmapHeight = bitmap.length;
+        const bitmapWidth = Math.max(...bitmap.map((row) => row.length));
+        view.save();
+        view.translate(x, y);
+        view.rotate(angle);
+        bitmap.forEach((row, rowIndex) => {
+            [...row].forEach((symbol, columnIndex) => {
+                if (symbol === '.') {
+                    return;
+                }
+                const color = colors[symbol] ?? PALETTE[symbol];
+                view.shadowColor = color;
+                view.shadowBlur = 6;
+                view.fillStyle = color;
+                view.beginPath();
+                view.arc((columnIndex - bitmapWidth / 2 + 0.5) * FLY, (rowIndex - bitmapHeight / 2 + 0.5) * FLY, FLY * 0.5, 0, Math.PI * 2);
+                view.fill();
+            });
+        });
+        view.restore();
+    };
+
+    const createFlyer = (kind, now) => {
+        const forward = Math.random() < 0.5 ? 1 : -1;
+        const margin = 40;
+        const travel = canvas.width + margin * 2;
+        const baseY = canvas.height * (0.4 + Math.random() * 0.3);
+        const lift = canvas.height * (0.14 + Math.random() * 0.16);
+        const duration = (travel / (kind.speed * SCALE)) * 1000;
+
+        return {
+            update: (time) => time - now < duration,
+            draw: (time) => {
+                const t = (time - now) / duration;
+                const dx = forward * travel;
+                const dy = lift * 4 * (2 * t - 1);
+                const x = forward > 0 ? -margin + t * travel : canvas.width + margin - t * travel;
+                const y = baseY - lift * (1 - (2 * t - 1) ** 2) + Math.sin(t * 40) * kind.bob * FLY;
+                drawBitmap(kind.bitmap, x, y, Math.atan2(dy, dx));
+
+                if (kind.rotor) {
+                    view.save();
+                    view.translate(x, y);
+                    view.rotate(((time - now) / 40) % (Math.PI * 2));
+                    view.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                    view.lineWidth = 1.5;
+                    view.beginPath();
+                    view.moveTo(-kind.rotor, 0);
+                    view.lineTo(kind.rotor, 0);
+                    view.moveTo(0, -kind.rotor);
+                    view.lineTo(0, kind.rotor);
+                    view.stroke();
+                    view.restore();
+                }
+            },
+        };
+    };
+
+    const createBattle = (now) => {
+        const centerX = canvas.width * (0.25 + Math.random() * 0.5);
+        const centerY = canvas.height * (0.3 + Math.random() * 0.3);
+        const gap = 90;
+        const ships = SIDES.flatMap((side, sideIndex) => [0, 1, 2].map((i) => ({
+            side: sideIndex,
+            x: centerX + (sideIndex === 0 ? -gap : gap) + (Math.random() - 0.5) * 20,
+            y: centerY + (i - 1) * 28 + (Math.random() - 0.5) * 10,
+            phase: Math.random() * 6,
+            hp: 2,
+            alive: true,
+        })));
+        const lasers = [];
+        const blasts = [];
+        let nextShot = now + 600;
+        let endedAt = null;
+
+        const explode = (x, y, time, big) => blasts.push({ x, y, start: time, duration: big ? 700 : 350, radius: big ? 22 : 9 });
+
+        return {
+            update: (time) => {
+                const living = [0, 1].map((side) => ships.filter((ship) => ship.alive && ship.side === side));
+                if (endedAt === null && (time - now > 9000 || !living[0].length || !living[1].length)) {
+                    endedAt = time;
+                }
+                if (endedAt !== null && time - endedAt > 800) {
+                    ships.forEach((ship) => {
+                        if (ship.alive) {
+                            ship.alive = false;
+                            explode(ship.x, ship.y, time, false);
+                        }
+                    });
+                }
+
+                if (endedAt === null && time >= nextShot) {
+                    nextShot = time + 250 + Math.random() * 300;
+                    const shooter = living[Math.floor(Math.random() * 2)];
+                    const shooterShip = shooter[Math.floor(Math.random() * shooter.length)];
+                    const enemies = living[1 - shooterShip.side];
+                    const target = enemies[Math.floor(Math.random() * enemies.length)];
+                    lasers.push({ from: shooterShip, target, start: time, duration: 380 });
+                }
+
+                for (let i = lasers.length - 1; i >= 0; i--) {
+                    if (time - lasers[i].start >= lasers[i].duration) {
+                        const { target } = lasers[i];
+                        if (target.alive && Math.random() < 0.6) {
+                            target.hp--;
+                            explode(target.x, target.y, time, target.hp <= 0);
+                            target.alive = target.hp > 0;
+                        } else {
+                            explode(target.x + (Math.random() - 0.5) * 30, target.y + (Math.random() - 0.5) * 30, time, false);
+                        }
+                        lasers.splice(i, 1);
+                    }
+                }
+                for (let i = blasts.length - 1; i >= 0; i--) {
+                    if (time - blasts[i].start >= blasts[i].duration) {
+                        blasts.splice(i, 1);
+                    }
+                }
+
+                return ships.some((ship) => ship.alive) || lasers.length > 0 || blasts.length > 0;
+            },
+            draw: (time) => {
+                ships.filter((ship) => ship.alive).forEach((ship) => {
+                    const side = SIDES[ship.side];
+                    drawBitmap(FIGHTER, ship.x, ship.y + Math.sin(time / 400 + ship.phase) * 3, side.facing, { X: side.color });
+                });
+                lasers.forEach((laser) => {
+                    const t = (time - laser.start) / laser.duration;
+                    const x = laser.from.x + (laser.target.x - laser.from.x) * t;
+                    const y = laser.from.y + (laser.target.y - laser.from.y) * t;
+                    const tail = Math.max(0, t - 0.12);
+                    view.strokeStyle = SIDES[laser.from.side].laser;
+                    view.shadowColor = SIDES[laser.from.side].laser;
+                    view.shadowBlur = 8;
+                    view.lineWidth = 2;
+                    view.beginPath();
+                    view.moveTo(laser.from.x + (laser.target.x - laser.from.x) * tail, laser.from.y + (laser.target.y - laser.from.y) * tail);
+                    view.lineTo(x, y);
+                    view.stroke();
+                });
+                blasts.forEach((blast) => {
+                    const t = (time - blast.start) / blast.duration;
+                    view.globalAlpha = 1 - t;
+                    view.fillStyle = t < 0.5 ? '#ffe600' : '#ff8a00';
+                    view.shadowColor = '#ff8a00';
+                    view.shadowBlur = 10;
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        view.beginPath();
+                        view.arc(blast.x + Math.cos(angle) * blast.radius * t, blast.y + Math.sin(angle) * blast.radius * t, 2, 0, Math.PI * 2);
+                        view.fill();
+                    }
+                    view.globalAlpha = 1;
+                });
+                view.shadowBlur = 0;
+            },
+        };
+    };
+
+    const actors = [];
+    let running = false;
+
+    const render = (time = 0) => {
         view.drawImage(layer, 0, 0);
 
-        if (flyer) {
-            const elapsed = (now - flyer.start) / 1000;
-            const offset = elapsed * flyer.kind.speed;
-            const bitmapWidth = Math.max(...flyer.kind.bitmap.map((row) => row.length));
-            const head = flyer.leftToRight ? offset - bitmapWidth : cols - offset;
-            const lift = Math.sin(elapsed * 2.2) * flyer.kind.bob;
-
-            flyer.kind.bitmap.forEach((row, rowIndex) => {
-                [...row].forEach((symbol, columnIndex) => {
-                    if (symbol === '.') {
-                        return;
-                    }
-                    const column = flyer.leftToRight ? columnIndex : row.length - 1 - columnIndex;
-                    const x = Math.round(head + column + (flyer.leftToRight ? 0 : bitmapWidth - row.length));
-                    const y = Math.round(flyer.row + lift + rowIndex);
-                    view.shadowColor = PALETTE[symbol];
-                    view.shadowBlur = 10;
-                    view.fillStyle = PALETTE[symbol];
-                    view.beginPath();
-                    view.arc((x + 0.5) * SCALE, (y + 0.5) * SCALE, SCALE * 0.42, 0, Math.PI * 2);
-                    view.fill();
-                });
-            });
-            view.shadowBlur = 0;
-            flyer.finished = head > cols || head < -bitmapWidth - 1;
+        for (let i = actors.length - 1; i >= 0; i--) {
+            if (actors[i].update(time)) {
+                actors[i].draw(time);
+            } else {
+                actors.splice(i, 1);
+            }
         }
+        view.shadowBlur = 0;
 
         view.fillStyle = 'rgba(0, 0, 0, 0.28)';
         for (let y = 0; y < canvas.height; y += 3) {
@@ -166,32 +284,40 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
     };
 
-    render();
-
-    const launch = () => {
-        const kind = FLYERS[Math.floor(Math.random() * FLYERS.length)];
-        const flyer = {
-            kind,
-            leftToRight: Math.random() < 0.5,
-            row: 4 + Math.floor(Math.random() * Math.max(1, rows * 0.5 - kind.bitmap.length)),
-            start: performance.now(),
-            finished: false,
-        };
-        const frame = (now) => {
-            render(flyer, now);
-            if (flyer.finished) {
-                schedule();
-            } else {
-                requestAnimationFrame(frame);
-            }
-        };
-        requestAnimationFrame(frame);
+    const frame = (time) => {
+        render(time);
+        if (actors.length && canvas.isConnected) {
+            requestAnimationFrame(frame);
+        } else {
+            running = false;
+        }
     };
 
-    const schedule = () => setTimeout(launch, 12000 + Math.random() * 18000);
+    const spawn = () => {
+        const now = performance.now();
+        if (!document.hidden && actors.length < 4) {
+            const battleActive = actors.some((actor) => actor.isBattle);
+            if (!battleActive && Math.random() < 0.2) {
+                const battle = createBattle(now);
+                battle.isBattle = true;
+                actors.push(battle);
+            } else {
+                actors.push(createFlyer(FLYERS[Math.floor(Math.random() * FLYERS.length)], now));
+            }
+            if (!running) {
+                running = true;
+                requestAnimationFrame(frame);
+            }
+        }
+        if (canvas.isConnected) {
+            setTimeout(spawn, 2500 + Math.random() * 5000);
+        }
+    };
+
+    render();
 
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        setTimeout(launch, 3000 + Math.random() * 3000);
+        setTimeout(spawn, 2000 + Math.random() * 2000);
     }
 
     canvas.addEventListener('mousemove', (event) => {
