@@ -51,11 +51,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const H = rows * SCALE;
     canvas.className = `${(svg.getAttribute('class') ?? '').replace('mt-2', '')} block`;
     const sea = document.createElement('div');
-    sea.className = 'relative mt-2';
-    const scanlines = document.createElement('div');
-    scanlines.className = 'pointer-events-none absolute inset-0';
-    sea.appendChild(scanlines);
-    sea.style.background = 'linear-gradient(to bottom, #12062b, #2a0a3d)';
+    sea.className = 'mt-2';
     sea.appendChild(canvas);
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', svg.getAttribute('aria-label') ?? '');
@@ -90,46 +86,39 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     });
 
     const paint = () => {
-        ctx.clearRect(0, 0, W, H);
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, layer.width, layer.height);
 
-        const dot = (x, y, color, radius) => {
+        const cell = SCALE * res;
+        const square = (x, y, color, fill) => {
+            const size = Math.max(1, Math.round(cell * fill));
             ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc((x + 0.5) * SCALE, (y + 0.5) * SCALE, radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillRect(Math.round(x * cell + (cell - size) / 2), Math.round(y * cell + (cell - size) / 2), size, size);
         };
+        const mix = (from, to, amount) => `rgb(${from.map((value, index) => Math.round(value + (to[index] - value) * amount)).join(', ')})`;
 
         for (let position = 0; position < owner.length; position++) {
-            const x = position % cols;
-            const y = Math.floor(position / cols);
             const country = countries[owner[position]];
 
             if (!country) {
                 continue;
             }
 
+            const x = position % cols;
+            const y = Math.floor(position / cols);
+
             if (country.visited) {
-                const heat = Math.round(180 + 75 * country.opacity);
-                dot(x, y, `rgb(255, ${255 - heat + 60}, ${heat})`, SCALE * 0.42);
+                square(x, y, mix([217, 119, 6], [253, 224, 71], country.opacity), 0.8);
             } else {
-                dot(x, y, 'rgb(0, 180, 205)', SCALE * 0.32);
+                square(x, y, 'rgb(75, 106, 136)', 0.6);
             }
         }
+        ctx.restore();
     };
 
     const paintSea = () => {
-        const ratio = window.devicePixelRatio || 1;
-        const cell = (SCALE * res) / ratio;
-        const radius = (SCALE * 0.1 * res) / ratio;
-        const scanlineStep = Math.max(3, Math.round(res * 3)) / ratio;
-        const offset = (sea.clientWidth - canvas.clientWidth) / 2;
-        scanlines.style.backgroundImage = `repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 ${1 / ratio}px, transparent ${1 / ratio}px ${scanlineStep}px)`;
-        sea.style.backgroundImage = [
-            `radial-gradient(circle at center, rgba(150, 110, 230, 0.22) ${radius}px, transparent ${radius + 0.5}px)`,
-            'linear-gradient(to bottom, #12062b, #2a0a3d)',
-        ].join(', ');
-        sea.style.backgroundSize = `${cell}px ${cell}px, 100% 100%`;
-        sea.style.backgroundPosition = `${offset}px 0, 0 0`;
+        sea.style.background = 'linear-gradient(to bottom, #0a1020, #131c33)';
     };
 
     const resize = () => {
@@ -388,5 +377,4 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         paintSea();
     });
     observer.observe(canvas);
-    observer.observe(sea);
 });
