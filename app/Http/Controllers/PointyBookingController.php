@@ -44,6 +44,7 @@ class PointyBookingController extends Controller
             'guest_name' => ['required', 'string', 'max:100'],
             'guest_email' => ['required', 'email', 'max:200'],
             'guest_timezone' => ['required', Rule::in(DateTimeZone::listIdentifiers())],
+            'guest_hour12' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -59,6 +60,7 @@ class PointyBookingController extends Controller
                 'guest_name' => $data['guest_name'],
                 'guest_email' => $data['guest_email'],
                 'guest_timezone' => $data['guest_timezone'],
+                'guest_hour12' => (bool) ($data['guest_hour12'] ?? false),
                 'notes' => $data['notes'] ?? null,
                 'starts_at' => $start,
                 'ends_at' => $start->addMinutes($type->duration_minutes),

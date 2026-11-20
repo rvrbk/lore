@@ -122,4 +122,16 @@ class PointyTest extends TestCase
 
         $this->assertDatabaseCount('reminders', 0);
     }
+
+    public function test_the_guest_confirmation_uses_the_notation_of_their_device_and_the_owner_gets_24_hours(): void
+    {
+        Mail::fake();
+        config(['services.pointy.owner_email' => 'owner@example.test']);
+        $type = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
+
+        $this->post(route('pointy.book', $type->slug), ['starts_at' => '2026-11-23T15:00:00Z', 'guest_name' => 'Ann', 'guest_email' => 'ann@example.test', 'guest_timezone' => 'UTC', 'guest_hour12' => '1']);
+
+        Mail::assertSent(BookingMail::class, fn (BookingMail $mail) => $mail->hasTo('ann@example.test') && str_contains($mail->whenText(), '3:00 PM'));
+        Mail::assertSent(BookingMail::class, fn (BookingMail $mail) => $mail->hasTo('owner@example.test') && str_contains($mail->whenText(), '15:00'));
+    }
 }

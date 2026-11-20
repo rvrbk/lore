@@ -22,11 +22,11 @@ class Booking extends Model
     /** How long before the meeting its reminder comes due. */
     public const REMINDER_MINUTES_BEFORE = 15;
 
-    protected $fillable = ['booking_type_id', 'guest_name', 'guest_email', 'guest_timezone', 'notes', 'starts_at', 'ends_at', 'token', 'cancelled_at'];
+    protected $fillable = ['booking_type_id', 'guest_name', 'guest_email', 'guest_timezone', 'guest_hour12', 'notes', 'starts_at', 'ends_at', 'token', 'cancelled_at'];
 
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'cancelled_at' => 'datetime'];
+        return ['guest_hour12' => 'boolean', 'starts_at' => 'datetime', 'ends_at' => 'datetime', 'cancelled_at' => 'datetime'];
     }
 
     /**
@@ -65,7 +65,7 @@ class Booking extends Model
 
         $this->reminders()->create([
             'title' => "Meeting: {$this->type->name} with {$this->guest_name}",
-            'notes' => $this->starts_at->copy()->setTimezone($timezone)->format('D j M, '.Setting::timePattern()).' ('.str_replace('_', ' ', $timezone).') · '.$this->guest_email,
+            'notes' => $this->starts_at->copy()->setTimezone($timezone)->format('D j M, H:i').' ('.str_replace('_', ' ', $timezone).') · '.$this->guest_email,
             'due_at' => $this->starts_at->copy()->subMinutes(self::REMINDER_MINUTES_BEFORE)->max(now()),
         ]);
     }

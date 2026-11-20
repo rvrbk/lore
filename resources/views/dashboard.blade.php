@@ -15,12 +15,12 @@
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">World clocks</h2>
         <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             @foreach($clocks as $clock)
-                <li class="border border-zinc-800 bg-zinc-900 p-3" data-world-clock="{{ $clock->timezone }}" data-hour12="{{ \App\Models\Setting::uses12Hours() ? 1 : 0 }}">
+                <li class="border border-zinc-800 bg-zinc-900 p-3" data-world-clock="{{ $clock->timezone }}">
                     <div class="flex items-start justify-between gap-2">
                         <span class="truncate text-sm font-medium text-zinc-100">{{ $clock->city }}</span>
                         <form method="POST" action="{{ route('world-clocks.destroy', $clock) }}" onsubmit="return confirm('Remove {{ e($clock->city) }}?')">@csrf @method('DELETE')<button class="text-xs text-zinc-500 hover:text-red-400" title="Remove clock" aria-label="Remove {{ $clock->city }}">✕</button></form>
                     </div>
-                    <div class="mt-1 text-2xl font-semibold tabular-nums text-indigo-400" data-clock-time>{{ now($clock->timezone)->format(\App\Models\Setting::timePattern(true)) }}</div>
+                    <div class="mt-1 text-2xl font-semibold tabular-nums text-indigo-400" data-clock-time>{{ now($clock->timezone)->format('H:i:s') }}</div>
                     <div class="text-xs text-zinc-500" data-clock-date>{{ now($clock->timezone)->format('D j M') }}</div>
                 </li>
             @endforeach

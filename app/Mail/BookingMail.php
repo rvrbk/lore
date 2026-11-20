@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use App\Models\Booking;
-use App\Models\Setting;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
@@ -27,7 +26,7 @@ class BookingMail extends Mailable
         $start = $this->booking->starts_at->copy()->setTimezone($this->timezone());
         $end = $this->booking->ends_at->copy()->setTimezone($this->timezone());
 
-        $pattern = Setting::timePattern();
+        $pattern = ! $this->forOwner && $this->booking->guest_hour12 ? 'g:i A' : 'H:i';
 
         return $start->format('l j F Y, '.$pattern).' – '.$end->format($pattern).' ('.str_replace('_', ' ', $this->timezone()).')';
     }

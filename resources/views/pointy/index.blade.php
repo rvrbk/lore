@@ -14,7 +14,7 @@
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <span class="font-medium text-zinc-100">{{ $type->name }}</span>
-                        <span class="ml-2 text-xs text-zinc-500">{{ $type->duration_minutes }} min · {{ \Carbon\Carbon::createFromFormat('H:i', $type->start_time)->format(\App\Models\Setting::timePattern()) }}–{{ \Carbon\Carbon::createFromFormat('H:i', $type->end_time)->format(\App\Models\Setting::timePattern()) }} {{ str_replace('_', ' ', $type->timezone) }}@unless($type->is_active) · paused @endunless</span>
+                        <span class="ml-2 text-xs text-zinc-500">{{ $type->duration_minutes }} min · {{ $type->start_time }}–{{ $type->end_time }} {{ str_replace('_', ' ', $type->timezone) }}@unless($type->is_active) · paused @endunless</span>
                     </div>
                     <a href="{{ route('pointy.show', $type->slug) }}" target="_blank" rel="noopener" class="text-sm text-indigo-400 hover:underline">{{ route('pointy.show', $type->slug) }}</a>
                 </div>
@@ -35,7 +35,7 @@
             <div class="mb-2 flex flex-wrap items-center justify-between gap-2 border border-zinc-800 bg-zinc-900 p-3 text-sm">
                 <div>
                     <div class="font-medium text-zinc-100">{{ $booking->guest_name }} <span class="font-normal text-zinc-500">{{ $booking->guest_email }}</span></div>
-                    <div class="text-zinc-300">{{ $booking->type->name }} · {{ $booking->starts_at->copy()->setTimezone($booking->type->timezone)->format('D j M, '.\App\Models\Setting::timePattern()) }} <span class="text-zinc-500">your time</span> · {{ $booking->starts_at->copy()->setTimezone($booking->guest_timezone)->format('D j M, '.\App\Models\Setting::timePattern()) }} <span class="text-zinc-500">{{ str_replace('_', ' ', $booking->guest_timezone) }}</span></div>
+                    <div class="text-zinc-300">{{ $booking->type->name }} · {{ $booking->starts_at->copy()->setTimezone($booking->type->timezone)->format('D j M') }}, <span data-local-time="{{ $booking->starts_at->copy()->utc()->toIso8601String() }}" data-zone="{{ $booking->type->timezone }}">{{ $booking->starts_at->copy()->setTimezone($booking->type->timezone)->format('H:i') }}</span> <span class="text-zinc-500">your time</span> · {{ $booking->starts_at->copy()->setTimezone($booking->guest_timezone)->format('D j M') }}, <span data-local-time="{{ $booking->starts_at->copy()->utc()->toIso8601String() }}" data-zone="{{ $booking->guest_timezone }}">{{ $booking->starts_at->copy()->setTimezone($booking->guest_timezone)->format('H:i') }}</span> <span class="text-zinc-500">{{ str_replace('_', ' ', $booking->guest_timezone) }}</span></div>
                     @if($booking->notes)<div class="mt-1 text-xs text-zinc-400">{{ $booking->notes }}</div>@endif
                 </div>
                 <form method="POST" action="{{ route('pointy.bookings.cancel', $booking) }}" onsubmit="return confirm('Cancel this booking and email {{ e($booking->guest_name) }}?')">@csrf<button class="text-xs text-red-400 hover:underline">Cancel</button></form>
