@@ -1,3 +1,4 @@
+<div id="booking-request" class="scroll-mt-4">
 @if(session('status'))<p class="mb-3 text-sm text-emerald-400">{{ session('status') }}</p>@endif
 <form method="POST" action="{{ route('pointy.requests.send') }}" class="grid gap-2 sm:grid-cols-2">
     @csrf
@@ -10,3 +11,7 @@
         @foreach(['booking_type_id', 'guest_email', 'guest_name', 'note'] as $field)@error($field)<span class="text-sm text-red-400">{{ $errors->first($field) }}</span>@enderror @endforeach
     </div>
 </form>
+</div>
+@if(session('status') || $errors->hasAny(['booking_type_id', 'guest_email', 'guest_name', 'note']))
+    <script>document.getElementById('booking-request').scrollIntoView({ block: 'center' });</script>
+@endif
