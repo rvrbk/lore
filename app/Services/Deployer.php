@@ -146,6 +146,11 @@ class Deployer
             if (is_file($path.'/composer.json')) {
                 $later[] = ['Install PHP packages', array_values(array_filter(['composer', 'install', '--no-dev', '--optimize-autoloader', '--no-interaction']))];
             }
+            if ($laravel) {
+                // The build generates the frontend's route helpers from the app's routes; a route cache left by the
+                // previous deploy hides new routes and breaks the build.
+                $later[] = ['Clear route cache', ['php', 'artisan', 'route:clear']];
+            }
             if (is_file($path.'/package.json')) {
                 if (! is_dir($path.'/node_modules') || in_array('package-lock.json', $changed, true)) {
                     $later[] = ['Install JS packages', ['npm', 'ci', '--no-audit', '--no-fund']];
