@@ -31,7 +31,7 @@ if (clocks.length) {
                 }
                 timeFormatters.set(zone, true);
                 const seconds = document.createElement('sup');
-                seconds.className = 'ml-px text-[9px] font-medium text-indigo-300/70';
+                seconds.className = 'ml-px text-xs font-medium text-indigo-300/70';
                 seconds.textContent = String(now.getSeconds()).padStart(2, '0');
                 const nodes = [];
                 let hour = 0;
