@@ -6,10 +6,6 @@ import './live-users.js';
 import './local-time.js';
 import './world-clocks.js';
 
-if (document.querySelector('[data-invaders]')) {
-    import('./invaders.js');
-}
-
 const sidebar = document.getElementById('sidebar');
 const navToggle = document.querySelector('[data-nav-toggle]');
 const navBackdrop = document.querySelector('[data-nav-backdrop]');
