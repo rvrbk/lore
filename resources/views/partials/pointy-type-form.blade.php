@@ -2,6 +2,7 @@
     $type = $type ?? null;
     $selectedDays = old('days', $type?->days ?? [1, 2, 3, 4, 5]);
     $weekdays = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
+    $weekdayHoursOpen = filled($type?->weekday_hours) || $errors->has('weekday_hours.*');
     $field = 'rounded-md border border-zinc-700 px-3 py-1.5 text-sm';
 @endphp
 <form method="POST" action="{{ $type ? route('pointy.types.update', $type) : route('pointy.types.store') }}" class="grid gap-3 sm:grid-cols-2">
@@ -22,7 +23,7 @@
     </div>
     <label class="text-xs text-zinc-400">From<input type="time" name="start_time" value="{{ old('start_time', $type?->start_time ?? '09:00') }}" required class="{{ $field }} mt-1 w-full"></label>
     <label class="text-xs text-zinc-400">Until<input type="time" name="end_time" value="{{ old('end_time', $type?->end_time ?? '17:00') }}" required class="{{ $field }} mt-1 w-full"></label>
-    <details class="text-sm sm:col-span-2" @open($type?->weekday_hours || $errors->has('weekday_hours.*'))>
+    <details class="text-sm sm:col-span-2" @if($weekdayHoursOpen) open @endif>
         <summary class="cursor-pointer text-xs text-zinc-400">Different hours for a weekday (optional)</summary>
         <p class="mt-1 text-xs text-zinc-500">Leave a weekday empty to use the general hours above. Only the days ticked above are used.</p>
         @foreach($weekdays as $number => $label)

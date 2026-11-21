@@ -226,4 +226,16 @@ class PointyTest extends TestCase
         $this->post(route('pointy.types.store'), $base + ['name' => 'Bad', 'weekday_hours' => [5 => ['start_time' => '12:00', 'end_time' => '09:00']]])->assertSessionHasErrors('weekday_hours.5.end_time');
         $this->post(route('pointy.types.store'), $base + ['name' => 'Half', 'weekday_hours' => [5 => ['start_time' => '12:00', 'end_time' => '']]])->assertSessionHasErrors('weekday_hours.5.end_time');
     }
+
+    public function test_the_weekday_hours_fields_are_on_the_edit_form_and_open_when_filled(): void
+    {
+        $this->actingAs(User::factory()->create());
+        BookingType::factory()->create(['weekday_hours' => [5 => ['start_time' => '09:00', 'end_time' => '12:00']]]);
+
+        $this->get(route('pointy.index'))->assertOk()
+            ->assertSee('Different hours for a weekday', false)
+            ->assertSee('name="weekday_hours[5][start_time]" value="09:00"', false)
+            ->assertSee('<details class="text-sm sm:col-span-2"  open >', false)
+            ->assertDontSee('@open', false);
+    }
 }
