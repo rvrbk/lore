@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Deployment;
 use App\Services\Deployer;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,6 +23,15 @@ class DeployController extends Controller
             ]),
             'deployments' => Deployment::latest('id')->limit(15)->get(),
         ]);
+    }
+
+    /**
+     * A fingerprint of the deployment history; the page polls it and reloads when it changes, so deploys
+     * started from outside (a push to GitHub) show up without a manual refresh.
+     */
+    public function state(): JsonResponse
+    {
+        return response()->json(['version' => Deployment::count().'-'.Deployment::max('id').'-'.Deployment::max('updated_at')]);
     }
 
     /**

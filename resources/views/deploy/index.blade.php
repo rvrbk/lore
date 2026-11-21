@@ -77,5 +77,18 @@
         @endforelse
     </ul>
 
-    @if($sites->contains('active', true))<script>setTimeout(() => location.reload(), 5000)</script>@endif
+    <script>
+        (() => {
+            let version = null;
+            setInterval(async () => {
+                if (document.hidden || document.querySelector('details[open] form')) { return; }
+                try {
+                    const response = await fetch(@json(route('deploy.state')), { headers: { Accept: 'application/json' } });
+                    const next = (await response.json()).version;
+                    if (version !== null && next !== version) { location.reload(); }
+                    version = next;
+                } catch (error) {}
+            }, 5000);
+        })();
+    </script>
 </x-layouts.app>

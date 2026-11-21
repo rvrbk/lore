@@ -57,6 +57,19 @@ class DeployHookTest extends TestCase
         $this->actingAs(User::factory()->create())->get(route('deploy.index'))->assertSee('Waiting for the scheduler');
     }
 
+    public function test_the_deploy_page_version_changes_when_a_push_queues_a_deployment(): void
+    {
+        $site = $this->site();
+        Process::fake(['*' => Process::result("main\n")]);
+        $this->actingAs(User::factory()->create());
+        $before = $this->getJson(route('deploy.state'))->assertOk()->json('version');
+
+        $this->withToken('secret-token')->postJson(route('api.deploy.hook', $site))->assertAccepted();
+
+        $this->assertNotSame($before, $this->getJson(route('deploy.state'))->json('version'));
+        $this->get(route('deploy.index'))->assertSee('deploy\\/state', false);
+    }
+
     public function test_a_second_push_while_one_is_waiting_does_not_queue_another(): void
     {
         $site = $this->site();

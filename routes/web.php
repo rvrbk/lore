@@ -88,6 +88,7 @@ Route::middleware('auth')->group(function () {
     Route::post('incidents/{incident}/post-mortem', [IncidentController::class, 'postMortem'])->name('incidents.post-mortem');
 
     Route::get('deploy', [DeployController::class, 'index'])->name('deploy.index');
+    Route::get('deploy/state', [DeployController::class, 'state'])->name('deploy.state');
     Route::post('deploy', [DeployController::class, 'store'])->name('deploy.store');
 
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
