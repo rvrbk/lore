@@ -13,22 +13,22 @@
 
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">World clocks</h2>
-        <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">
+        <ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-5 xl:grid-cols-8" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">
             @foreach($clocks as $clock)
-                <li class="group relative flex cursor-grab touch-manipulation select-none items-center justify-between gap-3 border border-zinc-800 bg-zinc-900 px-4 py-4" draggable="true" data-clock-id="{{ $clock->id }}" data-world-clock="{{ $clock->timezone }}" data-analog="{{ $clock->is_analog ? 1 : 0 }}">
-                    <div class="min-w-0">
-                        <div class="truncate text-sm font-medium text-zinc-100">{{ $clock->city }}</div>
-                        <div class="mt-0.5 text-xs text-zinc-500" data-clock-date>{{ now($clock->timezone)->format('D j M') }}</div>
+                <li class="group relative flex aspect-square cursor-grab touch-manipulation select-none flex-col items-center justify-center gap-1 border border-zinc-800 bg-zinc-900 p-1 text-center" draggable="true" data-clock-id="{{ $clock->id }}" data-world-clock="{{ $clock->timezone }}" data-analog="{{ $clock->is_analog ? 1 : 0 }}">
+                    <div class="order-2 w-full min-w-0">
+                        <div class="truncate text-[11px] font-medium leading-tight text-zinc-100">{{ $clock->city }}</div>
+                        <div class="text-[10px] leading-tight text-zinc-500" data-clock-date>{{ now($clock->timezone)->format('D j M') }}</div>
                     </div>
                     @php($local = now($clock->timezone))
-                    <svg viewBox="0 0 48 32" class="h-12 w-[4.5rem] shrink-0 text-indigo-400 {{ $clock->is_analog ? '' : 'hidden' }}" data-clock-face aria-hidden="true">
-                        <rect x="1" y="1" width="46" height="30" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/>
-                        <path d="M24 2.5V5M24 27V29.5M2.5 16H5M43 16H45.5" stroke="currentColor" stroke-opacity=".6" stroke-width="1.2"/>
-                        <line x1="24" y1="16" x2="24" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-hand="hour" transform="rotate({{ ($local->hour % 12) * 30 + $local->minute * 0.5 }} 24 16)"/>
-                        <line x1="24" y1="16" x2="24" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" data-hand="minute" transform="rotate({{ $local->minute * 6 }} 24 16)"/>
-                        <line x1="24" y1="18" x2="24" y2="4.5" stroke="#a1a1aa" stroke-width=".8" stroke-linecap="round" data-hand="second" transform="rotate({{ $local->second * 6 }} 24 16)"/>
+                    <svg viewBox="0 0 32 32" class="size-12 shrink-0 text-indigo-400 {{ $clock->is_analog ? '' : 'hidden' }}" data-clock-face aria-hidden="true">
+                        <rect x="1" y="1" width="30" height="30" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/>
+                        @foreach([0, 90, 180, 270] as $tick)<line x1="16" y1="2.5" x2="16" y2="5" stroke="currentColor" stroke-opacity=".6" stroke-width="1.2" transform="rotate({{ $tick }} 16 16)"/>@endforeach
+                        <line x1="16" y1="16" x2="16" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-hand="hour" transform="rotate({{ ($local->hour % 12) * 30 + $local->minute * 0.5 }} 16 16)"/>
+                        <line x1="16" y1="16" x2="16" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" data-hand="minute" transform="rotate({{ $local->minute * 6 }} 16 16)"/>
+                        <line x1="16" y1="18" x2="16" y2="4.5" stroke="#a1a1aa" stroke-width=".8" stroke-linecap="round" data-hand="second" transform="rotate({{ $local->second * 6 }} 16 16)"/>
                     </svg>
-                    <button type="button" class="{{ $clock->is_analog ? 'hidden' : '' }} shrink-0 text-2xl font-semibold tabular-nums text-indigo-400" data-clock-time title="Tap to switch 12/24 hour">{{ now($clock->timezone)->format('H:i') }}<sup class="ml-px text-xs font-medium text-indigo-300/70">{{ now($clock->timezone)->format('s') }}</sup></button>
+                    <button type="button" class="{{ $clock->is_analog ? 'hidden' : '' }} shrink-0 text-lg font-semibold tabular-nums text-indigo-400" data-clock-time title="Tap to switch 12/24 hour">{{ now($clock->timezone)->format('H:i') }}<sup class="ml-px text-[9px] font-medium text-indigo-300/70">{{ now($clock->timezone)->format('s') }}</sup></button>
                     <form method="POST" action="{{ route('world-clocks.style', $clock) }}" class="absolute -left-1 -top-1 hidden group-hover:block [@media(hover:none)]:block">@csrf @method('PATCH')<button class="rounded-full bg-zinc-800 px-1 text-[9px] text-zinc-400 hover:text-indigo-400" title="Switch between analog and digital" aria-label="Switch {{ $clock->city }} between analog and digital">◷</button></form>
                     <form method="POST" action="{{ route('world-clocks.header', $clock) }}" class="absolute -bottom-1 -left-1 {{ $clock->is_header ? '' : 'hidden group-hover:block [@media(hover:none)]:block' }}">@csrf @method('PATCH')<button class="rounded-full bg-zinc-800 px-1 text-[9px] {{ $clock->is_header ? 'text-indigo-400' : 'text-zinc-400 hover:text-indigo-400' }}" title="{{ $clock->is_header ? 'Remove from the header' : 'Show in the header' }}" aria-label="{{ $clock->is_header ? 'Remove '.$clock->city.' from the header' : 'Show '.$clock->city.' in the header' }}">{{ $clock->is_header ? '★' : '☆' }}</button></form>
                     <form method="POST" action="{{ route('world-clocks.destroy', $clock) }}" onsubmit="return confirm('Remove {{ e($clock->city) }}?')" class="absolute -right-1 -top-1 hidden group-hover:block [@media(hover:none)]:block">@csrf @method('DELETE')<button class="rounded-full bg-zinc-800 px-1 text-[9px] text-zinc-400 hover:text-red-400" title="Remove clock" aria-label="Remove {{ $clock->city }}">✕</button></form>
