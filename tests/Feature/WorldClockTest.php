@@ -64,6 +64,23 @@ class WorldClockTest extends TestCase
         $this->assertFalse($clock->fresh()->is_analog);
     }
 
+    public function test_only_one_clock_can_be_shown_in_the_header(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $first = WorldClock::factory()->create();
+        $second = WorldClock::factory()->create();
+
+        $this->patch(route('world-clocks.header', $first))->assertRedirect(route('dashboard'));
+        $this->patch(route('world-clocks.header', $second));
+
+        $this->assertFalse($first->fresh()->is_header);
+        $this->assertTrue($second->fresh()->is_header);
+        $this->get(route('dashboard'))->assertSee('data-header-clock="'.$second->timezone.'"', false);
+
+        $this->patch(route('world-clocks.header', $second));
+        $this->get(route('dashboard'))->assertDontSee('data-header-clock', false);
+    }
+
     public function test_clocks_require_a_login(): void
     {
         $this->post(route('world-clocks.store'), ['city' => 'Tokyo (Asia)'])->assertRedirect(route('login'));

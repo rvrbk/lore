@@ -15,14 +15,14 @@ class WorldClock extends Model
     /** @use HasFactory<WorldClockFactory> */
     use HasFactory;
 
-    protected $fillable = ['city', 'timezone', 'position', 'is_analog'];
+    protected $fillable = ['city', 'timezone', 'position', 'is_analog', 'is_header'];
 
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['is_analog' => 'boolean'];
+        return ['is_analog' => 'boolean', 'is_header' => 'boolean'];
     }
 
     /**

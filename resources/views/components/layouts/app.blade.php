@@ -7,7 +7,8 @@
 <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-zinc-700 bg-zinc-900 px-4 py-2.5 lg:hidden">
     <button type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open menu" class="-ml-1 border border-zinc-700 px-2.5 py-1 text-lg leading-none text-zinc-200">&#9776;</button>
     <a href="{{ route('dashboard') }}" class="flex items-center gap-2 font-pixel text-sm text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-6" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
-    @if($dueCount || $downCount)<span class="ml-auto rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount + $downCount }}</span>@endif
+    @include('partials.header-clock', ['class' => 'ml-auto'])
+    @if($dueCount || $downCount)<span class="{{ $headerClock ? '' : 'ml-auto' }} rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount + $downCount }}</span>@endif
 </header>
 <div data-nav-backdrop hidden class="fixed inset-0 z-40 bg-black/70 lg:hidden"></div>
 <div class="flex min-h-screen">
@@ -73,6 +74,7 @@
         </form>
     </aside>
     <main class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        @include('partials.header-clock', ['class' => 'mb-4 hidden justify-end lg:flex'])
         <div>
             @if($openIncidents->isNotEmpty() && ! request()->routeIs('incidents.*'))
                 <div role="alert" class="mb-6 border border-red-500/60 bg-red-500/10 p-3 text-sm">

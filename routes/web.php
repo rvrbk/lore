@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::post('world-clocks', [WorldClockController::class, 'store'])->name('world-clocks.store');
     Route::post('world-clocks/reorder', [WorldClockController::class, 'reorder'])->name('world-clocks.reorder');
     Route::patch('world-clocks/{worldClock}/style', [WorldClockController::class, 'toggleStyle'])->name('world-clocks.style');
+    Route::patch('world-clocks/{worldClock}/header', [WorldClockController::class, 'toggleHeader'])->name('world-clocks.header');
     Route::delete('world-clocks/{worldClock}', [WorldClockController::class, 'destroy'])->name('world-clocks.destroy');
     Route::get('scheduling', [PointyController::class, 'index'])->name('pointy.index');
     Route::post('scheduling/types', [PointyController::class, 'store'])->name('pointy.types.store');

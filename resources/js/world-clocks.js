@@ -118,3 +118,41 @@ if (list) {
         });
     };
 }
+
+const headerClocks = document.querySelectorAll('[data-header-clock]');
+
+if (headerClocks.length) {
+    const storageKey = 'world-clocks-12h';
+    const readTwelve = () => {
+        try {
+            const stored = localStorage.getItem(storageKey);
+
+            return stored === null ? uses12Hours() : stored === '1';
+        } catch {
+            return uses12Hours();
+        }
+    };
+
+    const tickHeader = () => {
+        const twelve = readTwelve();
+        headerClocks.forEach((clock) => {
+            try {
+                clock.querySelector('[data-header-clock-time]').textContent = new Intl.DateTimeFormat(undefined, { timeZone: clock.dataset.headerClock, hour: twelve ? 'numeric' : '2-digit', minute: '2-digit', hour12: twelve }).format(new Date());
+            } catch {
+                // keep the server-rendered time
+            }
+        });
+    };
+
+    headerClocks.forEach((clock) => clock.addEventListener('click', () => {
+        try {
+            localStorage.setItem(storageKey, readTwelve() ? '0' : '1');
+        } catch {
+            // preference just won't persist
+        }
+        tickHeader();
+    }));
+
+    setInterval(tickHeader, 1000);
+    tickHeader();
+}

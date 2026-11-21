@@ -7,6 +7,7 @@ use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Space;
+use App\Models\WorldClock;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('components.layouts.app', fn ($view) => $view->with([
             'navSpaces' => Space::orderBy('name')->get(),
+            'headerClock' => WorldClock::where('is_header', true)->first(),
             'dueCount' => Reminder::due()->count(),
             'openIncidents' => Incident::open()->orderBy('started_at')->get(),
             'downCount' => Monitor::where('is_up', false)->count(),

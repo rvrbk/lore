@@ -38,6 +38,15 @@ class WorldClockController extends Controller
         return redirect()->route('dashboard');
     }
 
+    public function toggleHeader(WorldClock $worldClock): RedirectResponse
+    {
+        $show = ! $worldClock->is_header;
+        WorldClock::where('is_header', true)->update(['is_header' => false]);
+        $worldClock->update(['is_header' => $show]);
+
+        return redirect()->route('dashboard');
+    }
+
     public function destroy(WorldClock $worldClock): RedirectResponse
     {
         $worldClock->delete();
