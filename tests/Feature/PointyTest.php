@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\SlotFinder;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -257,5 +258,21 @@ class PointyTest extends TestCase
 
         $this->post(route('pointy.requests.send'), ['booking_type_id' => $inactive->id, 'guest_email' => 'bad'])->assertSessionHasErrors(['booking_type_id', 'guest_email']);
         Mail::assertSentCount(1);
+    }
+
+    public function test_a_new_booking_sends_the_owner_a_telegram_alert_but_a_cancellation_does_not(): void
+    {
+        Mail::fake();
+        Http::fake();
+        config(['services.telegram.token' => 'token', 'services.telegram.chat_id' => '42']);
+        $type = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
+
+        $this->post(route('pointy.book', $type->slug), ['starts_at' => '2026-11-23T09:00:00+00:00', 'guest_name' => 'Ann', 'guest_email' => 'ann@example.test', 'guest_timezone' => 'UTC'])->assertRedirect();
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => str_contains($request['text'], 'New booking') && str_contains($request['text'], 'Ann') && $request['chat_id'] === '42');
+
+        $this->post(route('pointy.cancel', Booking::firstOrFail()->token))->assertRedirect();
+        Http::assertSentCount(1);
     }
 }
