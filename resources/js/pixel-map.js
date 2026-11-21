@@ -919,11 +919,21 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const RAINBOW_HUES = [0, 30, 55, 120, 200, 250, 290];
 
-    const AURORA = Array.from({ length: 5 }, (_, index) => ({
-        hue: [140, 165, 280, 320, 190][index],
-        speed: 6000 + index * 2100,
+    const AURORA = Array.from({ length: 8 }, (_, index) => ({
+        hue: [140, 165, 280, 320, 190, 150, 300, 175][index],
+        speed: 6000 + index * 1700,
         phase: index * 1.7,
-        offset: index * 1.6,
+        latitude: -66 + index * 19,
+        drift: 6 + (index % 3) * 3,
+    }));
+
+    const SCATTERED_BOWS = Array.from({ length: 7 }, (_, index) => ({
+        x: (index * 0.618 + 0.1) % 1,
+        y: 0.12 + ((index * 0.41) % 0.76),
+        radius: 22 + ((index * 17) % 40),
+        seconds: 16000 + index * 4300,
+        phase: index * 2.3,
+        sway: 6 + index * 1.5,
     }));
 
     const skyLayer = document.createElement('canvas');
@@ -965,44 +975,42 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             y: originY + (EQUATOR_Y - latitudeDegrees) * unit,
         });
 
-        [67, -67].forEach((latitude, side) => {
-            AURORA.forEach((ribbon) => {
-                const steps = 90;
-                for (let step = 0; step < steps; step++) {
-                    const fraction = step / steps;
-                    const longitudeDegrees = fraction * 360 - 180;
-                    const swirl = Math.sin(fraction * Math.PI * 6 + moment / ribbon.speed + ribbon.phase + side * 2) * 5 + Math.sin(fraction * Math.PI * 14 - moment / (ribbon.speed * 0.7)) * 1.8;
-                    const glow = 0.3 + 0.7 * Math.pow(Math.sin(fraction * Math.PI * 5 + moment / (ribbon.speed * 0.5) + ribbon.phase) * 0.5 + 0.5, 2);
-                    const centre = pointAt(longitudeDegrees, latitude + swirl * (side ? -1 : 1) + ribbon.offset * (side ? -1 : 1));
-                    const thickness = (5 + 4 * glow) * unit;
-                    const ribbonGlow = sky.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, thickness * 2);
-                    ribbonGlow.addColorStop(0, `hsla(${ribbon.hue}, 100%, 65%, ${0.2 * glow})`);
-                    ribbonGlow.addColorStop(1, `hsla(${ribbon.hue}, 100%, 55%, 0)`);
-                    sky.fillStyle = ribbonGlow;
-                    sky.fillRect(centre.x - thickness * 2, centre.y - thickness * 2, thickness * 4, thickness * 4);
-                }
-            });
+        AURORA.forEach((ribbon) => {
+            const steps = 90;
+            const baseLatitude = ribbon.latitude + Math.sin(moment / (ribbon.speed * 3) + ribbon.phase) * ribbon.drift;
+            for (let step = 0; step < steps; step++) {
+                const fraction = step / steps;
+                const longitudeDegrees = fraction * 360 - 180;
+                const swirl = Math.sin(fraction * Math.PI * 6 + moment / ribbon.speed + ribbon.phase) * 5 + Math.sin(fraction * Math.PI * 14 - moment / (ribbon.speed * 0.7)) * 1.8;
+                const glow = 0.3 + 0.7 * Math.pow(Math.sin(fraction * Math.PI * 5 + moment / (ribbon.speed * 0.5) + ribbon.phase) * 0.5 + 0.5, 2);
+                const centre = pointAt(longitudeDegrees, baseLatitude + swirl);
+                const thickness = (6 + 5 * glow) * unit;
+                const ribbonGlow = sky.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, thickness * 2);
+                ribbonGlow.addColorStop(0, `hsla(${ribbon.hue}, 100%, 65%, ${0.17 * glow})`);
+                ribbonGlow.addColorStop(1, `hsla(${ribbon.hue}, 100%, 55%, 0)`);
+                sky.fillStyle = ribbonGlow;
+                sky.fillRect(centre.x - thickness * 2, centre.y - thickness * 2, thickness * 4, thickness * 4);
+            }
         });
 
-        const sun = sunPosition();
-        const centre = pointAt(sun.longitude / DEGREES + 180, -sun.declination / DEGREES);
-        const bands = [
-            { radius: 42, alpha: 0.3 },
-            { radius: 66, alpha: 0.12 },
-        ];
-        bands.forEach((bow) => {
-            const band = bow.radius * unit * 0.07;
+        sky.filter = `blur(${Math.max(1, 2.5 * unit)}px)`;
+        SCATTERED_BOWS.forEach((bow) => {
+            const fade = Math.pow(Math.sin(moment / bow.seconds * Math.PI * 2 + bow.phase) * 0.5 + 0.5, 1.5);
+            const centreX = originX + (bow.x + moment / (bow.seconds * 60)) % 1 * mapWidth;
+            const centreY = originY + (bow.y + Math.sin(moment / bow.seconds + bow.phase) * 0.04) * canvas.offsetHeight;
+            const band = bow.radius * unit * 0.09;
             RAINBOW_HUES.forEach((hue, index) => {
-                const radius = (bow.radius * unit) + (RAINBOW_HUES.length - index) * band;
-                sky.strokeStyle = `hsla(${hue}, 100%, 62%, ${bow.alpha * (0.85 + 0.15 * Math.sin(moment / 1400 + index))})`;
-                sky.lineWidth = band + 0.5;
+                const radius = bow.radius * unit + (RAINBOW_HUES.length - index) * band;
+                sky.strokeStyle = `hsla(${hue}, 100%, 65%, ${0.03 + 0.1 * fade})`;
+                sky.lineWidth = band + 1;
                 [-mapWidth, 0, mapWidth].forEach((wrap) => {
                     sky.beginPath();
-                    sky.arc(centre.x + wrap, centre.y, radius, 0, Math.PI * 2);
+                    sky.arc(centreX + wrap, centreY, radius, 0, Math.PI * 2);
                     sky.stroke();
                 });
             });
         });
+        sky.filter = 'none';
 
         sky.restore();
     };
