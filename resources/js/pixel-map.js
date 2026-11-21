@@ -22,7 +22,7 @@ const blinkColors = (time) => (Math.floor(time / 300) % 2 === 0 ? { L: '#ff2d55'
 const FLY = 2;
 
 const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW...WW....', '....WW.....', '....M......'];
-const UFO = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
+const UFO = ['..SLS..', '.DDDDD.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.DDDDD.', '..SLS..'];
 
 const UNICORN = ['.......Y.', '..L...YW.', '.LMLWWWWW', 'LMBWWWWW.', '.BBWWWWW.', '.W.W.W.W.', '.W.W.W.W.'];
 
