@@ -41,6 +41,7 @@
             <div class="text-xs font-semibold uppercase tracking-wide text-zinc-400">Games</div>
             <nav class="mt-2 space-y-1 text-sm">
                 <a href="{{ route('pilot') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('pilot') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Train the Pilot</a>
+                <a href="{{ route('crop-circles') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('crop-circles') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Crop Circle Lab</a>
             </nav>
         </div>
         @foreach(['Pinned' => $pinnedPages, 'Recent' => $recentPages] as $heading => $list)
