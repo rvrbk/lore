@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Models\Deployment;
 use App\Models\Monitor;
 use App\Models\User;
+use App\Services\GitHubDeployHook;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
+use Symfony\Component\Yaml\Yaml;
 use Tests\TestCase;
 
 class DeployHookTest extends TestCase
@@ -79,6 +81,19 @@ class DeployHookTest extends TestCase
         $this->withToken('secret-token')->postJson(route('api.deploy.hook', $site))->assertForbidden();
 
         $this->assertSame(0, Deployment::count());
+    }
+
+    public function test_the_generated_workflow_is_valid_yaml_that_posts_the_secret_to_the_hook(): void
+    {
+        $site = $this->site();
+
+        $workflow = Yaml::parse(app(GitHubDeployHook::class)->workflow($site));
+
+        $this->assertSame(['main', 'master'], $workflow['on']['push']['branches']);
+        $step = $workflow['jobs']['deploy']['steps'][0];
+        $this->assertSame('${{ secrets.LORE_DEPLOY_TOKEN }}', $step['env']['LORE_DEPLOY_TOKEN']);
+        $this->assertStringContainsString('Authorization: Bearer $LORE_DEPLOY_TOKEN', $step['run']);
+        $this->assertStringContainsString("https://lore.test/api/deploy/{$site->id}", $step['run']);
     }
 
     public function test_adding_a_site_commits_the_workflow_and_stores_the_secret_on_its_repository(): void

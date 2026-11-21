@@ -84,7 +84,9 @@ class GitHubDeployHook
               - name: Ask Lore to deploy
                 env:
                   LORE_DEPLOY_TOKEN: \${{ secrets.LORE_DEPLOY_TOKEN }}
-                run: curl --fail-with-body --silent --show-error --retry 3 -X POST -H "Authorization: Bearer \$LORE_DEPLOY_TOKEN" "{$url}"
+                run: |
+                  curl --fail-with-body --silent --show-error --retry 3 -X POST \\
+                    -H "Authorization: Bearer \$LORE_DEPLOY_TOKEN" "{$url}"
 
         YAML;
     }
