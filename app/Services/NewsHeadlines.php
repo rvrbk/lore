@@ -20,6 +20,26 @@ class NewsHeadlines
     }
 
     /**
+     * World headlines from a second source (The Guardian by default).
+     *
+     * @return array<int, string>
+     */
+    public function world(): array
+    {
+        return $this->cached('news.world', 'services.news.world_feed', 15);
+    }
+
+    /**
+     * Tech headlines (Ars Technica by default).
+     *
+     * @return array<int, string>
+     */
+    public function tech(): array
+    {
+        return $this->cached('news.tech', 'services.news.tech_feed', 15);
+    }
+
+    /**
      * Recent UFO sighting news from a public RSS feed.
      *
      * @return array<int, string>

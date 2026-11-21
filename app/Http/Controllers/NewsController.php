@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 class NewsController extends Controller
 {
     /**
-     * Ticker lines: the news nwsfd has harvested (alerts first) with the public feed's headlines and UFO sighting news mixed in between.
+     * Ticker lines: the news nwsfd has harvested (alerts first) with the public feeds' headlines (two world sources), tech news and UFO sighting news mixed in between.
      */
     public function __invoke(NewsHeadlines $fallback): JsonResponse
     {
@@ -20,11 +20,13 @@ class NewsController extends Controller
         ]);
 
         $headlines = collect($fallback->latest())->map(fn (string $text) => ['kind' => 'headline', 'tag' => null, 'text' => $text]);
+        $world = collect($fallback->world())->map(fn (string $text) => ['kind' => 'headline', 'tag' => null, 'text' => $text]);
+        $tech = collect($fallback->tech())->map(fn (string $text) => ['kind' => 'news', 'tag' => 'Tech', 'text' => $text]);
         $ufo = collect($fallback->ufo())->map(fn (string $text) => ['kind' => 'news', 'tag' => 'UFO', 'text' => $text]);
 
         $mixed = [];
-        foreach (range(0, max($items->count(), $headlines->count(), $ufo->count()) - 1) as $index) {
-            foreach ([$items->get($index), $headlines->get($index), $ufo->get($index)] as $line) {
+        foreach (range(0, max($items->count(), $headlines->count(), $world->count(), $tech->count(), $ufo->count()) - 1) as $index) {
+            foreach ([$items->get($index), $headlines->get($index), $tech->get($index), $world->get($index), $ufo->get($index)] as $line) {
                 if ($line !== null) {
                     $mixed[] = $line;
                 }

@@ -56,6 +56,9 @@ return [
     'news' => [
         // RSS feed whose headlines flash in the corner of the dashboard map.
         'feed' => env('NEWS_FEED_URL', 'https://feeds.bbci.co.uk/news/world/rss.xml'),
+        // A second world news source and a tech news feed, mixed into the same ticker.
+        'world_feed' => env('NEWS_WORLD_FEED_URL', 'https://www.theguardian.com/world/rss'),
+        'tech_feed' => env('NEWS_TECH_FEED_URL', 'https://feeds.arstechnica.com/arstechnica/index'),
         // RSS feed with UFO sighting news, mixed into the same ticker.
         'ufo_feed' => env('NEWS_UFO_FEED_URL', 'https://news.google.com/rss/search?q=UFO+sighting+OR+UAP&hl=en-US&gl=US&ceid=US:en'),
     ],
