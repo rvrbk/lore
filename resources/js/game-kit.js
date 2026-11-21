@@ -3,13 +3,13 @@
  */
 
 /*
- * The UFO from the world map: the same 7x7 dot bitmap seen from above, with the red and yellow lights swapping every 300 ms.
+ * The UFO from the world map: the same 7x7 dot bitmap seen from above, with just four red and yellow lights swapping every 300 ms.
  */
-const UFO_BITMAP = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
+const UFO_BITMAP = ['..SLS..', '.DDDDD.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.DDDDD.', '..SLS..'];
 const UFO_COLORS = { W: '#ffffff', S: '#c4c8e0', D: '#6c7090' };
-const LIGHT_COLORS = { L: ['#ff2d55', '#ffe600'], M: ['#ffe600', '#ff2d55'] };
+const LIGHT_COLORS = { L: ['#ff2d55', '#ffe600'] };
 
-export const UFO_SVG = `<svg viewBox="0 0 7 7" class="size-full" style="filter: drop-shadow(0 0 1px #00e5ff)" aria-hidden="true">${UFO_BITMAP.flatMap((row, y) =>
+export const UFO_SVG = `<svg viewBox="0 0 7 7" class="ufo-hover size-full" style="filter: drop-shadow(0 0 1px #00e5ff)" aria-hidden="true">${UFO_BITMAP.flatMap((row, y) =>
     [...row].flatMap((symbol, x) => {
         if (symbol === '.') {
             return [];

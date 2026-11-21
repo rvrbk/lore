@@ -95,3 +95,16 @@ html { color-scheme: dark; font-size: 15px; }
         .commit-ticker-track { animation: none; }
     }
 }
+
+@keyframes ufo-hover {
+    0%, 100% { transform: translate(0, 0) rotate(-6deg); }
+    25% { transform: translate(6%, -8%) rotate(0deg); }
+    50% { transform: translate(0, -3%) rotate(6deg); }
+    75% { transform: translate(-6%, -8%) rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .ufo-hover {
+        animation: ufo-hover 2.4s ease-in-out infinite;
+    }
+}
