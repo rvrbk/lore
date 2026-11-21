@@ -1123,7 +1123,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     if (newsUrl) {
         const bar = document.createElement('div');
         bar.setAttribute('aria-hidden', 'true');
-        bar.style.cssText = 'position:absolute;z-index:2;left:0;right:0;bottom:0;display:none;align-items:center;height:22px;overflow:hidden;pointer-events:none;font:12px/22px ui-monospace,monospace;background:rgba(0,0,0,0.7);border-top:1px solid currentColor';
+        bar.style.cssText = 'position:absolute;z-index:2;left:0;right:0;bottom:0;display:none;align-items:center;height:22px;overflow:hidden;cursor:pointer;touch-action:manipulation;font:12px/22px ui-monospace,monospace;background:rgba(0,0,0,0.7);border-top:1px solid currentColor';
         const label = document.createElement('span');
         label.style.cssText = 'flex:none;padding:0 8px;font-weight:700;letter-spacing:0.08em;background:#f4f4f5';
         const labelText = document.createElement('span');
@@ -1141,6 +1141,40 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         let items = [];
         let loadedAt = 0;
         let index = 0;
+        let hovering = false;
+        let tapped = false;
+
+        const applyPause = () => {
+            track.getAnimations().forEach((animation) => {
+                if (hovering || tapped) {
+                    animation.pause();
+                } else {
+                    animation.play();
+                }
+            });
+        };
+        bar.addEventListener('pointerenter', (event) => {
+            if (event.pointerType === 'mouse') {
+                hovering = true;
+                applyPause();
+            }
+        });
+        bar.addEventListener('pointerleave', (event) => {
+            if (event.pointerType === 'mouse') {
+                hovering = false;
+                applyPause();
+            }
+        });
+        bar.addEventListener('click', () => {
+            tapped = !tapped;
+            applyPause();
+        });
+        document.addEventListener('pointerdown', (event) => {
+            if (tapped && !bar.contains(event.target)) {
+                tapped = false;
+                applyPause();
+            }
+        });
 
         const load = async () => {
             try {
@@ -1235,6 +1269,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 [{ transform: 'translateX(0)' }, { transform: `translateX(-${loopWidth}px)` }],
                 { duration: cycle, easing: 'linear', iterations: Infinity },
             );
+            applyPause();
 
             const refresh = async () => {
                 if (!sea.isConnected) {
