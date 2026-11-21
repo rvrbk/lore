@@ -27,7 +27,7 @@
         @if(! $page->exists && ! empty($templateTasks))
             <label class="flex items-start gap-2 border border-zinc-800 bg-zinc-900 p-3 text-sm">
                 <input type="checkbox" name="spawn_tasks" value="1" checked class="mt-0.5">
-                <span>Also add these {{ count($templateTasks) }} tasks to the board, linked to this page and with due dates spread from today<span class="mt-1 block text-xs text-zinc-400">{{ collect($templateTasks)->pluck('title')->implode(' · ') }}</span></span>
+                <span>Also add these {{ count($templateTasks) }} tasks to the Kanban board, linked to this page and with due dates spread from today<span class="mt-1 block text-xs text-zinc-400">{{ collect($templateTasks)->pluck('title')->implode(' · ') }}</span></span>
             </label>
         @endif
         @include('partials.markdown-editor', ['value' => old('body', $page->body), 'rows' => 24])

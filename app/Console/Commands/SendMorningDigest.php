@@ -88,7 +88,7 @@ class SendMorningDigest extends Command
         $attention = (clone $open)->whereNotNull('due_on')->whereDate('due_on', '<=', today())->orderBy('due_on')->limit(10)->get();
         $inProgress = (clone $open)->where('status', 'in_progress')->count();
 
-        $lines = ['📋 <b>Board</b> · '.$inProgress.' in progress'];
+        $lines = ['📋 <b>Kanban</b> · '.$inProgress.' in progress'];
         foreach ($attention as $task) {
             $lines[] = '• '.e($task->title).' ('.($task->isOverdue() ? 'overdue since '.$task->due_on->format('j M') : 'due today').')';
         }

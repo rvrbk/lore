@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasTags;
 use Database\Factories\TaskFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,16 +28,30 @@ class Task extends Model
         'low' => 'Low',
     ];
 
+    public const DONE_LIMIT = 10;
+
     protected $attributes = ['status' => 'todo', 'priority' => 'medium', 'recurrence' => 'none'];
 
-    protected $fillable = ['title', 'description', 'status', 'priority', 'due_on', 'page_id', 'checklist', 'recurrence'];
+    protected $fillable = ['title', 'description', 'status', 'priority', 'due_on', 'page_id', 'checklist', 'recurrence', 'completed_at', 'archived_at'];
 
     protected function casts(): array
     {
         return [
             'due_on' => 'date',
+            'completed_at' => 'datetime',
+            'archived_at' => 'datetime',
             'checklist' => 'array',
         ];
+    }
+
+    /**
+     * Tasks that are still on the Kanban board, as opposed to the archive.
+     *
+     * @param  Builder<Task>  $query
+     */
+    public function scopeOnBoard(Builder $query): void
+    {
+        $query->whereNull('archived_at');
     }
 
     public function page(): BelongsTo
@@ -93,9 +108,15 @@ class Task extends Model
     public static function createAtBottom(array $attributes): self
     {
         $status = $attributes['status'] ?? 'todo';
-        $attributes['position'] = (int) static::where('status', $status)->max('position') + 1;
+        $attributes['position'] = (int) static::onBoard()->where('status', $status)->max('position') + 1;
+        if ($status === 'done') {
+            $attributes['completed_at'] = now();
+        }
 
-        return static::unguarded(fn () => static::create($attributes));
+        $task = static::unguarded(fn () => static::create($attributes));
+        static::archiveOverflow();
+
+        return $task;
     }
 
     /**
@@ -106,11 +127,15 @@ class Task extends Model
         DB::transaction(function () use ($status, $index) {
             $previous = $this->status;
 
-            $ids = static::where('status', $status)->whereKeyNot($this->id)
+            $ids = static::onBoard()->where('status', $status)->whereKeyNot($this->id)
                 ->orderBy('position')->orderBy('id')->pluck('id')->all();
             array_splice($ids, min($index, count($ids)), 0, [$this->id]);
 
-            $this->update(['status' => $status]);
+            $this->update([
+                'status' => $status,
+                'archived_at' => null,
+                'completed_at' => $status === 'done' ? ($previous === 'done' ? $this->completed_at : now()) : null,
+            ]);
             static::renumber($ids);
 
             if ($status === 'done' && $previous !== 'done') {
@@ -119,9 +144,28 @@ class Task extends Model
             }
 
             if ($previous !== $status) {
-                static::renumber(static::where('status', $previous)->orderBy('position')->orderBy('id')->pluck('id')->all());
+                static::renumber(static::onBoard()->where('status', $previous)->orderBy('position')->orderBy('id')->pluck('id')->all());
             }
+
+            static::archiveOverflow();
         });
+    }
+
+    /**
+     * Keep only the most recently finished tasks in "Done"; the rest move to the archive.
+     */
+    public static function archiveOverflow(): void
+    {
+        $overflow = static::onBoard()->where('status', 'done')
+            ->orderByDesc('completed_at')->orderByDesc('id')
+            ->skip(self::DONE_LIMIT)->take(PHP_INT_MAX)->pluck('id');
+
+        if ($overflow->isEmpty()) {
+            return;
+        }
+
+        static::whereKey($overflow)->update(['archived_at' => now()]);
+        static::renumber(static::onBoard()->where('status', 'done')->orderBy('position')->orderBy('id')->pluck('id')->all());
     }
 
     /**

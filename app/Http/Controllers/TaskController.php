@@ -20,11 +20,25 @@ class TaskController extends Controller
         $tag = $request->query('tag');
 
         return view('tasks.index', [
-            'columns' => Task::with(['tags', 'page', 'reminder'])->withTag($tag)->orderBy('position')->orderBy('id')->get()->groupBy('status'),
+            'columns' => Task::onBoard()->with(['tags', 'page', 'reminder'])->withTag($tag)->orderBy('position')->orderBy('id')->get()->groupBy('status'),
             'activeTag' => $tag,
             'tags' => Tag::whereHas('tasks')->orderBy('name')->get(),
             'pages' => Page::with('space')->orderBy('title')->get(),
         ]);
+    }
+
+    public function archive(): View
+    {
+        return view('tasks.archive', [
+            'tasks' => Task::whereNotNull('archived_at')->with(['tags', 'page'])->orderByDesc('completed_at')->orderByDesc('id')->get(),
+        ]);
+    }
+
+    public function restore(Task $task): RedirectResponse
+    {
+        $task->moveTo('todo', PHP_INT_MAX);
+
+        return redirect()->route('tasks.archive');
     }
 
     public function store(Request $request): RedirectResponse

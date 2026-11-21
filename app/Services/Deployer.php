@@ -196,7 +196,7 @@ class Deployer
 
     /**
      * Request the site's monitored URL once the deploy is finished. A site that does not answer opens an incident
-     * (board card, Telegram, banner) that points at this deploy; the deploy itself is left in place.
+     * (Kanban card, Telegram, banner) that points at this deploy; the deploy itself is left in place.
      */
     public function smokeCheck(Deployment $deployment): void
     {

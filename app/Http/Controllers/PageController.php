@@ -154,7 +154,7 @@ class PageController extends Controller
     }
 
     /**
-     * Put a checklist template's tasks on the board, linked to the new page and tagged like it.
+     * Put a checklist template's tasks on the Kanban board, linked to the new page and tagged like it.
      *
      * @param  string|array<int, string>|null  $tags
      */

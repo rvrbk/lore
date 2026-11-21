@@ -13,7 +13,7 @@
     <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">
         @if($incident->monitor)<a href="{{ route('monitors.show', $incident->monitor) }}" class="hover:text-zinc-100 hover:underline">↗ {{ $incident->monitor->name }}</a>@endif
         @if($incident->deployment)<a href="{{ route('deploy.index') }}" class="hover:text-zinc-100 hover:underline" title="Deploy #{{ $incident->deployment->id }} finished {{ $incident->deployment->finished_at?->diffForHumans() }}">↗ after deploy #{{ $incident->deployment->id }}</a>@endif
-        @if($incident->task)<a href="{{ route('tasks.index') }}" class="hover:text-zinc-100 hover:underline">↗ board card</a>@endif
+        @if($incident->task)<a href="{{ route('tasks.index') }}" class="hover:text-zinc-100 hover:underline">↗ Kanban card</a>@endif
         @if($incident->page)<a href="{{ route('pages.show', $incident->page) }}" class="hover:text-zinc-100 hover:underline">↗ post-mortem</a>@endif
     </div>
     <form method="POST" action="{{ route('incidents.update', $incident) }}" class="mt-3 flex gap-2">

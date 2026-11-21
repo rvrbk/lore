@@ -1,6 +1,6 @@
-<x-layouts.app title="Board">
-    <h1 class="text-2xl font-semibold">Board</h1>
-    <p class="mt-2 text-sm text-zinc-400">Drag cards between columns or reorder them. Click a card to edit it.</p>
+<x-layouts.app title="Kanban">
+    <h1 class="text-2xl font-semibold">Kanban</h1>
+    <p class="mt-2 text-sm text-zinc-400">Drag cards between columns or reorder them. Click a card to edit it. Done keeps the last {{ \App\Models\Task::DONE_LIMIT }} finished cards; older ones move to the <a href="{{ route('tasks.archive') }}" class="underline">archive</a>.</p>
     @if($tags->isNotEmpty())
         <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
             <span class="text-zinc-400">Filter:</span>

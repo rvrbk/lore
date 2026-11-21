@@ -75,6 +75,8 @@ Route::middleware('auth')->group(function () {
     Route::post('pages/{page}/history/{revision}/restore', [PageController::class, 'restore'])->name('pages.restore');
 
     Route::get('board', [TaskController::class, 'index'])->name('tasks.index');
+    Route::get('board/archive', [TaskController::class, 'archive'])->name('tasks.archive');
+    Route::post('tasks/{task}/restore', [TaskController::class, 'restore'])->name('tasks.restore');
     Route::post('tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::put('tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');

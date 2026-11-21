@@ -19,7 +19,7 @@
         </form>
         <nav class="space-y-1 text-sm">
             <a href="{{ route('dashboard') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('dashboard') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Home</a>
-            <a href="{{ route('tasks.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tasks.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Board</a>
+            <a href="{{ route('tasks.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tasks.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Kanban</a>
             <a href="{{ route('reminders.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('reminders.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
                 Reminders
                 @if($dueCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount }}</span>@endif
@@ -97,10 +97,10 @@
 
 @php
     $paletteActions = array_values(array_filter([
-        ['title' => 'New task', 'hint' => 'Board', 'url' => route('tasks.index', ['new' => 1])],
+        ['title' => 'New task', 'hint' => 'Kanban', 'url' => route('tasks.index', ['new' => 1])],
         ['title' => 'New space', 'hint' => 'Action', 'url' => route('spaces.create')],
         ['title' => 'Home', 'hint' => 'Go to', 'url' => route('dashboard')],
-        ['title' => 'Board', 'hint' => 'Go to', 'url' => route('tasks.index')],
+        ['title' => 'Kanban', 'hint' => 'Go to', 'url' => route('tasks.index')],
         ['title' => 'Reminders', 'hint' => 'Go to', 'url' => route('reminders.index')],
         ['title' => 'Tags', 'hint' => 'Go to', 'url' => route('tags.index')],
         ['title' => 'Deploy', 'hint' => 'Go to', 'url' => route('deploy.index')],

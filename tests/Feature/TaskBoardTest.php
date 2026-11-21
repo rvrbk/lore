@@ -80,4 +80,30 @@ class TaskBoardTest extends TestCase
         $this->get(route('tasks.index'))->assertRedirect(route('login'));
         $this->postJson(route('tasks.move', Task::factory()->create()), ['status' => 'done', 'position' => 0])->assertUnauthorized();
     }
+
+    public function test_done_keeps_the_ten_latest_finished_cards_and_older_ones_go_to_the_archive(): void
+    {
+        foreach (range(1, 10) as $number) {
+            Task::factory()->create(['title' => "Done {$number}", 'status' => 'done', 'position' => $number, 'completed_at' => now()->subDays(20 - $number)]);
+        }
+        $todo = Task::factory()->create(['title' => 'Finish me', 'status' => 'todo']);
+
+        $this->postJson(route('tasks.move', $todo), ['status' => 'done', 'position' => 0])->assertOk();
+
+        $this->assertSame(10, Task::onBoard()->where('status', 'done')->count());
+        $this->assertNotNull(Task::where('title', 'Done 1')->value('archived_at'));
+        $this->get(route('tasks.index'))->assertOk()->assertSee('Finish me')->assertDontSee('Done 1<');
+        $this->get(route('tasks.archive'))->assertOk()->assertSee('Done 1')->assertDontSee('Finish me');
+    }
+
+    public function test_an_archived_card_can_be_restored_to_to_do(): void
+    {
+        $task = Task::factory()->create(['title' => 'Old one', 'status' => 'done', 'archived_at' => now(), 'completed_at' => now()->subMonth()]);
+
+        $this->post(route('tasks.restore', $task))->assertRedirect(route('tasks.archive'));
+
+        $task->refresh();
+        $this->assertSame('todo', $task->status);
+        $this->assertNull($task->archived_at);
+    }
 }

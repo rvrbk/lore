@@ -8,7 +8,7 @@ use App\Models\Monitor;
 use App\Models\Task;
 
 /**
- * Turns a detected problem into an incident: a card on the board, a Telegram message and a banner in the app.
+ * Turns a detected problem into an incident: a card on the Kanban board, a Telegram message and a banner in the app.
  * One incident stays open per kind and site until it is resolved, so a problem that persists does not repeat itself.
  */
 class IncidentReporter
