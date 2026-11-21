@@ -59,6 +59,7 @@ const THEMES = {
         visited: (heat) => mix([255, 70, 170], [255, 240, 120], heat),
         visitedAt: (x, heat) => `hsl(${(x * 2.5) % 360}, 100%, ${55 + heat * 15}%)`,
         unicorns: true,
+        sky: true,
     },
     terminal: {
         label: 'Terminal',
@@ -914,6 +915,88 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const mistOn = () => Boolean(THEMES[styleName].mist);
 
+    const skyOn = () => Boolean(THEMES[styleName].sky);
+
+    const RAINBOWS = [
+        { x: 0.22, y: 0.62, radius: 0.34, seconds: 14, phase: 0 },
+        { x: 0.74, y: 0.78, radius: 0.26, seconds: 18, phase: 2.4 },
+    ];
+    const RAINBOW_HUES = [0, 30, 55, 120, 200, 250, 290];
+
+    const AURORA = Array.from({ length: 4 }, (_, index) => ({
+        hue: [140, 170, 280, 320][index],
+        base: 0.1 + index * 0.07,
+        speed: 5200 + index * 1700,
+        phase: index * 1.9,
+        height: 0.22 + index * 0.03,
+    }));
+
+    const skyLayer = document.createElement('canvas');
+    skyLayer.setAttribute('aria-hidden', 'true');
+    skyLayer.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:-1;display:none';
+    sea.style.isolation = 'isolate';
+    sea.prepend(skyLayer);
+    const sky = skyLayer.getContext('2d');
+
+    const drawSky = (time) => {
+        if (!skyOn()) {
+            skyLayer.style.display = 'none';
+
+            return;
+        }
+        const width = sea.clientWidth;
+        const height = sea.clientHeight;
+        if (!width || !height) {
+            return;
+        }
+        const ratio = window.devicePixelRatio || 1;
+        if (skyLayer.width !== Math.round(width * ratio) || skyLayer.height !== Math.round(height * ratio)) {
+            skyLayer.width = Math.round(width * ratio);
+            skyLayer.height = Math.round(height * ratio);
+        }
+        skyLayer.style.display = 'block';
+        sky.setTransform(ratio, 0, 0, ratio, 0, 0);
+        sky.clearRect(0, 0, width, height);
+        sky.save();
+        sky.globalCompositeOperation = 'lighter';
+
+        const moment = animateSun ? time : 0;
+
+        AURORA.forEach((band) => {
+            const columns = 48;
+            const step = width / columns;
+            for (let column = 0; column <= columns; column++) {
+                const x = column * step;
+                const wave = Math.sin(x / (width * 0.16) + moment / band.speed + band.phase) * 0.5 + Math.sin(x / (width * 0.07) - moment / (band.speed * 0.6)) * 0.25;
+                const top = (band.base + wave * 0.12) * height;
+                const reach = band.height * height * (0.7 + 0.3 * Math.sin(x / (width * 0.1) + moment / (band.speed * 0.45) + band.phase));
+                const curtain = sky.createLinearGradient(0, top, 0, top + reach);
+                curtain.addColorStop(0, `hsla(${band.hue}, 100%, 65%, 0.32)`);
+                curtain.addColorStop(0.35, `hsla(${band.hue + 20}, 100%, 60%, 0.16)`);
+                curtain.addColorStop(1, `hsla(${band.hue + 40}, 100%, 55%, 0)`);
+                sky.fillStyle = curtain;
+                sky.fillRect(x, top, step + 1, reach);
+            }
+        });
+
+        RAINBOWS.forEach((bow) => {
+            const centerX = bow.x * width;
+            const centerY = bow.y * height;
+            const radius = bow.radius * Math.min(width, height * 1.8);
+            const band = radius * 0.035;
+            const shimmer = 0.5 + 0.5 * Math.sin(moment / (bow.seconds * 100) + bow.phase);
+            sky.lineWidth = band + 0.5;
+            RAINBOW_HUES.forEach((hue, index) => {
+                sky.strokeStyle = `hsla(${hue}, 100%, 62%, ${0.16 + shimmer * 0.14})`;
+                sky.beginPath();
+                sky.arc(centerX, centerY, radius - index * band, Math.PI, 0);
+                sky.stroke();
+            });
+        });
+
+        sky.restore();
+    };
+
     const MIST = Array.from({ length: 13 }, (_, index) => ({
         x: (index * 0.618) % 1,
         y: 0.08 + ((index * 0.37) % 0.84),
@@ -1030,6 +1113,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         if (radarOn()) {
             drawRadar(time);
         }
+        drawSky(time);
         drawMist(time);
 
         for (let i = actors.length - 1; i >= 0; i--) {
@@ -1045,7 +1129,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const frame = (time) => {
         render(time);
-        if ((actors.length || radarOn() || (mistOn() && animateSun)) && canvas.isConnected) {
+        if ((actors.length || radarOn() || ((mistOn() || skyOn()) && animateSun)) && canvas.isConnected) {
             requestAnimationFrame(frame);
         } else {
             running = false;
