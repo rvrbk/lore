@@ -48,7 +48,7 @@ if (clocks.length) {
                     }
                 });
                 clock.querySelector('[data-clock-time]').replaceChildren(...nodes);
-                const rotate = (hand, degrees) => clock.querySelector(`[data-hand="${hand}"]`).setAttribute('transform', `rotate(${degrees} 16 16)`);
+                const rotate = (hand, degrees) => clock.querySelector(`[data-hand="${hand}"]`).setAttribute('transform', `rotate(${degrees} 24 16)`);
                 rotate('hour', hour * 30 + minute * 0.5);
                 rotate('minute', minute * 6);
                 rotate('second', now.getSeconds() * 6);

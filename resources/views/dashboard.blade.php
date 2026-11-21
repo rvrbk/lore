@@ -21,12 +21,12 @@
                         <div class="text-[10px] leading-tight text-zinc-500" data-clock-date>{{ now($clock->timezone)->format('D j M') }}</div>
                     </div>
                     @php($local = now($clock->timezone))
-                    <svg viewBox="0 0 32 32" class="size-8 shrink-0 text-indigo-400 {{ $clock->is_analog ? '' : 'hidden' }}" data-clock-face aria-hidden="true">
-                        <rect x="1" y="1" width="30" height="30" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/>
-                        @foreach([0, 90, 180, 270] as $tick)<line x1="16" y1="2.5" x2="16" y2="5" stroke="currentColor" stroke-opacity=".6" stroke-width="1.2" transform="rotate({{ $tick }} 16 16)"/>@endforeach
-                        <line x1="16" y1="16" x2="16" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-hand="hour" transform="rotate({{ ($local->hour % 12) * 30 + $local->minute * 0.5 }} 16 16)"/>
-                        <line x1="16" y1="16" x2="16" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" data-hand="minute" transform="rotate({{ $local->minute * 6 }} 16 16)"/>
-                        <line x1="16" y1="18" x2="16" y2="4.5" stroke="#a1a1aa" stroke-width=".8" stroke-linecap="round" data-hand="second" transform="rotate({{ $local->second * 6 }} 16 16)"/>
+                    <svg viewBox="0 0 48 32" class="h-8 w-12 shrink-0 text-indigo-400 {{ $clock->is_analog ? '' : 'hidden' }}" data-clock-face aria-hidden="true">
+                        <rect x="1" y="1" width="46" height="30" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/>
+                        <path d="M24 2.5V5M24 27V29.5M2.5 16H5M43 16H45.5" stroke="currentColor" stroke-opacity=".6" stroke-width="1.2"/>
+                        <line x1="24" y1="16" x2="24" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round" data-hand="hour" transform="rotate({{ ($local->hour % 12) * 30 + $local->minute * 0.5 }} 24 16)"/>
+                        <line x1="24" y1="16" x2="24" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" data-hand="minute" transform="rotate({{ $local->minute * 6 }} 24 16)"/>
+                        <line x1="24" y1="18" x2="24" y2="4.5" stroke="#a1a1aa" stroke-width=".8" stroke-linecap="round" data-hand="second" transform="rotate({{ $local->second * 6 }} 24 16)"/>
                     </svg>
                     <button type="button" class="{{ $clock->is_analog ? 'hidden' : '' }} shrink-0 text-sm font-semibold tabular-nums text-indigo-400" data-clock-time title="Tap to switch 12/24 hour">{{ now($clock->timezone)->format('H:i') }}<sup class="ml-px text-[9px] font-medium text-indigo-300/70">{{ now($clock->timezone)->format('s') }}</sup></button>
                     <form method="POST" action="{{ route('world-clocks.style', $clock) }}" class="absolute -left-1 -top-1 hidden group-hover:block [@media(hover:none)]:block">@csrf @method('PATCH')<button class="rounded-full bg-zinc-800 px-1 text-[9px] text-zinc-400 hover:text-indigo-400" title="Switch between analog and digital" aria-label="Switch {{ $clock->city }} between analog and digital">◷</button></form>
