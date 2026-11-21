@@ -15,20 +15,10 @@ class ArcadeTest extends TestCase
         $this->get(route('arcade'))->assertRedirect(route('login'));
     }
 
-    public function test_signed_in_users_can_open_the_arcade(): void
+    public function test_signed_in_users_get_ufo_invaders(): void
     {
         $this->actingAs(User::factory()->create())
             ->get(route('arcade'))
-            ->assertOk()
-            ->assertSee('data-keen', false);
-    }
-
-    public function test_ufo_invaders_needs_a_login_and_loads_for_signed_in_users(): void
-    {
-        $this->get(route('arcade.invaders'))->assertRedirect(route('login'));
-
-        $this->actingAs(User::factory()->create())
-            ->get(route('arcade.invaders'))
             ->assertOk()
             ->assertSee('data-invaders', false);
     }

@@ -91,7 +91,6 @@ Route::middleware('auth')->group(function () {
     Route::post('incidents/{incident}/post-mortem', [IncidentController::class, 'postMortem'])->name('incidents.post-mortem');
 
     Route::view('arcade', 'arcade')->name('arcade');
-    Route::view('arcade/invaders', 'arcade-invaders')->name('arcade.invaders');
 
     Route::get('deploy', [DeployController::class, 'index'])->name('deploy.index');
     Route::get('deploy/state', [DeployController::class, 'state'])->name('deploy.state');

@@ -59,7 +59,7 @@ const BUNKER_GAP = 38;
 
 const START_LIVES = 3;
 const HIGH_SCORE_KEY = 'lore.invaders.high';
-const MUTE_KEY = 'lore.keen.mute';
+const MUTE_KEY = 'lore.arcade.mute';
 
 const KEY_ACTIONS = {
     ArrowLeft: 'left',
@@ -651,7 +651,40 @@ const setKey = (action, isDown) => {
 
 const isTyping = (target) => target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable]');
 
+const setFullscreen = (on) => {
+    root.toggleAttribute('data-fullscreen', on);
+    document.body.classList.toggle('overflow-hidden', on);
+};
+
+const toggleFullscreen = async () => {
+    const on = !root.hasAttribute('data-fullscreen');
+    setFullscreen(on);
+    try {
+        if (on) {
+            await root.requestFullscreen?.();
+        } else if (document.fullscreenElement) {
+            await document.exitFullscreen();
+        }
+    } catch {
+        // the fixed full-window layout still applies where the browser has no fullscreen API
+    }
+};
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+        setFullscreen(false);
+    }
+});
+
+document.querySelectorAll('[data-game-fullscreen]').forEach((button) => button.addEventListener('click', toggleFullscreen));
+
 window.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyF' && !event.ctrlKey && !event.metaKey && !event.altKey && !isTyping(event.target)) {
+        event.preventDefault();
+        toggleFullscreen();
+
+        return;
+    }
     const action = KEY_ACTIONS[event.code];
     if (!action || event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) {
         return;

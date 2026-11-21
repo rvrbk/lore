@@ -6,10 +6,6 @@ import './live-users.js';
 import './local-time.js';
 import './world-clocks.js';
 
-if (document.querySelector('[data-keen]')) {
-    import('./keen.js');
-}
-
 if (document.querySelector('[data-invaders]')) {
     import('./invaders.js');
 }
