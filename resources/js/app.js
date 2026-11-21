@@ -10,6 +10,10 @@ if (document.querySelector('[data-keen]')) {
     import('./keen.js');
 }
 
+if (document.querySelector('[data-invaders]')) {
+    import('./invaders.js');
+}
+
 const sidebar = document.getElementById('sidebar');
 const navToggle = document.querySelector('[data-nav-toggle]');
 const navBackdrop = document.querySelector('[data-nav-backdrop]');

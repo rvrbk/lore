@@ -22,4 +22,14 @@ class ArcadeTest extends TestCase
             ->assertOk()
             ->assertSee('data-keen', false);
     }
+
+    public function test_ufo_invaders_needs_a_login_and_loads_for_signed_in_users(): void
+    {
+        $this->get(route('arcade.invaders'))->assertRedirect(route('login'));
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('arcade.invaders'))
+            ->assertOk()
+            ->assertSee('data-invaders', false);
+    }
 }

@@ -1,5 +1,6 @@
 <x-layouts.app title="Arcade">
     <h1 class="text-2xl font-semibold">Arcade</h1>
+    @include('partials.arcade-tabs')
     <p class="mt-2 text-sm text-zinc-400">Commander Lore: for when you're bored. Three worlds, one pogo stick, a raygun and a lot of candy.</p>
 
     <div data-keen class="mt-5 max-w-4xl select-none">
