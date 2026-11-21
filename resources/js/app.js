@@ -6,14 +6,6 @@ import './live-users.js';
 import './local-time.js';
 import './world-clocks.js';
 
-if (document.querySelector('[data-pilot]')) {
-    import('./pilot.js');
-}
-
-if (document.querySelector('[data-root-cause]')) {
-    import('./root-cause.js');
-}
-
 const sidebar = document.getElementById('sidebar');
 const navToggle = document.querySelector('[data-nav-toggle]');
 const navBackdrop = document.querySelector('[data-nav-backdrop]');
