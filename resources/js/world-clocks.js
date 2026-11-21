@@ -34,13 +34,24 @@ if (clocks.length) {
                 seconds.className = 'ml-px text-[9px] font-medium text-indigo-300/70';
                 seconds.textContent = String(now.getSeconds()).padStart(2, '0');
                 const nodes = [];
+                let hour = 0;
+                let minute = 0;
                 timeFormatters.get(key).formatToParts(now).forEach((part) => {
+                    if (part.type === 'hour') {
+                        hour = Number(part.value) % 12;
+                    } else if (part.type === 'minute') {
+                        minute = Number(part.value);
+                    }
                     nodes.push(document.createTextNode(part.value));
                     if (part.type === 'minute') {
                         nodes.push(seconds);
                     }
                 });
                 clock.querySelector('[data-clock-time]').replaceChildren(...nodes);
+                const rotate = (hand, degrees) => clock.querySelector(`[data-hand="${hand}"]`).setAttribute('transform', `rotate(${degrees} 16 16)`);
+                rotate('hour', hour * 30 + minute * 0.5);
+                rotate('minute', minute * 6);
+                rotate('second', now.getSeconds() * 6);
                 clock.querySelector('[data-clock-date]').textContent = dateFormatters.get(zone).format(now).replace(',', '');
             } catch {
                 // keep the server-rendered time

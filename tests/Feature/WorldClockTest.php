@@ -52,6 +52,18 @@ class WorldClockTest extends TestCase
         $this->assertSame([$second->id, $first->id], WorldClock::orderBy('position')->pluck('id')->all());
     }
 
+    public function test_a_clock_can_be_switched_between_analog_and_digital(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $clock = WorldClock::factory()->create();
+
+        $this->patch(route('world-clocks.style', $clock))->assertRedirect(route('dashboard'));
+        $this->assertTrue($clock->fresh()->is_analog);
+
+        $this->patch(route('world-clocks.style', $clock));
+        $this->assertFalse($clock->fresh()->is_analog);
+    }
+
     public function test_clocks_require_a_login(): void
     {
         $this->post(route('world-clocks.store'), ['city' => 'Tokyo (Asia)'])->assertRedirect(route('login'));

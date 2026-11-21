@@ -31,6 +31,13 @@ class WorldClockController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function toggleStyle(WorldClock $worldClock): RedirectResponse
+    {
+        $worldClock->update(['is_analog' => ! $worldClock->is_analog]);
+
+        return redirect()->route('dashboard');
+    }
+
     public function destroy(WorldClock $worldClock): RedirectResponse
     {
         $worldClock->delete();

@@ -15,7 +15,15 @@ class WorldClock extends Model
     /** @use HasFactory<WorldClockFactory> */
     use HasFactory;
 
-    protected $fillable = ['city', 'timezone', 'position'];
+    protected $fillable = ['city', 'timezone', 'position', 'is_analog'];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return ['is_analog' => 'boolean'];
+    }
 
     /**
      * Every city the dashboard can show, keyed by its time zone identifier.
