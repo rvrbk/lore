@@ -4,6 +4,21 @@
         <a href="{{ route('export.all') }}" class="rounded border px-3 py-1.5 text-sm hover:bg-zinc-800" title="Download every page as Markdown files in a .zip">Export everything</a>
     </div>
 
+    @if($commits)
+        <div class="mt-6 flex items-center overflow-hidden border border-zinc-800 bg-zinc-900 text-xs" aria-label="Latest commits">
+            <span class="z-10 shrink-0 bg-indigo-500 px-2 py-1.5 font-semibold text-zinc-950">COMMITS</span>
+            <div class="commit-ticker min-w-0 flex-1 overflow-hidden">
+                <ul class="commit-ticker-track flex w-max py-1.5" style="--ticker-seconds: {{ max(30, count($commits) * 6) }}s">
+                    @foreach([false, true] as $copy)
+                        @foreach($commits as $commit)
+                            <li class="whitespace-nowrap pl-8 text-zinc-300" @if($copy) aria-hidden="true" @endif><span class="text-indigo-400">{{ $commit['site'] }}</span> <span class="text-zinc-500">{{ $commit['hash'] }}</span> {{ $commit['subject'] }}</li>
+                        @endforeach
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
     @if($jobScout)
         <a href="{{ $jobScout['url'] }}" target="_blank" rel="noopener" class="mt-6 flex items-center justify-between border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-500">
             <span class="text-sm text-zinc-400">New vacancies in Job Scout</span>

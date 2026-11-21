@@ -6,6 +6,7 @@ use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\WorldClock;
+use App\Services\CommitLog;
 use App\Services\GoogleAnalytics;
 use App\Services\JobScout;
 
@@ -16,6 +17,7 @@ class DashboardController extends Controller
         return view('dashboard', [
             'clocks' => WorldClock::orderBy('position')->orderBy('id')->get(),
             'cities' => WorldClock::cities(),
+            'commits' => app(CommitLog::class)->latest(),
             'jobScout' => app(JobScout::class)->newMatches(),
             'analytics' => app(GoogleAnalytics::class)->summary(),
             'monitors' => $monitors = Monitor::orderBy('name')->get(),
