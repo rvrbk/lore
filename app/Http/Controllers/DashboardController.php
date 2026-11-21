@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BookingType;
 use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Reminder;
@@ -24,6 +25,7 @@ class DashboardController extends Controller
             'sparks' => Monitor::sparklines($monitors),
             'due' => Reminder::due()->with('page')->orderBy('due_at')->get(),
             'upcoming' => Reminder::open()->where('due_at', '>', now())->where('due_at', '<=', now()->addDays(14))->with('page')->orderBy('due_at')->get(),
+            'bookingTypes' => BookingType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'recent' => Page::with('space')->latest('updated_at')->limit(8)->get(),
         ]);
     }

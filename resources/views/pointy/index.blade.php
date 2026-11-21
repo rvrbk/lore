@@ -2,6 +2,14 @@
     <h1 class="text-2xl font-semibold">Pointy</h1>
     <p class="mt-2 text-sm text-zinc-400">Share a link, let people book a free slot in their own time zone. Confirmations go out from {{ config('services.pointy.from') }}.</p>
 
+    @php($activeTypes = $types->where('is_active', true))
+    @if($activeTypes->isNotEmpty())
+        <section class="mt-5 border border-zinc-800 bg-zinc-900 p-3">
+            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">Send a booking request</h2>
+            @include('partials.pointy-request-form', ['bookingTypes' => $activeTypes])
+        </section>
+    @endif
+
     <details class="mt-5 border border-zinc-800 bg-zinc-900 p-3">
         <summary class="cursor-pointer text-sm font-medium">Add a meeting type</summary>
         <div class="mt-3">@include('partials.pointy-type-form', ['type' => null])</div>

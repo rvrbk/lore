@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\BookingMail;
+use App\Mail\BookingRequestMail;
 use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
@@ -237,5 +238,24 @@ class PointyTest extends TestCase
             ->assertSee('name="weekday_hours[5][start_time]" value="09:00"', false)
             ->assertSee('<details class="text-sm sm:col-span-2"  open >', false)
             ->assertDontSee('@open', false);
+    }
+
+    public function test_the_owner_sends_a_booking_request_from_the_dashboard(): void
+    {
+        Mail::fake();
+        $this->actingAs(User::factory()->create());
+        $type = BookingType::factory()->create(['is_active' => true]);
+        $inactive = BookingType::factory()->create(['is_active' => false]);
+
+        $this->get(route('dashboard'))->assertOk()->assertSee('Pointy booking request')->assertSee($type->name);
+
+        $this->post(route('pointy.requests.send'), ['booking_type_id' => $type->id, 'guest_email' => 'ann@example.test', 'guest_name' => 'Ann'])
+            ->assertRedirect();
+        $this->get(route('pointy.index'))->assertOk()->assertSee('Send a booking request');
+
+        Mail::assertSent(BookingRequestMail::class, fn (BookingRequestMail $mail) => $mail->hasTo('ann@example.test') && str_contains($mail->render(), route('pointy.show', $type->slug)));
+
+        $this->post(route('pointy.requests.send'), ['booking_type_id' => $inactive->id, 'guest_email' => 'bad'])->assertSessionHasErrors(['booking_type_id', 'guest_email']);
+        Mail::assertSentCount(1);
     }
 }

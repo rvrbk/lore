@@ -97,6 +97,16 @@
         </section>
     @endif
 
+    @if($bookingTypes->isNotEmpty())
+        <section class="mt-12">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-400">Pointy booking request</h2>
+                <a href="{{ route('pointy.index') }}" class="text-sm text-zinc-400 hover:text-zinc-100">Manage</a>
+            </div>
+            @include('partials.pointy-request-form', ['bookingTypes' => $bookingTypes])
+        </section>
+    @endif
+
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Due now</h2>
         @if($due->isEmpty())

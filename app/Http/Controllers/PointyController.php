@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\BookingRequestMail;
 use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
@@ -9,6 +10,7 @@ use App\Services\BookingNotifier;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -72,6 +74,21 @@ class PointyController extends Controller
         $exception->delete();
 
         return redirect()->route('pointy.index');
+    }
+
+    public function sendRequest(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'booking_type_id' => ['required', Rule::exists('booking_types', 'id')->where('is_active', true)],
+            'guest_email' => ['required', 'email', 'max:200'],
+            'guest_name' => ['nullable', 'string', 'max:100'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $type = BookingType::findOrFail($data['booking_type_id']);
+        Mail::to($data['guest_email'])->send(new BookingRequestMail($type, $data['guest_name'] ?? null, $data['note'] ?? null));
+
+        return back()->with('status', "Booking request for {$type->name} sent to {$data['guest_email']}.");
     }
 
     public function cancel(Booking $booking, BookingNotifier $notifier): RedirectResponse
