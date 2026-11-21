@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * Works out which start times of a booking type are still free. The weekly hours are in the owner's time zone,
+ * Works out which start times of a booking type are still free. The weekly hours, and per-day exceptions to them, are in the owner's time zone,
  * the results are UTC instants so they can be shown in any guest time zone.
  */
 class SlotFinder
@@ -28,17 +29,20 @@ class SlotFinder
             ->where('ends_at', '>', now()->subDay())
             ->get(['starts_at', 'ends_at']);
 
+        $exceptions = $type->exceptions()->get()->keyBy(fn (AvailabilityException $exception) => $exception->date->format('Y-m-d'));
+
         $slots = collect();
         $day = $now->setTimezone($type->timezone)->startOfDay()->subDay();
         $lastDay = $latest->setTimezone($type->timezone)->startOfDay()->addDay();
 
         for (; $day <= $lastDay; $day = $day->addDay()->startOfDay()) {
-            if (! in_array($day->dayOfWeekIso, $type->days, true)) {
+            $exception = $exceptions->get($day->format('Y-m-d'));
+            if ($exception?->isClosed() || (! $exception && ! in_array($day->dayOfWeekIso, $type->days, true))) {
                 continue;
             }
 
-            $end = $day->setTimeFromTimeString($type->end_time);
-            for ($start = $day->setTimeFromTimeString($type->start_time); $start->addMinutes($type->duration_minutes) <= $end; $start = $start->addMinutes($type->duration_minutes + $buffer)) {
+            $end = $day->setTimeFromTimeString($exception->end_time ?? $type->end_time);
+            for ($start = $day->setTimeFromTimeString($exception->start_time ?? $type->start_time); $start->addMinutes($type->duration_minutes) <= $end; $start = $start->addMinutes($type->duration_minutes + $buffer)) {
                 $slot = $start->setTimezone('UTC');
                 if ($slot < $earliest || $slot > $latest) {
                     continue;

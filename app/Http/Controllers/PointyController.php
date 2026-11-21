@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
 use App\Services\BookingNotifier;
@@ -17,7 +18,7 @@ class PointyController extends Controller
     public function index()
     {
         return view('pointy.index', [
-            'types' => BookingType::withCount(['bookings' => fn ($query) => $query->active()->where('starts_at', '>=', now())])->orderBy('name')->get(),
+            'types' => BookingType::with(['exceptions' => fn ($query) => $query->where('date', '>=', now()->toDateString())->orderBy('date')])->withCount(['bookings' => fn ($query) => $query->active()->where('starts_at', '>=', now())])->orderBy('name')->get(),
             'bookings' => Booking::active()->where('ends_at', '>=', now())->with('type')->orderBy('starts_at')->get(),
             'timezones' => DateTimeZone::listIdentifiers(),
         ]);
@@ -44,6 +45,31 @@ class PointyController extends Controller
     public function destroy(BookingType $bookingType): RedirectResponse
     {
         $bookingType->delete();
+
+        return redirect()->route('pointy.index');
+    }
+
+    public function storeException(Request $request, BookingType $bookingType): RedirectResponse
+    {
+        $data = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'start_time' => ['nullable', 'required_with:end_time', 'date_format:H:i'],
+            'end_time' => ['nullable', 'required_with:start_time', 'date_format:H:i', 'after:start_time'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $bookingType->exceptions()->updateOrCreate(['date' => $data['date']], [
+            'start_time' => $data['start_time'] ?? null,
+            'end_time' => $data['end_time'] ?? null,
+            'note' => $data['note'] ?? null,
+        ]);
+
+        return redirect()->route('pointy.index');
+    }
+
+    public function destroyException(AvailabilityException $exception): RedirectResponse
+    {
+        $exception->delete();
 
         return redirect()->route('pointy.index');
     }

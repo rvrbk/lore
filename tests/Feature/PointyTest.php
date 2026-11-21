@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\BookingMail;
+use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
 use App\Models\Reminder;
@@ -163,5 +164,40 @@ class PointyTest extends TestCase
         $this->post(route('pointy.types.store'), $type + ['name' => 'Call two', 'include_meet' => 1])->assertSessionHasNoErrors();
 
         $this->assertDatabaseCount('booking_types', 2);
+    }
+
+    public function test_a_day_exception_closes_a_day_or_replaces_its_hours_or_opens_an_off_day(): void
+    {
+        $type = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'start_time' => '09:00', 'end_time' => '10:00', 'min_notice_hours' => 0, 'max_days_ahead' => 8]);
+        $slots = fn () => app(SlotFinder::class)->free($type->fresh())->map(fn ($slot) => $slot->format('m-d H:i'))->all();
+
+        $this->assertSame(['11-23 09:00', '11-23 09:30', '11-30 09:00', '11-30 09:30'], $slots());
+
+        AvailabilityException::factory()->create(['booking_type_id' => $type->id, 'date' => '2026-11-23']);
+        AvailabilityException::factory()->create(['booking_type_id' => $type->id, 'date' => '2026-11-30', 'start_time' => '14:00', 'end_time' => '15:00']);
+        AvailabilityException::factory()->create(['booking_type_id' => $type->id, 'date' => '2026-11-24', 'start_time' => '16:00', 'end_time' => '16:30']);
+
+        $this->assertSame(['11-24 16:00', '11-30 14:00', '11-30 14:30'], $slots());
+    }
+
+    public function test_the_owner_adds_updates_and_removes_a_day_exception(): void
+    {
+        $type = BookingType::factory()->create();
+        $this->post(route('pointy.exceptions.store', $type), ['date' => '2026-12-24'])->assertRedirect(route('login'));
+
+        $this->actingAs(User::factory()->create());
+        $this->post(route('pointy.exceptions.store', $type), ['date' => '2026-12-24', 'note' => 'Christmas Eve'])->assertRedirect(route('pointy.index'));
+        $this->assertDatabaseHas('availability_exceptions', ['booking_type_id' => $type->id, 'date' => '2026-12-24', 'start_time' => null]);
+
+        $this->post(route('pointy.exceptions.store', $type), ['date' => '2026-12-24', 'start_time' => '10:00', 'end_time' => '12:00']);
+        $this->assertDatabaseCount('availability_exceptions', 1);
+        $this->assertDatabaseHas('availability_exceptions', ['date' => '2026-12-24', 'start_time' => '10:00', 'end_time' => '12:00']);
+        $this->get(route('pointy.index'))->assertOk()->assertSee('Thu 24 Dec 2026');
+
+        $this->post(route('pointy.exceptions.store', $type), ['date' => '2026-12-25', 'start_time' => '12:00', 'end_time' => '10:00'])->assertSessionHasErrors('end_time');
+        $this->post(route('pointy.exceptions.store', $type), ['date' => '2026-12-25', 'start_time' => '12:00'])->assertSessionHasErrors('end_time');
+
+        $this->delete(route('pointy.exceptions.destroy', AvailabilityException::firstOrFail()))->assertRedirect(route('pointy.index'));
+        $this->assertDatabaseCount('availability_exceptions', 0);
     }
 }

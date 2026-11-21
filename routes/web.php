@@ -48,6 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::post('scheduling/types', [PointyController::class, 'store'])->name('pointy.types.store');
     Route::put('scheduling/types/{bookingType}', [PointyController::class, 'update'])->name('pointy.types.update');
     Route::delete('scheduling/types/{bookingType}', [PointyController::class, 'destroy'])->name('pointy.types.destroy');
+    Route::post('scheduling/types/{bookingType}/exceptions', [PointyController::class, 'storeException'])->name('pointy.exceptions.store');
+    Route::delete('scheduling/exceptions/{exception}', [PointyController::class, 'destroyException'])->name('pointy.exceptions.destroy');
     Route::post('scheduling/bookings/{booking}/cancel', [PointyController::class, 'cancel'])->name('pointy.bookings.cancel');
     Route::get('/search', SearchController::class)->name('search');
     Route::get('palette', [SearchController::class, 'palette'])->name('palette');

@@ -21,6 +21,24 @@
                 <details class="mt-3 border-t border-zinc-800 pt-3">
                     <summary class="cursor-pointer text-xs text-zinc-400">Edit · {{ $type->bookings_count }} upcoming</summary>
                     <div class="mt-3">@include('partials.pointy-type-form', ['type' => $type])</div>
+                    <div class="mt-4 border-t border-zinc-800 pt-3">
+                        <h3 class="text-xs font-semibold uppercase tracking-wide text-zinc-400">Exceptions for single days</h3>
+                        <p class="mt-1 text-xs text-zinc-500">The weekly hours above are the general rule. Pick a day to close it, or fill in hours to use those instead (also works on a day that is normally off). Times are in {{ str_replace('_', ' ', $type->timezone) }}.</p>
+                        @foreach($type->exceptions as $exception)
+                            <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                                <span class="text-zinc-200">{{ $exception->date->format('D j M Y') }} · {{ $exception->isClosed() ? 'closed' : $exception->start_time.'–'.$exception->end_time }}@if($exception->note) <span class="text-zinc-500">· {{ $exception->note }}</span>@endif</span>
+                                <form method="POST" action="{{ route('pointy.exceptions.destroy', $exception) }}">@csrf @method('DELETE')<button class="text-xs text-red-400 hover:underline">Remove</button></form>
+                            </div>
+                        @endforeach
+                        <form method="POST" action="{{ route('pointy.exceptions.store', $type) }}" class="mt-3 flex flex-wrap items-center gap-2">
+                            @csrf
+                            <input type="date" name="date" required aria-label="Date" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
+                            <input type="time" name="start_time" aria-label="From" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
+                            <input type="time" name="end_time" aria-label="Until" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
+                            <input name="note" maxlength="255" placeholder="Note (optional)" aria-label="Note" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
+                            <button class="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">Add exception</button>
+                        </form>
+                    </div>
                     <form method="POST" action="{{ route('pointy.types.destroy', $type) }}" class="mt-3" onsubmit="return confirm('Delete {{ e($type->name) }} and all its bookings?')">@csrf @method('DELETE')<button class="text-xs text-red-400 hover:underline">Delete this meeting type</button></form>
                 </details>
             </div>

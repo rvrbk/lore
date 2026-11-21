@@ -28,6 +28,12 @@ class BookingType extends Model
         return $this->hasMany(Booking::class);
     }
 
+    /** @return HasMany<AvailabilityException, $this> */
+    public function exceptions(): HasMany
+    {
+        return $this->hasMany(AvailabilityException::class);
+    }
+
     /** The Google Meet link bookings of this type get, or null when Meet is switched off or no link is set. */
     public function meetingUrl(): ?string
     {
