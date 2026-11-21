@@ -263,13 +263,6 @@ const game = {
     pausedFrom: null,
 };
 
-const stars = Array.from({ length: 70 }, (_, i) => ({
-    x: (i * 97) % VW,
-    y: (i * 53) % (VH - 30),
-    depth: 0.1 + ((i * 7) % 5) / 20,
-    size: i % 9 === 0 ? 2 : 1,
-}));
-
 const tileAt = (x, y) => {
     const { grid, width } = game.level;
     if (x < 0 || x >= width || y < 0) {
@@ -685,170 +678,114 @@ const rect = (x, y, w, h, color) => {
     ctx.fillRect(Math.round(x), Math.round(y), w, h);
 };
 
+const PALETTE = {
+    W: '#ffffff',
+    C: '#00e5ff',
+    G: '#39ff14',
+    R: '#ff2d55',
+    Y: '#ffe600',
+    O: '#ff8a00',
+    S: '#c4c8e0',
+    D: '#6c7090',
+    P: '#ff7ac8',
+    V: '#9b5de5',
+};
+
+const SEA = '#12062b';
+const LAND = '#00b4cd';
+
+const bitmap = (rows, x, y, scale = 1, mirror = false) => {
+    rows.forEach((row, ry) => {
+        for (let rx = 0; rx < row.length; rx++) {
+            const color = PALETTE[row[mirror ? row.length - 1 - rx : rx]];
+            if (color) {
+                rect(x + rx * scale, y + ry * scale, scale, scale, color);
+            }
+        }
+    });
+};
+
 const drawBackground = () => {
-    const gradient = ctx.createLinearGradient(0, 0, 0, VH);
-    gradient.addColorStop(0, '#120a2a');
-    gradient.addColorStop(0.7, '#3a1245');
-    gradient.addColorStop(1, '#6b1f3a');
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = SEA;
     ctx.fillRect(0, 0, VW, VH);
-
-    for (const star of stars) {
-        const x = (((star.x - game.cam.x * star.depth) % VW) + VW) % VW;
-        const twinkle = (game.tick + star.x * 3) % 90 < 6 ? '#ffffff' : '#9b8fc9';
-        rect(x, star.y - game.cam.y * star.depth * 0.3, star.size, star.size, twinkle);
-    }
-
-    ctx.fillStyle = '#2a0f3a';
-    for (let i = 0; i < 6; i++) {
-        const baseX = i * 90 - ((game.cam.x * 0.3) % 90) - 20;
-        ctx.beginPath();
-        ctx.moveTo(baseX, VH);
-        ctx.lineTo(baseX + 45, VH - 50 - ((i * 23) % 30));
-        ctx.lineTo(baseX + 90, VH);
-        ctx.fill();
-    }
 };
 
 const drawTile = (tx, ty, ch) => {
     const x = tx * T;
     const y = ty * T;
     if (ch === '#') {
-        const exposed = tileAt(tx, ty - 1) !== '#';
-        rect(x, y, T, T, '#8a3b2a');
-        rect(x, y + 7, T, 1, '#5a2218');
-        rect(x, y + 15, T, 1, '#5a2218');
-        rect(x + ((ty + 1) % 2 ? 7 : 3), y, 1, 7, '#5a2218');
-        rect(x + ((ty % 2) ? 11 : 4), y + 8, 1, 7, '#5a2218');
-        rect(x, y, T, 1, '#b5503a');
-        if (exposed) {
-            rect(x, y, T, 3, '#d9843f');
-            rect(x, y + 3, T, 1, '#8a3b2a');
+        rect(x, y, T, T, LAND);
+        if (tileAt(tx, ty - 1) !== '#') {
+            rect(x, y, T, 2, PALETTE.C);
         }
     } else if (ch === '=') {
-        rect(x, y, T, 4, '#8fa1b8');
-        rect(x, y, T, 1, '#d4dfec');
-        rect(x, y + 3, T, 1, '#55657c');
-        for (let i = 2; i < T; i += 5) {
-            rect(x + i, y + 1, 1, 2, '#55657c');
-        }
+        rect(x, y, T, 4, PALETTE.S);
     } else if (ch === '^') {
-        ctx.fillStyle = '#cfd8dc';
+        ctx.fillStyle = PALETTE.R;
         for (let i = 0; i < 2; i++) {
             ctx.beginPath();
             ctx.moveTo(x + i * 8, y + T);
-            ctx.lineTo(x + i * 8 + 4, y + 7);
+            ctx.lineTo(x + i * 8 + 4, y + 8);
             ctx.lineTo(x + i * 8 + 8, y + T);
             ctx.fill();
         }
-        rect(x, y + 14, T, 2, '#78909c');
     } else if (ch === 'E') {
-        rect(x - 2, y - 14, 20, 30, '#2d3550');
-        rect(x, y - 12, 16, 28, '#0c1020');
-        const glow = game.tick % 40 < 20 ? '#39ff14' : '#1fa80a';
-        rect(x + 2, y - 10, 12, 4, glow);
-        rect(x + 4, y - 4, 8, 20, '#161d36');
-        rect(x + 11, y + 4, 2, 2, '#ffe600');
+        rect(x, y - 16, T, 32, PALETTE.Y);
+        rect(x + 3, y - 12, 10, 28, SEA);
+        rect(x + 10, y + 2, 2, 2, PALETTE.Y);
     }
 };
 
+const GEM = ['..Y..', '.YYY.', 'YYYYY', '.YYY.', '..Y..'];
+
 const drawItem = (tx, ty, kind) => {
-    const bob = Math.sin((game.tick + tx * 9) / 14) * 1.5;
+    const bob = game.tick % 60 < 30 ? 0 : 1;
     const x = tx * T;
     const y = ty * T + bob;
     if (kind === 'o') {
-        rect(x + 5, y + 5, 6, 6, '#ff7ac8');
-        rect(x + 4, y + 6, 8, 4, '#ff7ac8');
-        rect(x + 6, y + 6, 2, 1, '#ffffff');
-        rect(x + 2, y + 7, 2, 2, '#ffd1ea');
-        rect(x + 12, y + 7, 2, 2, '#ffd1ea');
+        rect(x + 4, y + 4, 8, 8, PALETTE.P);
+        rect(x + 6, y + 6, 2, 2, PALETTE.W);
     } else if (kind === 'g') {
-        ctx.fillStyle = '#00e5ff';
-        ctx.beginPath();
-        ctx.moveTo(x + 8, y + 2);
-        ctx.lineTo(x + 13, y + 8);
-        ctx.lineTo(x + 8, y + 14);
-        ctx.lineTo(x + 3, y + 8);
-        ctx.fill();
-        rect(x + 7, y + 4, 2, 3, '#ffffff');
+        bitmap(GEM, x + 3, y + 3, 2);
     } else {
-        rect(x + 4, y + 6, 8, 6, '#ffe600');
-        rect(x + 12, y + 8, 2, 2, '#ff8a00');
-        rect(x + 5, y + 7, 6, 1, '#fff7a0');
-        rect(x + 4, y + 11, 8, 1, '#ff8a00');
+        rect(x + 3, y + 5, 10, 7, PALETTE.O);
+        rect(x + 5, y + 7, 6, 2, PALETTE.Y);
     }
 };
 
+const YORP = ['..VVV..', '.VVVVV.', 'VVWWWVV', 'VVWWDVV', 'VVVVVVV', 'VVVVVVV'];
+const YORP_FEET = ['VV...VV', '.V.V.V.'];
+
 const drawEnemy = (enemy) => {
-    const wiggle = Math.floor(game.tick / 8) % 2;
-    const x = enemy.x;
-    const y = enemy.y + wiggle * 0.5;
-    rect(x + 1, y + 3, 12, 9, '#39c41a');
-    rect(x + 3, y + 1, 8, 3, '#39c41a');
-    rect(x, y + 6, 14, 4, '#39c41a');
-    rect(x + 1, y + 11, 4, 3, '#1f7a0c');
-    rect(x + 9, y + 11, 4, 3, '#1f7a0c');
-    rect(x + 4, y + 3, 6, 6, '#ffffff');
-    rect(x + (enemy.vx > 0 ? 7 : 4), y + 5, 3, 3, '#111111');
-    rect(x + 2, y + 2, 2, 1, '#8dff72');
+    const rows = [...YORP, YORP_FEET[Math.floor(game.tick / 10) % 2]];
+    if (enemy.vx < 0) {
+        rows[3] = 'VVDWWVV';
+    }
+    bitmap(rows, enemy.x, enemy.y, 2);
 };
 
-const SPRITE_COLORS = {
-    y: '#ffd23f',
-    o: '#c98a00',
-    s: '#f5c9a0',
-    k: '#161616',
-    w: '#ffffff',
-    g: '#2fae4f',
-    G: '#1b7a35',
-    b: '#3a4fd6',
-    r: '#e5282d',
-    p: '#aab4c4',
-    P: '#6c7388',
-};
-
-const HEAD_AND_BODY = [
-    '...yyyyyy...',
-    '..yyyyyyyy..',
-    '.yyyyyyyyyy.',
-    '.oyyyyyyyyyy',
-    '.oossssssss.',
-    '.oosssswks..',
-    '..ossssssss.',
-    '..ggggggggg.',
-    '.gggGggggg..',
-    '.sgggGgggs..',
-    '..ggggggg...',
-    '..bbbbbbb...',
+const SPRITE_TOP = [
+    '..YYYYYY..',
+    '.YYYYYYYY.',
+    '.YYWWWDWY.',
+    '..YWWWWW..',
+    '..GGGGGG..',
+    '.GGGGGGGG.',
+    '.GGGGGGGG.',
+    '..GGGGGG..',
+    '..SSSSSS..',
 ];
 
 const SPRITE_LEGS = {
-    idle: ['..bb...bb...', '..bb...bb...', '.rrr...rrr..', '.rrr...rrrr.'],
-    runA: ['.bbb...bb...', 'bbb.....bb..', 'rrr.....rrr.', 'rrr.....rrrr'],
-    runB: ['..bbb.bbb...', '...bb..bb...', '...rr..rr...', '..rrrr.rrrr.'],
-    jump: ['.bbb...bbb..', 'bb.......bb.', 'rr.......rr.', 'rrr.....rrr.'],
-    pogo: ['...bbbbb....', '...rrrrr....', '.....pp.....', '.....PP.....'],
-};
-
-const SPRITE_ARMS_UP = { 7: 's.ggggggg.s.', 8: '.sgggGgggs..' };
-
-const spriteFrame = (name) => {
-    const rows = [...HEAD_AND_BODY, ...SPRITE_LEGS[name]];
-    if (name === 'jump') {
-        Object.entries(SPRITE_ARMS_UP).forEach(([row, pixels]) => {
-            rows[row] = pixels;
-        });
-    }
-
-    return rows;
+    idle: ['..SS..SS..', '..SS..SS..', '..SS..SS..', '..SS..SS..', '.RRR..RRR.', '.RRR..RRR.'],
+    runA: ['..SS..SS..', '.SS....SS.', 'SS......SS', 'SS......SS', 'RR......RR', 'RR......RR'],
+    runB: ['..SSSSSS..', '...SSSS...', '...SSSS...', '...SSSS...', '..RRRRRR..', '..RRRRRR..'],
+    jump: ['.SS....SS.', 'SS......SS', 'SS......SS', 'RR......RR', 'RR......RR', '..........'],
+    pogo: ['...SSSS...', '...RRRR...', '....DD....', '....DD....', '....DD....', '...DDDD...'],
 };
 
 const drawPlayer = () => {
     const p = game.player;
-    const left = Math.round(p.x) - 1;
-    const top = Math.round(p.y) - 1;
-    const width = 12;
-
     let name = 'idle';
     if (p.dead || !p.onGround) {
         name = p.pogo && !p.dead ? 'pogo' : 'jump';
@@ -858,19 +795,12 @@ const drawPlayer = () => {
         name = Math.floor(p.step) % 2 ? 'runA' : 'runB';
     }
 
-    spriteFrame(name).forEach((row, ry) => {
-        for (let rx = 0; rx < width; rx++) {
-            const color = SPRITE_COLORS[row[rx]];
-            if (color) {
-                rect(left + (p.facing > 0 ? rx : width - 1 - rx), top + ry, 1, 1, color);
-            }
-        }
-    });
+    bitmap([...SPRITE_TOP, ...SPRITE_LEGS[name]], Math.round(p.x), Math.round(p.y), 1, p.facing < 0);
 
     if (p.cooldown > 8) {
-        const gunX = p.facing > 0 ? left + 10 : left - 3;
-        rect(gunX, top + 8, 5, 2, '#6c7388');
-        rect(gunX + (p.facing > 0 ? 4 : 0), top + 8, 1, 2, '#ff2d55');
+        const gunX = Math.round(p.x) + (p.facing > 0 ? 9 : -4);
+        rect(gunX, Math.round(p.y) + 6, 5, 2, PALETTE.D);
+        rect(gunX + (p.facing > 0 ? 4 : 0), Math.round(p.y) + 6, 1, 2, PALETTE.R);
     }
 };
 
@@ -901,7 +831,6 @@ const drawWorld = () => {
     }
     for (const bullet of game.bullets) {
         rect(bullet.x, bullet.y, bullet.w, bullet.h, '#ff2d55');
-        rect(bullet.x + 1, bullet.y + 1, bullet.w - 2, 1, '#ffffff');
     }
     if (game.state !== 'complete') {
         drawPlayer();
@@ -923,7 +852,7 @@ const text = (value, x, y, { size = 8, color = '#ffffff', align = 'left' } = {})
 };
 
 const drawHud = () => {
-    rect(0, 0, VW, 13, 'rgba(8, 4, 20, 0.8)');
+    rect(0, 0, VW, 13, '#2a0a3d');
     text(`SCORE ${String(game.score).padStart(6, '0')}`, 4, 3, { size: 7, color: '#ffe600' });
     text(`AMMO ${game.ammo}`, 138, 3, { size: 7, color: '#ff7ac8' });
     text(`LIVES ${game.lives}`, 216, 3, { size: 7, color: '#39ff14' });
