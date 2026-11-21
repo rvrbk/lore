@@ -72,16 +72,17 @@ class DeployTest extends TestCase
             '*--abbrev-ref*' => Process::result("feature-x\n"),
             '*--short*' => Process::result("abc1234\n"),
             '*-1*--format=%s*' => Process::result("Current work\n"),
+            '*-1*--format=%an*' => Process::result("Grace\n"),
             '*fetch*' => Process::result(''),
             '*rev-list*' => Process::result("2\n"),
-            '*-n*HEAD..FETCH_HEAD*' => Process::result("def5678 Second\n123abcd First\n"),
+            '*-n*HEAD..FETCH_HEAD*' => Process::result("def5678 Second (Ada)\n123abcd First (Grace)\n"),
             '*' => Process::result(''),
         ]);
 
         $this->artisan('lore:deploy')->assertSuccessful();
 
         $this->get(route('deploy.index'))->assertOk()
-            ->assertSee('feature-x')->assertSee('abc1234')->assertSee('2 new commits')->assertSee('def5678 Second');
+            ->assertSee('feature-x')->assertSee('abc1234')->assertSee('2 new commits')->assertSee('def5678 Second (Ada)')->assertSee('Grace');
     }
 
     public function test_a_requested_deployment_pulls_the_current_branch_and_records_the_output(): void
@@ -90,6 +91,7 @@ class DeployTest extends TestCase
             '*--abbrev-ref*' => Process::result("main\n"),
             '*rev-parse*HEAD*' => Process::sequence()->push(Process::result("aaaaaaa\n"))->push(Process::result("bbbbbbb\n"))->whenEmpty(Process::result("bbbbbbb\n")),
             '*diff*' => Process::result("database/migrations/2030_01_01_000000_add_things.php\nresources/views/dashboard.blade.php\n"),
+            '*-1*--format=%an*' => Process::result("Grace\n"),
             '*' => Process::result('done'),
         ]);
         Deployment::create(['site' => 'lore', 'path' => base_path()]);
@@ -98,6 +100,7 @@ class DeployTest extends TestCase
 
         $deployment = Deployment::sole();
         $this->assertSame('succeeded', $deployment->status);
+        $this->assertSame('Grace', $deployment->author);
         $this->assertSame('main', $deployment->branch);
         $this->assertSame('aaaaaaa', $deployment->from_commit);
         $this->assertStringContainsString('Pull origin/main', $deployment->output);

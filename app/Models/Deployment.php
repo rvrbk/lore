@@ -28,7 +28,7 @@ class Deployment extends Model
 
     protected $attributes = ['status' => self::REQUESTED];
 
-    protected $fillable = ['site', 'path', 'branch', 'status', 'from_commit', 'to_commit', 'output', 'started_at', 'finished_at', 'smoke_status', 'smoke_detail'];
+    protected $fillable = ['site', 'path', 'branch', 'status', 'from_commit', 'to_commit', 'author', 'output', 'started_at', 'finished_at', 'smoke_status', 'smoke_detail'];
 
     protected function casts(): array
     {

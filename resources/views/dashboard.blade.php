@@ -11,7 +11,7 @@
                 <ul class="commit-ticker-track flex w-max py-1.5" style="--ticker-seconds: {{ max(30, count($commits) * 6) }}s">
                     @foreach([false, true] as $copy)
                         @foreach($commits as $commit)
-                            <li class="whitespace-nowrap pl-8 text-zinc-300" @if($copy) aria-hidden="true" @endif><span class="text-indigo-400">{{ $commit['site'] }}</span> <span class="text-zinc-500">{{ $commit['hash'] }}</span> {{ $commit['subject'] }}</li>
+                            <li class="whitespace-nowrap pl-8 text-zinc-300" @if($copy) aria-hidden="true" @endif><span class="text-indigo-400">{{ $commit['site'] }}</span> <span class="text-zinc-500">{{ $commit['hash'] }}</span> <span class="text-zinc-400">{{ $commit['author'] }}</span> {{ $commit['subject'] }}</li>
                         @endforeach
                     @endforeach
                 </ul>

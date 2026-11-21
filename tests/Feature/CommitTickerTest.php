@@ -26,12 +26,12 @@ class CommitTickerTest extends TestCase
         Monitor::factory()->create(['name' => 'job-scout', 'deploy_path' => '/var/www/job-scout']);
         Process::fake([
             '*' => Process::sequence()
-                ->push("aaa111\t1000\tOlder lore commit\n")
-                ->push("bbb222\t2000\tNewer scout commit\n"),
+                ->push("aaa111\t1000\tAda\tOlder lore commit\n")
+                ->push("bbb222\t2000\tGrace\tNewer scout commit\n"),
         ]);
 
         $this->get(route('dashboard'))->assertOk()
-            ->assertSeeInOrder(['job-scout', 'bbb222', 'Newer scout commit', 'lore', 'aaa111', 'Older lore commit']);
+            ->assertSeeInOrder(['job-scout', 'bbb222', 'Grace', 'Newer scout commit', 'lore', 'aaa111', 'Ada', 'Older lore commit']);
     }
 
     public function test_the_ticker_is_hidden_and_the_dashboard_still_loads_when_git_fails(): void
@@ -44,7 +44,7 @@ class CommitTickerTest extends TestCase
 
     public function test_commits_are_cached_so_git_runs_once_per_repository(): void
     {
-        Process::fake(['*' => Process::result("aaa111\t1000\tOne commit\n")]);
+        Process::fake(['*' => Process::result("aaa111\t1000\tAda\tOne commit\n")]);
 
         app(CommitLog::class)->latest();
         app(CommitLog::class)->latest();

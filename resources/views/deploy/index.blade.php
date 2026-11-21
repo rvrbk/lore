@@ -31,7 +31,7 @@
                     </form>
                 </div>
                 @if($status)
-                    <p class="mt-2 break-words text-xs text-zinc-400"><span class="text-zinc-100">{{ $status['branch'] ?? 'no branch' }}</span> · <span class="text-indigo-300">{{ $status['commit'] }}</span> {{ $status['subject'] }}</p>
+                    <p class="mt-2 break-words text-xs text-zinc-400"><span class="text-zinc-100">{{ $status['branch'] ?? 'no branch' }}</span> · <span class="text-indigo-300">{{ $status['commit'] }}</span> {{ $status['subject'] }} @if($status['author'] ?? null)<span class="text-zinc-500">· {{ $status['author'] }}</span>@endif</p>
                     @if($status['error'])
                         <p class="mt-2 text-xs text-red-400">{{ $status['error'] }}</p>
                     @elseif($status['behind'] > 0)
@@ -60,7 +60,7 @@
             @endphp
             <li class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span class="font-medium {{ $style }}"><span class="uppercase">{{ $deployment->status }}</span> <span class="text-zinc-100">{{ $deployment->site ?? 'lore' }}</span></span>
+                    <span class="font-medium {{ $style }}"><span class="uppercase">{{ $deployment->status }}</span> <span class="text-zinc-100">{{ $deployment->site ?? 'lore' }}</span>@if($deployment->author) <span class="text-xs font-normal text-zinc-400">by {{ $deployment->author }}</span>@endif</span>
                     <span class="text-xs text-zinc-400">{{ $deployment->branch }} · {{ $deployment->from_commit ? substr($deployment->from_commit, 0, 7) : '—' }} → {{ $deployment->to_commit ? substr($deployment->to_commit, 0, 7) : '—' }} · {{ $deployment->created_at->diffForHumans() }}</span>
                 </div>
                 @if($deployment->smoke_status && $deployment->smoke_status !== 'skipped')

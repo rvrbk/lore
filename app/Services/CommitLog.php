@@ -19,7 +19,7 @@ class CommitLog
     public function __construct(private Deployer $deployer) {}
 
     /**
-     * @return array<int, array{site: string, hash: string, subject: string, at: int}>
+     * @return array<int, array{site: string, hash: string, author: string, subject: string, at: int}>
      */
     public function latest(): array
     {
@@ -35,13 +35,13 @@ class CommitLog
     }
 
     /**
-     * @return array<int, array{site: string, hash: string, subject: string, at: int}>
+     * @return array<int, array{site: string, hash: string, author: string, subject: string, at: int}>
      */
     private function read(string $site, string $path): array
     {
         try {
             $result = Process::path($path)->timeout(10)->run([
-                'git', '-c', 'safe.directory='.$path, 'log', '-n', (string) self::PER_REPOSITORY, '--format=%h%x09%ct%x09%s',
+                'git', '-c', 'safe.directory='.$path, 'log', '-n', (string) self::PER_REPOSITORY, '--format=%h%x09%ct%x09%an%x09%s',
             ]);
         } catch (Throwable) {
             return [];
@@ -53,9 +53,9 @@ class CommitLog
 
         $commits = [];
         foreach (array_filter(explode("\n", trim($result->output()))) as $line) {
-            [$hash, $at, $subject] = array_pad(explode("\t", $line, 3), 3, '');
+            [$hash, $at, $author, $subject] = array_pad(explode("\t", $line, 4), 4, '');
             if ($subject !== '') {
-                $commits[] = ['site' => $site, 'hash' => $hash, 'subject' => mb_substr($subject, 0, 140), 'at' => (int) $at];
+                $commits[] = ['site' => $site, 'hash' => $hash, 'author' => $author, 'subject' => mb_substr($subject, 0, 140), 'at' => (int) $at];
             }
         }
 

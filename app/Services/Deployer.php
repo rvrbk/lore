@@ -57,7 +57,7 @@ class Deployer
     }
 
     /**
-     * @return array{branch: string|null, commit: string, subject: string, behind: int, incoming: array<int, string>, checked_at: string, error: string|null}|null
+     * @return array{branch: string|null, commit: string, subject: string, author: string, behind: int, incoming: array<int, string>, checked_at: string, error: string|null}|null
      */
     public function status(string $path): ?array
     {
@@ -67,7 +67,7 @@ class Deployer
     /**
      * Fetch the branch from origin and remember how far behind the checkout is.
      *
-     * @return array{branch: string|null, commit: string, subject: string, behind: int, incoming: array<int, string>, checked_at: string, error: string|null}
+     * @return array{branch: string|null, commit: string, subject: string, author: string, behind: int, incoming: array<int, string>, checked_at: string, error: string|null}
      */
     public function refreshStatus(string $path): array
     {
@@ -76,6 +76,7 @@ class Deployer
             'branch' => $branch,
             'commit' => trim($this->run($path, ['git', 'rev-parse', '--short', 'HEAD'])->output()),
             'subject' => trim($this->run($path, ['git', 'log', '-1', '--format=%s'])->output()),
+            'author' => trim($this->run($path, ['git', 'log', '-1', '--format=%an'])->output()),
             'behind' => 0,
             'incoming' => [],
             'checked_at' => now()->toIso8601String(),
@@ -90,7 +91,7 @@ class Deployer
                 $status['error'] = 'Could not fetch from origin: '.trim($fetch->errorOutput());
             } else {
                 $status['behind'] = (int) trim($this->run($path, ['git', 'rev-list', '--count', 'HEAD..FETCH_HEAD'])->output());
-                $status['incoming'] = array_values(array_filter(explode("\n", trim($this->run($path, ['git', 'log', '--format=%h %s', '-n', '10', 'HEAD..FETCH_HEAD'])->output()))));
+                $status['incoming'] = array_values(array_filter(explode("\n", trim($this->run($path, ['git', 'log', '--format=%h %s (%an)', '-n', '10', 'HEAD..FETCH_HEAD'])->output()))));
             }
         }
 
@@ -181,6 +182,7 @@ class Deployer
             $deployment->update([
                 'status' => $ok ? Deployment::SUCCEEDED : Deployment::FAILED,
                 'to_commit' => trim($this->run($path, ['git', 'rev-parse', 'HEAD'])->output()) ?: null,
+                'author' => trim($this->run($path, ['git', 'log', '-1', '--format=%an'])->output()) ?: null,
                 'output' => $log,
                 'finished_at' => now(),
             ]);
