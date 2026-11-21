@@ -125,6 +125,34 @@ class DeployTest extends TestCase
         Process::assertRan(fn ($process) => str_contains($this->commandLine($process), "'up'"));
     }
 
+    public function test_the_output_is_saved_step_by_step_while_a_deployment_runs(): void
+    {
+        $seenDuringPull = $seenDuringMigrate = null;
+        Process::fake([
+            '*--abbrev-ref*' => Process::result("main\n"),
+            '*diff*' => Process::result("resources/views/dashboard.blade.php\n"),
+            '*pull*' => function () use (&$seenDuringPull) {
+                $seenDuringPull = Deployment::sole()->output;
+
+                return Process::result('pulled');
+            },
+            '*artisan*migrate*' => function () use (&$seenDuringMigrate) {
+                $seenDuringMigrate = Deployment::sole()->output;
+
+                return Process::result('migrated');
+            },
+            '*' => Process::result('ok'),
+        ]);
+        Deployment::create(['site' => 'lore', 'path' => base_path()]);
+
+        $this->artisan('lore:deploy')->assertSuccessful();
+
+        $this->assertStringContainsString('## Pull origin/main (running…)', $seenDuringPull);
+        $this->assertStringContainsString("## Back up the database\n", $seenDuringMigrate);
+        $this->assertStringContainsString("## Pull origin/main\npulled", $seenDuringMigrate);
+        $this->assertStringNotContainsString('(running…)', Deployment::sole()->output);
+    }
+
     private function commandLine(object $process): string
     {
         return is_array($process->command) ? implode(' ', array_map(fn (string $part) => "'{$part}'", $process->command)) : $process->command;

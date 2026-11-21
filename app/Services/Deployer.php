@@ -136,7 +136,7 @@ class Deployer
                 if ($title === 'Maintenance mode on') {
                     $down = true;
                 }
-                if (! $this->step($log, $path, $title, $command)) {
+                if (! $this->step($log, $path, $title, $command, $deployment)) {
                     return;
                 }
             }
@@ -163,7 +163,7 @@ class Deployer
                 );
             }
             foreach ($later as [$title, $command]) {
-                if (! $this->step($log, $path, $title, $command)) {
+                if (! $this->step($log, $path, $title, $command, $deployment)) {
                     return;
                 }
             }
@@ -171,7 +171,7 @@ class Deployer
             $ok = true;
         } finally {
             if ($down) {
-                $this->step($log, $path, 'Maintenance mode off', ['php', 'artisan', 'up']);
+                $this->step($log, $path, 'Maintenance mode off', ['php', 'artisan', 'up'], $deployment);
             }
             $deployment->update([
                 'status' => $ok ? Deployment::SUCCEEDED : Deployment::FAILED,
@@ -234,13 +234,18 @@ class Deployer
     }
 
     /**
+     * Runs one step and saves the log after it, with the step in progress marked while it runs, so the Deploy
+     * page can show a deployment's progress.
+     *
      * @param  array<int, string>  $command
      */
-    private function step(string &$log, string $path, string $title, array $command): bool
+    private function step(string &$log, string $path, string $title, array $command, ?Deployment $deployment = null): bool
     {
+        $deployment?->update(['output' => $log.'## '.$title." (running…)\n"]);
         $result = $this->run($path, $command);
         $output = trim($result->output()."\n".$result->errorOutput());
         $log .= '## '.$title.($result->failed() ? ' (FAILED)' : '')."\n".mb_substr($output, -3000)."\n\n";
+        $deployment?->update(['output' => $log]);
 
         return $result->successful();
     }

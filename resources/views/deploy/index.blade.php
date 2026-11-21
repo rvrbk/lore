@@ -67,7 +67,7 @@
                     <p class="mt-1 text-xs {{ $deployment->smoke_status === 'passed' ? 'text-emerald-400' : 'text-red-400' }}">{{ $deployment->smoke_status === 'passed' ? '✓ Site answered after deploy' : '✗ Site did not answer after deploy' }} · {{ $deployment->smoke_detail }}</p>
                 @endif
                 @if($deployment->output)
-                    <details class="mt-2"><summary class="cursor-pointer text-xs text-zinc-400">Output</summary><pre class="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words bg-zinc-950 p-3 text-xs text-zinc-300">{{ $deployment->output }}</pre></details>
+                    <details class="mt-2" @if($deployment->isActive()) open @endif><summary class="cursor-pointer text-xs text-zinc-400">Output</summary><pre class="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words bg-zinc-950 p-3 text-xs text-zinc-300">{{ $deployment->output }}</pre></details>
                 @elseif($deployment->isActive())
                     <p class="mt-1 text-xs text-zinc-400">{{ $deployment->status === 'requested' ? 'Waiting for the scheduler (up to a minute)…' : 'Running…' }}</p>
                 @endif
