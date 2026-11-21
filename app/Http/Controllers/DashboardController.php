@@ -14,7 +14,7 @@ class DashboardController extends Controller
     public function __invoke()
     {
         return view('dashboard', [
-            'clocks' => WorldClock::orderBy('id')->get(),
+            'clocks' => WorldClock::orderBy('position')->orderBy('id')->get(),
             'cities' => WorldClock::cities(),
             'jobScout' => app(JobScout::class)->newMatches(),
             'analytics' => app(GoogleAnalytics::class)->summary(),

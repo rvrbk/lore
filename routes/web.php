@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::post('world-clocks', [WorldClockController::class, 'store'])->name('world-clocks.store');
+    Route::post('world-clocks/reorder', [WorldClockController::class, 'reorder'])->name('world-clocks.reorder');
     Route::delete('world-clocks/{worldClock}', [WorldClockController::class, 'destroy'])->name('world-clocks.destroy');
     Route::get('scheduling', [PointyController::class, 'index'])->name('pointy.index');
     Route::post('scheduling/types', [PointyController::class, 'store'])->name('pointy.types.store');

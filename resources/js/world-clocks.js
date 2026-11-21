@@ -30,7 +30,17 @@ if (clocks.length) {
                     timeFormatters.set(key, new Intl.DateTimeFormat(undefined, { timeZone: zone, hour: twelve ? 'numeric' : '2-digit', minute: '2-digit', hour12: twelve }));
                 }
                 timeFormatters.set(zone, true);
-                clock.querySelector('[data-clock-time]').textContent = timeFormatters.get(key).format(now);
+                const seconds = document.createElement('sup');
+                seconds.className = 'ml-px text-[9px] font-medium text-indigo-300/70';
+                seconds.textContent = String(now.getSeconds()).padStart(2, '0');
+                const nodes = [];
+                timeFormatters.get(key).formatToParts(now).forEach((part) => {
+                    nodes.push(document.createTextNode(part.value));
+                    if (part.type === 'minute') {
+                        nodes.push(seconds);
+                    }
+                });
+                clock.querySelector('[data-clock-time]').replaceChildren(...nodes);
                 clock.querySelector('[data-clock-date]').textContent = dateFormatters.get(zone).format(now).replace(',', '');
             } catch {
                 // keep the server-rendered time
@@ -52,4 +62,48 @@ if (clocks.length) {
 
     setInterval(tick, 1000);
     tick();
+}
+
+const list = document.querySelector('[data-clock-list]');
+
+if (list) {
+    let dragged = null;
+
+    list.addEventListener('dragstart', (event) => {
+        dragged = event.target.closest('[data-clock-id]');
+        if (dragged) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', dragged.dataset.clockId);
+            dragged.classList.add('opacity-40');
+        }
+    });
+
+    list.addEventListener('dragover', (event) => {
+        const target = event.target.closest('[data-clock-id]');
+        if (!dragged || !target || target === dragged) {
+            return;
+        }
+        event.preventDefault();
+        const box = target.getBoundingClientRect();
+        const after = event.clientX > box.left + box.width / 2;
+        list.insertBefore(dragged, after ? target.nextSibling : target);
+    });
+
+    list.addEventListener('dragend', () => {
+        if (!dragged) {
+            return;
+        }
+        dragged.classList.remove('opacity-40');
+        dragged = null;
+        saveOrder();
+    });
+
+    const saveOrder = () => {
+        const order = [...list.querySelectorAll('[data-clock-id]')].map((item) => Number(item.dataset.clockId));
+        fetch(list.dataset.reorderUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+            body: JSON.stringify({ order }),
+        });
+    };
 }

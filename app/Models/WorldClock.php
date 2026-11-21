@@ -15,7 +15,7 @@ class WorldClock extends Model
     /** @use HasFactory<WorldClockFactory> */
     use HasFactory;
 
-    protected $fillable = ['city', 'timezone'];
+    protected $fillable = ['city', 'timezone', 'position'];
 
     /**
      * Every city the dashboard can show, keyed by its time zone identifier.

@@ -41,6 +41,17 @@ class WorldClockTest extends TestCase
         $this->assertDatabaseCount('world_clocks', 0);
     }
 
+    public function test_clocks_can_be_reordered(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $first = WorldClock::factory()->create(['position' => 1]);
+        $second = WorldClock::factory()->create(['position' => 2]);
+
+        $this->postJson(route('world-clocks.reorder'), ['order' => [$second->id, $first->id]])->assertOk();
+
+        $this->assertSame([$second->id, $first->id], WorldClock::orderBy('position')->pluck('id')->all());
+    }
+
     public function test_clocks_require_a_login(): void
     {
         $this->post(route('world-clocks.store'), ['city' => 'Tokyo (Asia)'])->assertRedirect(route('login'));

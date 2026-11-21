@@ -13,14 +13,14 @@
 
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">World clocks</h2>
-        <ul class="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8">
+        <ul class="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">
             @foreach($clocks as $clock)
-                <li class="group relative flex items-center justify-between gap-1 border border-zinc-800 bg-zinc-900 px-2 py-1" data-world-clock="{{ $clock->timezone }}">
+                <li class="group relative flex cursor-grab touch-manipulation select-none items-center justify-between gap-1 border border-zinc-800 bg-zinc-900 px-2 py-1" draggable="true" data-clock-id="{{ $clock->id }}" data-world-clock="{{ $clock->timezone }}">
                     <div class="min-w-0">
                         <div class="truncate text-[11px] font-medium leading-tight text-zinc-100">{{ $clock->city }}</div>
                         <div class="text-[10px] leading-tight text-zinc-500" data-clock-date>{{ now($clock->timezone)->format('D j M') }}</div>
                     </div>
-                    <button type="button" class="shrink-0 text-sm font-semibold tabular-nums text-indigo-400" data-clock-time title="Tap to switch 12/24 hour">{{ now($clock->timezone)->format('H:i') }}</button>
+                    <button type="button" class="shrink-0 text-sm font-semibold tabular-nums text-indigo-400" data-clock-time title="Tap to switch 12/24 hour">{{ now($clock->timezone)->format('H:i') }}<sup class="ml-px text-[9px] font-medium text-indigo-300/70">{{ now($clock->timezone)->format('s') }}</sup></button>
                     <form method="POST" action="{{ route('world-clocks.destroy', $clock) }}" onsubmit="return confirm('Remove {{ e($clock->city) }}?')" class="absolute -right-1 -top-1 hidden group-hover:block [@media(hover:none)]:block">@csrf @method('DELETE')<button class="rounded-full bg-zinc-800 px-1 text-[9px] text-zinc-400 hover:text-red-400" title="Remove clock" aria-label="Remove {{ $clock->city }}">✕</button></form>
                 </li>
             @endforeach
