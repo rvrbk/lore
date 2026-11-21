@@ -13,9 +13,9 @@
 
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">World clocks</h2>
-        <ul class="grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">
+        <ul class="flex gap-1.5 overflow-x-auto px-1 py-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0 xl:grid-cols-8" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">
             @foreach($clocks as $clock)
-                <li class="group relative flex cursor-grab touch-manipulation select-none items-center justify-between gap-1 border border-zinc-800 bg-zinc-900 px-2 py-1" draggable="true" data-clock-id="{{ $clock->id }}" data-world-clock="{{ $clock->timezone }}" data-analog="{{ $clock->is_analog ? 1 : 0 }}">
+                <li class="group relative flex w-36 shrink-0 cursor-grab sm:w-auto sm:shrink touch-manipulation select-none items-center justify-between gap-1 border border-zinc-800 bg-zinc-900 px-2 py-1" draggable="true" data-clock-id="{{ $clock->id }}" data-world-clock="{{ $clock->timezone }}" data-analog="{{ $clock->is_analog ? 1 : 0 }}">
                     <div class="min-w-0">
                         <div class="truncate text-[11px] font-medium leading-tight text-zinc-100">{{ $clock->city }}</div>
                         <div class="text-[10px] leading-tight text-zinc-500" data-clock-date>{{ now($clock->timezone)->format('D j M') }}</div>
