@@ -13,10 +13,10 @@
 
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">World clocks</h2>
-        <ul class="grid grid-cols-4 gap-1 sm:grid-cols-6 xl:grid-cols-10" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">
+        <ul class="flex flex-wrap gap-1" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">
             @foreach($clocks as $clock)
-                <li class="group relative flex aspect-square cursor-grab touch-manipulation select-none flex-col items-center justify-center gap-0.5 border border-zinc-800 bg-zinc-900 p-1 text-center" draggable="true" data-clock-id="{{ $clock->id }}" data-world-clock="{{ $clock->timezone }}" data-analog="{{ $clock->is_analog ? 1 : 0 }}">
-                    <div class="w-full truncate text-[10px] font-medium leading-tight text-zinc-100">{{ $clock->city }}</div>
+                <li class="group relative flex size-[4.75rem] shrink-0 cursor-grab touch-manipulation select-none flex-col items-center justify-center gap-0.5 border border-zinc-800 bg-zinc-900 p-1 text-center" draggable="true" data-clock-id="{{ $clock->id }}" data-world-clock="{{ $clock->timezone }}" data-analog="{{ $clock->is_analog ? 1 : 0 }}">
+                    <div class="w-full truncate text-[10px] font-medium leading-tight text-zinc-100" title="{{ $clock->city }}">{{ \Illuminate\Support\Str::before($clock->city, ' (') }}</div>
                     @php($local = now($clock->timezone))
                     <svg viewBox="0 0 32 32" class="size-9 shrink-0 text-indigo-400 {{ $clock->is_analog ? '' : 'hidden' }}" data-clock-face aria-hidden="true">
                         <rect x="1" y="1" width="30" height="30" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="1.5"/>
