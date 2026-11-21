@@ -30,8 +30,25 @@ const STEP_MS = 140;
 const ARROWS = { up: '↑', down: '↓', left: '←', right: '→' };
 const KEY_DIRS = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
 
-const UFO_SVG =
-    '<svg viewBox="0 0 16 12" class="size-full" aria-hidden="true"><ellipse cx="8" cy="8" rx="7.5" ry="3" fill="#c4c8e0"/><path d="M4 7a4 4 0 0 1 8 0z" fill="#00e5ff"/><circle cx="4" cy="8.2" r="0.8" fill="#ff2d55"/><circle cx="8" cy="9" r="0.8" fill="#ffe600"/><circle cx="12" cy="8.2" r="0.8" fill="#39ff14"/></svg>';
+/*
+ * The UFO from the world map: the same 7x7 dot bitmap seen from above, with the red and yellow lights swapping every 300 ms.
+ */
+const UFO_BITMAP = ['..SLS..', '.MDDDM.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.MDDDM.', '..SLS..'];
+const UFO_COLORS = { W: '#ffffff', S: '#c4c8e0', D: '#6c7090' };
+const LIGHT_COLORS = { L: ['#ff2d55', '#ffe600'], M: ['#ffe600', '#ff2d55'] };
+
+const UFO_SVG = `<svg viewBox="0 0 7 7" class="size-full" style="filter: drop-shadow(0 0 1px #00e5ff)" aria-hidden="true">${UFO_BITMAP.flatMap((row, y) =>
+    [...row].flatMap((symbol, x) => {
+        if (symbol === '.') {
+            return [];
+        }
+        const light = LIGHT_COLORS[symbol];
+        const dot = light
+            ? `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5" fill="${light[0]}"><animate attributeName="fill" values="${light[0]};${light[1]}" dur="0.6s" calcMode="discrete" repeatCount="indefinite"/></circle>`
+            : `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5" fill="${UFO_COLORS[symbol]}"/>`;
+        return [dot];
+    }),
+).join('')}</svg>`;
 
 function el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
@@ -104,7 +121,7 @@ function createBoard(map, label) {
                 cell.append(el('span', { class: 'text-xs text-zinc-500' }, ARROWS[arrow]));
             }
             if (here) {
-                const ufo = el('span', { class: 'absolute inset-[12%]' });
+                const ufo = el('span', { class: 'absolute inset-[8%]' });
                 ufo.innerHTML = UFO_SVG;
                 cell.append(ufo);
             }

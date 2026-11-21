@@ -36,8 +36,13 @@
                 Incidents
                 @if($openIncidents->isNotEmpty())<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $openIncidents->count() }}</span>@endif
             </a>
-            <a href="{{ route('pilot') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('pilot') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Train the Pilot</a>
         </nav>
+        <div>
+            <div class="text-xs font-semibold uppercase tracking-wide text-zinc-400">Games</div>
+            <nav class="mt-2 space-y-1 text-sm">
+                <a href="{{ route('pilot') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('pilot') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Train the Pilot</a>
+            </nav>
+        </div>
         @foreach(['Pinned' => $pinnedPages, 'Recent' => $recentPages] as $heading => $list)
             @if($list->isNotEmpty())
                 <div>
