@@ -6,20 +6,20 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class CropCircleTest extends TestCase
+class RootCauseTest extends TestCase
 {
     use RefreshDatabase;
 
     public function test_guests_are_sent_to_login(): void
     {
-        $this->get(route('crop-circles'))->assertRedirect(route('login'));
+        $this->get(route('root-cause'))->assertRedirect(route('login'));
     }
 
-    public function test_signed_in_users_get_crop_circle_lab(): void
+    public function test_signed_in_users_get_root_cause(): void
     {
         $this->actingAs(User::factory()->create())
-            ->get(route('crop-circles'))
+            ->get(route('root-cause'))
             ->assertOk()
-            ->assertSee('data-crop-circles', false);
+            ->assertSee('data-root-cause', false);
     }
 }

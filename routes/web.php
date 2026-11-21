@@ -91,7 +91,7 @@ Route::middleware('auth')->group(function () {
     Route::post('incidents/{incident}/post-mortem', [IncidentController::class, 'postMortem'])->name('incidents.post-mortem');
 
     Route::view('pilot', 'pilot')->name('pilot');
-    Route::view('crop-circles', 'crop-circles')->name('crop-circles');
+    Route::view('root-cause', 'root-cause')->name('root-cause');
 
     Route::get('deploy', [DeployController::class, 'index'])->name('deploy.index');
     Route::get('deploy/state', [DeployController::class, 'state'])->name('deploy.state');
