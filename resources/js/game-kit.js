@@ -3,24 +3,24 @@
  */
 
 /*
- * The UFO from the world map: the same 7x7 dot bitmap seen from above, with just four red and yellow lights swapping every 300 ms.
+ * A flying saucer seen from above: a round disk with a dome in the middle and four red and yellow lights on the rim
+ * that swap colours every 300 ms, like the UFOs on the world map.
  */
-const UFO_BITMAP = ['..SLS..', '.DDDDD.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.DDDDD.', '..SLS..'];
-const UFO_COLORS = { W: '#ffffff', S: '#c4c8e0', D: '#6c7090' };
-const LIGHT_COLORS = { L: ['#ff2d55', '#ffe600'] };
+const LIGHTS = [
+    [8, 1.6, '#ff2d55', '#ffe600'],
+    [14.4, 8, '#ffe600', '#ff2d55'],
+    [8, 14.4, '#ff2d55', '#ffe600'],
+    [1.6, 8, '#ffe600', '#ff2d55'],
+];
 
-export const UFO_SVG = `<svg viewBox="0 0 7 7" class="ufo-hover size-full" style="filter: drop-shadow(0 0 1px #00e5ff)" aria-hidden="true">${UFO_BITMAP.flatMap((row, y) =>
-    [...row].flatMap((symbol, x) => {
-        if (symbol === '.') {
-            return [];
-        }
-        const light = LIGHT_COLORS[symbol];
-        const dot = light
-            ? `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5" fill="${light[0]}"><animate attributeName="fill" values="${light[0]};${light[1]}" dur="0.6s" calcMode="discrete" repeatCount="indefinite"/></circle>`
-            : `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5" fill="${UFO_COLORS[symbol]}"/>`;
-        return [dot];
-    }),
-).join('')}</svg>`;
+export const UFO_SVG = `<svg viewBox="0 0 16 16" class="ufo-hover size-full" style="filter: drop-shadow(0 0 1px #00e5ff)" aria-hidden="true">
+<circle cx="8" cy="8" r="7.6" fill="#c4c8e0"/>
+<circle cx="8" cy="8" r="6" fill="#6c7090"/>
+<circle cx="8" cy="8" r="4.6" fill="none" stroke="#c4c8e0" stroke-width="0.5" stroke-dasharray="1.2 1.2"/>
+<circle cx="8" cy="8" r="2.6" fill="#00e5ff"/>
+<circle cx="7.1" cy="7.1" r="1" fill="#ffffff"/>
+${LIGHTS.map(([x, y, from, to]) => `<circle cx="${x}" cy="${y}" r="1" fill="${from}"><animate attributeName="fill" values="${from};${to}" dur="0.6s" calcMode="discrete" repeatCount="indefinite"/></circle>`).join('')}
+</svg>`;
 
 export function el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
