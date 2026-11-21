@@ -90,6 +90,8 @@ Route::middleware('auth')->group(function () {
     Route::put('incidents/{incident}', [IncidentController::class, 'update'])->name('incidents.update');
     Route::post('incidents/{incident}/post-mortem', [IncidentController::class, 'postMortem'])->name('incidents.post-mortem');
 
+    Route::view('pilot', 'pilot')->name('pilot');
+
     Route::get('deploy', [DeployController::class, 'index'])->name('deploy.index');
     Route::get('deploy/state', [DeployController::class, 'state'])->name('deploy.state');
     Route::post('deploy', [DeployController::class, 'store'])->name('deploy.store');
