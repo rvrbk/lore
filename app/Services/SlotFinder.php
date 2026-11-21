@@ -9,7 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * Works out which start times of a booking type are still free. The weekly hours, and per-day exceptions to them, are in the owner's time zone,
+ * Works out which start times of a booking type are still free. The weekly hours (general, or per weekday) and per-date exceptions to them are in the owner's time zone,
  * the results are UTC instants so they can be shown in any guest time zone.
  */
 class SlotFinder
@@ -41,8 +41,9 @@ class SlotFinder
                 continue;
             }
 
-            $end = $day->setTimeFromTimeString($exception->end_time ?? $type->end_time);
-            for ($start = $day->setTimeFromTimeString($exception->start_time ?? $type->start_time); $start->addMinutes($type->duration_minutes) <= $end; $start = $start->addMinutes($type->duration_minutes + $buffer)) {
+            $hours = $type->hoursOnWeekday($day->dayOfWeekIso);
+            $end = $day->setTimeFromTimeString($exception->end_time ?? $hours['end_time']);
+            for ($start = $day->setTimeFromTimeString($exception->start_time ?? $hours['start_time']); $start->addMinutes($type->duration_minutes) <= $end; $start = $start->addMinutes($type->duration_minutes + $buffer)) {
                 $slot = $start->setTimezone('UTC');
                 if ($slot < $earliest || $slot > $latest) {
                     continue;

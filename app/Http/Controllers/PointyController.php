@@ -99,6 +99,9 @@ class PointyController extends Controller
             'days.*' => ['integer', 'between:1,7'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'weekday_hours' => ['nullable', 'array'],
+            'weekday_hours.*.start_time' => ['nullable', 'required_with:weekday_hours.*.end_time', 'date_format:H:i'],
+            'weekday_hours.*.end_time' => ['nullable', 'required_with:weekday_hours.*.start_time', 'date_format:H:i', 'after:weekday_hours.*.start_time'],
             'buffer_minutes' => ['required', 'integer', 'min:0', 'max:240'],
             'min_notice_hours' => ['required', 'integer', 'min:0', 'max:720'],
             'max_days_ahead' => ['required', 'integer', 'min:1', 'max:365'],
@@ -106,6 +109,10 @@ class PointyController extends Controller
         ], ['slug.regex' => 'Use lowercase letters, numbers and dashes for the link.', 'meet_url.regex' => 'Use a Google Meet link, like https://meet.google.com/abc-defg-hij.']);
 
         $data['days'] = array_map('intval', $data['days']);
+        $data['weekday_hours'] = collect($data['weekday_hours'] ?? [])
+            ->filter(fn (array $hours, int|string $weekday) => in_array((int) $weekday, $data['days'], true) && filled($hours['start_time'] ?? null) && filled($hours['end_time'] ?? null))
+            ->map(fn (array $hours) => ['start_time' => $hours['start_time'], 'end_time' => $hours['end_time']])
+            ->all() ?: null;
         $data['is_active'] = $request->boolean('is_active');
         $data['include_meet'] = $request->boolean('include_meet');
         if ($data['include_meet'] && blank($data['meet_url'] ?? null) && blank(config('services.pointy.meet_url'))) {

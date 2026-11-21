@@ -22,6 +22,17 @@
     </div>
     <label class="text-xs text-zinc-400">From<input type="time" name="start_time" value="{{ old('start_time', $type?->start_time ?? '09:00') }}" required class="{{ $field }} mt-1 w-full"></label>
     <label class="text-xs text-zinc-400">Until<input type="time" name="end_time" value="{{ old('end_time', $type?->end_time ?? '17:00') }}" required class="{{ $field }} mt-1 w-full"></label>
+    <details class="text-sm sm:col-span-2" @open($type?->weekday_hours || $errors->has('weekday_hours.*'))>
+        <summary class="cursor-pointer text-xs text-zinc-400">Different hours for a weekday (optional)</summary>
+        <p class="mt-1 text-xs text-zinc-500">Leave a weekday empty to use the general hours above. Only the days ticked above are used.</p>
+        @foreach($weekdays as $number => $label)
+            <div class="mt-2 flex items-center gap-2">
+                <span class="w-10 text-zinc-300">{{ $label }}</span>
+                <input type="time" name="weekday_hours[{{ $number }}][start_time]" value="{{ old("weekday_hours.$number.start_time", $type?->weekday_hours[$number]['start_time'] ?? '') }}" aria-label="{{ $label }} from" class="{{ $field }}">
+                <input type="time" name="weekday_hours[{{ $number }}][end_time]" value="{{ old("weekday_hours.$number.end_time", $type?->weekday_hours[$number]['end_time'] ?? '') }}" aria-label="{{ $label }} until" class="{{ $field }}">
+            </div>
+        @endforeach
+    </details>
     <label class="text-xs text-zinc-400">Minimum notice (hours)<input type="number" name="min_notice_hours" value="{{ old('min_notice_hours', $type?->min_notice_hours ?? 4) }}" min="0" max="720" required class="{{ $field }} mt-1 w-full"></label>
     <label class="text-xs text-zinc-400">Bookable this many days ahead<input type="number" name="max_days_ahead" value="{{ old('max_days_ahead', $type?->max_days_ahead ?? 30) }}" min="1" max="365" required class="{{ $field }} mt-1 w-full"></label>
     <label class="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="include_meet" value="1" @checked(old('include_meet', $type?->include_meet ?? true))>Include a Google Meet link</label>

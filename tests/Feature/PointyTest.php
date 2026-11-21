@@ -200,4 +200,30 @@ class PointyTest extends TestCase
         $this->delete(route('pointy.exceptions.destroy', AvailabilityException::firstOrFail()))->assertRedirect(route('pointy.index'));
         $this->assertDatabaseCount('availability_exceptions', 0);
     }
+
+    public function test_a_weekday_can_have_its_own_hours_and_a_date_exception_still_wins(): void
+    {
+        $type = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1, 2], 'start_time' => '09:00', 'end_time' => '10:00', 'weekday_hours' => [1 => ['start_time' => '13:00', 'end_time' => '14:00']], 'min_notice_hours' => 0, 'max_days_ahead' => 9]);
+        $slots = fn () => app(SlotFinder::class)->free($type->fresh())->map(fn ($slot) => $slot->format('m-d H:i'))->all();
+
+        $this->assertSame(['11-23 13:00', '11-23 13:30', '11-24 09:00', '11-24 09:30', '11-30 13:00', '11-30 13:30', '12-01 09:00', '12-01 09:30'], $slots());
+
+        AvailabilityException::factory()->create(['booking_type_id' => $type->id, 'date' => '2026-11-30', 'start_time' => '16:00', 'end_time' => '16:30']);
+
+        $this->assertContains('11-30 16:00', $slots());
+        $this->assertNotContains('11-30 13:00', $slots());
+    }
+
+    public function test_the_owner_saves_weekday_hours_and_only_for_days_that_are_on(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $base = ['name' => 'Intro call', 'duration_minutes' => 30, 'timezone' => 'Europe/Amsterdam', 'days' => [1, 5], 'start_time' => '09:00', 'end_time' => '17:00', 'buffer_minutes' => 0, 'min_notice_hours' => 4, 'max_days_ahead' => 30, 'is_active' => 1, 'include_meet' => 0];
+
+        $this->post(route('pointy.types.store'), $base + ['weekday_hours' => [5 => ['start_time' => '09:00', 'end_time' => '12:00'], 3 => ['start_time' => '10:00', 'end_time' => '11:00'], 1 => ['start_time' => '', 'end_time' => '']]])->assertSessionHasNoErrors();
+
+        $this->assertSame([5 => ['start_time' => '09:00', 'end_time' => '12:00']], BookingType::firstOrFail()->weekday_hours);
+
+        $this->post(route('pointy.types.store'), $base + ['name' => 'Bad', 'weekday_hours' => [5 => ['start_time' => '12:00', 'end_time' => '09:00']]])->assertSessionHasErrors('weekday_hours.5.end_time');
+        $this->post(route('pointy.types.store'), $base + ['name' => 'Half', 'weekday_hours' => [5 => ['start_time' => '12:00', 'end_time' => '']]])->assertSessionHasErrors('weekday_hours.5.end_time');
+    }
 }
