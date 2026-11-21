@@ -793,29 +793,84 @@ const drawEnemy = (enemy) => {
     rect(x + 2, y + 2, 2, 1, '#8dff72');
 };
 
+const SPRITE_COLORS = {
+    y: '#ffd23f',
+    o: '#c98a00',
+    s: '#f5c9a0',
+    k: '#161616',
+    w: '#ffffff',
+    g: '#2fae4f',
+    G: '#1b7a35',
+    b: '#3a4fd6',
+    r: '#e5282d',
+    p: '#aab4c4',
+    P: '#6c7388',
+};
+
+const HEAD_AND_BODY = [
+    '...yyyyyy...',
+    '..yyyyyyyy..',
+    '.yyyyyyyyyy.',
+    '.oyyyyyyyyyy',
+    '.oossssssss.',
+    '.oosssswks..',
+    '..ossssssss.',
+    '..ggggggggg.',
+    '.gggGggggg..',
+    '.sgggGgggs..',
+    '..ggggggg...',
+    '..bbbbbbb...',
+];
+
+const SPRITE_LEGS = {
+    idle: ['..bb...bb...', '..bb...bb...', '.rrr...rrr..', '.rrr...rrrr.'],
+    runA: ['.bbb...bb...', 'bbb.....bb..', 'rrr.....rrr.', 'rrr.....rrrr'],
+    runB: ['..bbb.bbb...', '...bb..bb...', '...rr..rr...', '..rrrr.rrrr.'],
+    jump: ['.bbb...bbb..', 'bb.......bb.', 'rr.......rr.', 'rrr.....rrr.'],
+    pogo: ['...bbbbb....', '...rrrrr....', '.....pp.....', '.....PP.....'],
+};
+
+const SPRITE_ARMS_UP = { 7: 's.ggggggg.s.', 8: '.sgggGgggs..' };
+
+const spriteFrame = (name) => {
+    const rows = [...HEAD_AND_BODY, ...SPRITE_LEGS[name]];
+    if (name === 'jump') {
+        Object.entries(SPRITE_ARMS_UP).forEach(([row, pixels]) => {
+            rows[row] = pixels;
+        });
+    }
+
+    return rows;
+};
+
 const drawPlayer = () => {
     const p = game.player;
-    const x = Math.round(p.x);
-    const y = Math.round(p.y);
-    const f = p.facing;
-    const legSwing = p.onGround && p.vx !== 0 ? Math.floor(p.step) % 2 : 0;
-    const flip = (offset, width) => (f > 0 ? offset : p.w - offset - width);
+    const left = Math.round(p.x) - 1;
+    const top = Math.round(p.y) - 1;
+    const width = 12;
 
-    if (p.pogo) {
-        rect(x + 4, y + 11, 2, 5, '#aab4c4');
-        rect(x + 2, y + 15, 6, 1, '#6c7388');
+    let name = 'idle';
+    if (p.dead || !p.onGround) {
+        name = p.pogo && !p.dead ? 'pogo' : 'jump';
+    } else if (p.pogo) {
+        name = 'pogo';
+    } else if (p.vx !== 0) {
+        name = Math.floor(p.step) % 2 ? 'runA' : 'runB';
     }
-    rect(x + flip(1, 8), y, 8, 5, '#ffd23f');
-    rect(x + flip(f > 0 ? 6 : 0, 4), y + 3, 4, 2, '#e0a800');
-    rect(x + flip(2, 6), y + 5, 6, 3, '#f5c9a0');
-    rect(x + flip(5, 1), y + 5, 1, 2, '#222222');
-    rect(x + 1, y + 8, 8, 4, '#3a86ff');
-    rect(x + 1, y + 8, 8, 1, '#7fb0ff');
-    if (!p.pogo) {
-        rect(x + 1 + legSwing, y + 12, 3, 3, '#ff3b3b');
-        rect(x + 6 - legSwing, y + 12, 3, 3, '#ff3b3b');
-    } else {
-        rect(x + 2, y + 12, 6, 2, '#ff3b3b');
+
+    spriteFrame(name).forEach((row, ry) => {
+        for (let rx = 0; rx < width; rx++) {
+            const color = SPRITE_COLORS[row[rx]];
+            if (color) {
+                rect(left + (p.facing > 0 ? rx : width - 1 - rx), top + ry, 1, 1, color);
+            }
+        }
+    });
+
+    if (p.cooldown > 8) {
+        const gunX = p.facing > 0 ? left + 10 : left - 3;
+        rect(gunX, top + 8, 5, 2, '#6c7388');
+        rect(gunX + (p.facing > 0 ? 4 : 0), top + 8, 1, 2, '#ff2d55');
     }
 };
 
