@@ -31,7 +31,7 @@ if (clocks.length) {
                 }
                 timeFormatters.set(zone, true);
                 const seconds = document.createElement('sup');
-                seconds.className = 'ml-px text-[9px] font-medium text-indigo-300/70';
+                seconds.className = 'ml-px text-xs font-medium text-indigo-300/70';
                 seconds.textContent = String(now.getSeconds()).padStart(2, '0');
                 const nodes = [];
                 let hour = 0;
@@ -48,7 +48,7 @@ if (clocks.length) {
                     }
                 });
                 clock.querySelector('[data-clock-time]').replaceChildren(...nodes);
-                const rotate = (hand, degrees) => clock.querySelector(`[data-hand="${hand}"]`).setAttribute('transform', `rotate(${degrees} 16 16)`);
+                const rotate = (hand, degrees) => clock.querySelector(`[data-hand="${hand}"]`).setAttribute('transform', `rotate(${degrees} 24 16)`);
                 rotate('hour', hour * 30 + minute * 0.5);
                 rotate('minute', minute * 6);
                 rotate('second', now.getSeconds() * 6);
