@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AnalyticsSite;
 use App\Models\Monitor;
+use App\Services\GitHubDeployHook;
 use App\Services\GoogleAnalytics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Throwable;
 
 class AnalyticsController extends Controller
 {
@@ -32,7 +34,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function store(Request $request, GoogleAnalytics $analytics): RedirectResponse
+    public function store(Request $request, GoogleAnalytics $analytics, GitHubDeployHook $hook): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -49,7 +51,16 @@ class AnalyticsController extends Controller
             $analytics->forget();
         }
 
-        return redirect()->back(fallback: route('analytics.index'));
+        $redirect = redirect()->back(fallback: route('analytics.index'));
+        if ($monitor->deploy_path !== null && $hook->isConfigured()) {
+            try {
+                $redirect->with('hook', "Pushes to {$hook->install($monitor)} now deploy through Lore.");
+            } catch (Throwable $e) {
+                $redirect->with('hook_error', "Site added, but deploy-on-push was not set up: {$e->getMessage()}");
+            }
+        }
+
+        return $redirect;
     }
 
     public function destroy(AnalyticsSite $site, GoogleAnalytics $analytics): RedirectResponse

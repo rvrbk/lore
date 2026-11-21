@@ -77,6 +77,11 @@ return [
         'smoke_retry_seconds' => env('DEPLOY_SMOKE_RETRY_SECONDS', 5),
     ],
 
+    'github' => [
+        // Token with repo + workflow scope; lets Lore add the deploy-on-push workflow and secret to a site's repository.
+        'token' => env('GITHUB_DEPLOY_TOKEN'),
+    ],
+
     'telegram' => [
         // Bot token from @BotFather and the id of the chat that should receive reminders.
         'token' => env('TELEGRAM_BOT_TOKEN'),

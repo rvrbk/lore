@@ -6,7 +6,7 @@
         <p class="mt-4 border border-zinc-700 bg-zinc-900 p-3 text-sm text-zinc-400">Deploying is switched off here. Set <code>DEPLOY_ENABLED=true</code> in the server's .env to use it.</p>
     @endunless
 
-    <details class="mt-5 border border-zinc-800 bg-zinc-900 p-3" @if($errors->any()) open @endif>
+    <details class="mt-5 border border-zinc-800 bg-zinc-900 p-3" @if($errors->any() || session('hook') || session('hook_error')) open @endif>
         <summary class="cursor-pointer text-sm font-medium">Add a site</summary>
         <div class="mt-3">@include('partials.site-form')</div>
     </details>
