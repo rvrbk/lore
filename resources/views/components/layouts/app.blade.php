@@ -19,23 +19,20 @@
         </form>
         <nav class="space-y-1 text-sm">
             <a href="{{ route('dashboard') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('dashboard') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Home</a>
-            <a href="{{ route('tasks.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tasks.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Kanban</a>
-            <a href="{{ route('reminders.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('reminders.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
-                Reminders
-                @if($dueCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount }}</span>@endif
-            </a>
-            <a href="{{ route('tags.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('tags.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Tags</a>
-            <a href="{{ route('pointy.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('pointy.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Pointy</a>
-            <a href="{{ route('deploy.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('deploy.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Deploy</a>
-            <a href="{{ route('analytics.index') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('analytics.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Analytics</a>
-            <a href="{{ route('monitors.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('monitors.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
-                Server health
-                @if($downCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $downCount }}</span>@endif
-            </a>
-            <a href="{{ route('incidents.index') }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('incidents.*') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
-                Incidents
-                @if($openIncidents->isNotEmpty())<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $openIncidents->count() }}</span>@endif
-            </a>
+            @foreach($navItems as $key => $item)
+                @php
+                    $badge = match($key) {
+                        'reminders' => $dueCount,
+                        'monitors' => $downCount,
+                        'incidents' => $openIncidents->count(),
+                        default => 0,
+                    };
+                @endphp
+                <a href="{{ route($item['route']) }}" class="flex items-center justify-between rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs($item['pattern']) ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">
+                    {{ $item['label'] }}
+                    @if($badge)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $badge }}</span>@endif
+                </a>
+            @endforeach
         </nav>
         @foreach(['Pinned' => $pinnedPages, 'Recent' => $recentPages] as $heading => $list)
             @if($list->isNotEmpty())

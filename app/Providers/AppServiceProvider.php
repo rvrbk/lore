@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Space;
 use App\Models\WorldClock;
+use App\Support\NavMenu;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         DevCommands::artisan('schedule:work', 'scheduler');
 
         View::composer('components.layouts.app', fn ($view) => $view->with([
+            'navItems' => NavMenu::sorted(),
             'navSpaces' => Space::orderBy('name')->get(),
             'headerClock' => WorldClock::where('is_header', true)->first(),
             'dueCount' => Reminder::due()->count(),
