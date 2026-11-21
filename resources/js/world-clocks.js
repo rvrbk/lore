@@ -1,5 +1,3 @@
-import { uses12Hours } from './local-time.js';
-
 const clocks = document.querySelectorAll('[data-world-clock]');
 
 if (clocks.length) {
@@ -12,7 +10,7 @@ if (clocks.length) {
         }
     };
     const stored = readStored();
-    let twelve = stored === null ? uses12Hours() : stored === '1';
+    let twelve = stored === null ? true : stored === '1';
 
     const timeFormatters = new Map();
     const dateFormatters = new Map();
@@ -127,9 +125,9 @@ if (headerClocks.length) {
         try {
             const stored = localStorage.getItem(storageKey);
 
-            return stored === null ? uses12Hours() : stored === '1';
+            return stored === null ? true : stored === '1';
         } catch {
-            return uses12Hours();
+            return true;
         }
     };
 
