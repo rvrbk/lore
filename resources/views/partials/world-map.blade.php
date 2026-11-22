@@ -7,7 +7,7 @@
     $top = array_slice($totals, 0, 6, true);
 @endphp
 @if($totals)
-    <div class="border border-zinc-800 bg-zinc-900 p-3">
+    <div class="border border-zinc-800 bg-zinc-900 p-1.5 sm:p-3">
         <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs text-zinc-400">
             <span>Visitors by country
                 <span data-live-users="{{ route('analytics.live') }}">@if($live !== null) · <span class="text-pink-400">● {{ number_format($live) }} live now</span>@foreach(array_filter($liveSites ?? []) as $name => $users) · <span class="text-zinc-300">{{ $name }} {{ number_format($users) }}</span>@endforeach @endif</span></span><span class="flex items-center gap-3">{{ count($totals) }} {{ \Illuminate\Support\Str::plural('country', count($totals)) }} · all sites

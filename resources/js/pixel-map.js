@@ -379,9 +379,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             return false;
         }
         const ratio = pixelRatio();
-        const cellPixels = Math.max(3, Math.floor((available * ratio) / cols));
-        const width = cols * cellPixels;
-        const height = rows * cellPixels;
+        const exactCell = (available * ratio) / cols;
+        const cellPixels = lite || exactCell < 3 ? exactCell : Math.floor(exactCell);
+        const width = Math.floor(cols * cellPixels);
+        const height = Math.round(rows * cellPixels);
         if (width === canvas.width && height === canvas.height) {
             return false;
         }
