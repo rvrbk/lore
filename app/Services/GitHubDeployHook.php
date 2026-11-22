@@ -126,7 +126,7 @@ class GitHubDeployHook
         }
     }
 
-    private function github(): PendingRequest
+    public function github(): PendingRequest
     {
         return Http::baseUrl('https://api.github.com')
             ->withToken((string) config('services.github.token'))

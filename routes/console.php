@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\HeatClick;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -16,3 +17,4 @@ Schedule::command('monitors:check-expiry')->hourly()->withoutOverlapping();
 Schedule::command('server:measure')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('lore:digest')->dailyAt('07:30');
 Schedule::command('sites:count-users')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::call(fn () => HeatClick::where('created_at', '<', now()->subDays(HeatClick::KEEP_DAYS))->delete())->name('heat:prune')->daily();

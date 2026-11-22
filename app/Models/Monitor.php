@@ -34,6 +34,13 @@ class Monitor extends Model
 
     protected $fillable = ['name', 'url', 'deploy_path'];
 
+    protected static function booted(): void
+    {
+        static::creating(function (Monitor $monitor): void {
+            $monitor->heat_key ??= Str::random(32);
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -65,6 +72,14 @@ class Monitor extends Model
         foreach ($monitors as $monitor) {
             $monitor->recordResult($results[(string) $monitor->id]);
         }
+    }
+
+    /**
+     * @return HasMany<HeatClick, $this>
+     */
+    public function heatClicks(): HasMany
+    {
+        return $this->hasMany(HeatClick::class);
     }
 
     public function checks(): HasMany

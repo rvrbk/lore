@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AnalyticsSite;
 use App\Models\Monitor;
 use App\Services\GitHubDeployHook;
+use App\Services\GitHubHeatmapSnippet;
 use App\Services\GoogleAnalytics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +35,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function store(Request $request, GoogleAnalytics $analytics, GitHubDeployHook $hook): RedirectResponse
+    public function store(Request $request, GoogleAnalytics $analytics, GitHubDeployHook $hook, GitHubHeatmapSnippet $heatmap): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -57,6 +58,15 @@ class AnalyticsController extends Controller
                 $redirect->with('hook', "Pushes to {$hook->install($monitor)} now deploy through Lore.");
             } catch (Throwable $e) {
                 $redirect->with('hook_error', "Site added, but deploy-on-push was not set up: {$e->getMessage()}");
+            }
+        }
+
+        if ($monitor->deploy_path !== null && $hook->isConfigured()) {
+            try {
+                $heatmap->install($monitor);
+                $redirect->with('heatmap', "{$monitor->name} now sends its clicks to Heatmaps once the push is deployed.");
+            } catch (Throwable $e) {
+                $redirect->with('heatmap_error', "Site added, but the heatmap tracker was not added: {$e->getMessage()}");
             }
         }
 
