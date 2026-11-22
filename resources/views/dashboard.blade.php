@@ -1,7 +1,7 @@
 <x-layouts.app title="Home">
     <div class="flex items-start justify-between gap-4">
         <h1 class="text-2xl font-semibold">Welcome back</h1>
-        <a href="{{ route('export.all') }}" class="rounded border px-3 py-1.5 text-sm hover:bg-zinc-800" title="Download every page as Markdown files in a .zip">Export everything</a>
+        <a href="{{ route('export.all') }}" class="rounded border px-3 py-1.5 text-sm hover:bg-zinc-800" title="Download every page in your spaces as Markdown files in a .zip. Only the .md files in the spaces are included.">Export all space pages (.md)</a>
     </div>
 
     @if($commits)
