@@ -1,4 +1,4 @@
-import { confetti, trombone } from './fx.js';
+import { trombone } from './fx.js';
 
 const POLL_MS = 5000;
 
@@ -52,8 +52,8 @@ const poll = async () => {
                 const data = await response.json();
                 show(data.active);
                 const latest = data.latest?.id ?? null;
-                if (lastFinished !== undefined && latest !== null && latest !== lastFinished) {
-                    (data.latest.ok ? confetti : trombone)();
+                if (lastFinished !== undefined && latest !== null && latest !== lastFinished && !data.latest.ok) {
+                    trombone();
                 }
                 lastFinished = latest;
             }

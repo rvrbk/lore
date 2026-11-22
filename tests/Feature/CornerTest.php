@@ -8,8 +8,6 @@ use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorDay;
 use App\Models\Mood;
-use App\Models\Page;
-use App\Models\Space;
 use App\Models\User;
 use App\Services\CommitStreak;
 use App\Services\MoodInsights;
@@ -23,11 +21,6 @@ use Tests\TestCase;
 class CornerTest extends TestCase
 {
     use RefreshDatabase;
-
-    private function page(string $title, string $body): Page
-    {
-        return Page::create(['space_id' => Space::firstOrCreate(['name' => 'Ops'])->id, 'title' => $title, 'body' => $body]);
-    }
 
     public function test_the_dashboard_shows_the_corner_with_streak_fortune_and_mood_buttons(): void
     {
