@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Monitor;
 use App\Models\User;
 use App\Services\ErrorLog;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class ErrorLogTest extends TestCase
@@ -55,6 +57,8 @@ class ErrorLogTest extends TestCase
         $this->assertSame(1, $summary['daily'][4]);
         $this->assertCount(2, $summary['recent']);
         $this->assertContains(2, array_column($summary['recent'], 'count'));
+        $this->assertInstanceOf(Carbon::class, $summary['recent'][0]['last_at']);
+        $this->assertSame([], array_filter(array_merge(...Cache::get('error-log.v2.'.$monitor->id)['recent']), 'is_object'), 'cached data must be plain values, objects cannot be restored from the cache');
     }
 
     public function test_a_site_without_a_readable_log_has_no_error_summary(): void

@@ -29,7 +29,16 @@ class ErrorLog
             return null;
         }
 
-        return Cache::remember('error-log.'.$monitor->id, now()->addMinutes(5), fn () => $this->summarize($this->entries($monitor->deploy_path))) ?: null;
+        $summary = Cache::remember('error-log.v2.'.$monitor->id, now()->addMinutes(5), fn () => $this->summarize($this->entries($monitor->deploy_path)));
+        if (! $summary) {
+            return null;
+        }
+
+        foreach ($summary['recent'] as &$group) {
+            $group['last_at'] = Carbon::createFromTimestamp($group['last_at']);
+        }
+
+        return $summary;
     }
 
     /**
@@ -107,9 +116,9 @@ class ErrorLog
                 $daily[$index]++;
             }
             $key = preg_replace('/\d+/', '#', $entry['message']);
-            $groups[$key] ??= ['message' => $entry['message'], 'level' => $entry['level'], 'count' => 0, 'last_at' => $entry['at']];
+            $groups[$key] ??= ['message' => $entry['message'], 'level' => $entry['level'], 'count' => 0, 'last_at' => 0];
             $groups[$key]['count']++;
-            $groups[$key]['last_at'] = $entry['at'];
+            $groups[$key]['last_at'] = $entry['at']->timestamp;
         }
         usort($groups, fn (array $a, array $b) => $b['last_at'] <=> $a['last_at']);
 
