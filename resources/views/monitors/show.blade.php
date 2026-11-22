@@ -116,6 +116,35 @@
         </section>
     @endif
 
+    @if($search)
+        <section class="mt-8">
+            <h2 class="{{ $heading }}">Google Search <span class="ml-2 normal-case">last {{ \App\Services\SearchConsole::DAYS }} days · {{ $search['property'] }}</span></h2>
+            <div class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
+                <div class="mb-1 text-xs text-zinc-400">Impressions per day (how often the site showed up in Google)</div>
+                @include('partials.trend', ['values' => $search['daily_impressions'], 'label' => 'Search impressions per day', 'markers' => $search['impact']['markers']])
+                @if($search['impact']['markers'])
+                    <p class="mt-1 text-xs text-zinc-500"><span class="text-red-400">┆</span> deploy{{ count($search['impact']['markers']) > 1 ? 's' : '' }}@if($search['impact']['change']) · since {{ $search['impact']['change']['deployed_at']->format('D j M H:i') }} impressions went from {{ $search['impact']['change']['before'] }} to {{ $search['impact']['change']['after'] }} a day (<span class="{{ $search['impact']['change']['percent'] < -25 ? 'text-red-400' : ($search['impact']['change']['percent'] > 25 ? 'text-emerald-400' : '') }}">{{ $search['impact']['change']['percent'] > 0 ? '+' : '' }}{{ $search['impact']['change']['percent'] }}%</span>)@endif</p>
+                @endif
+                <dl class="mt-3 grid grid-cols-2 gap-2 text-xs text-zinc-400 sm:grid-cols-4">
+                    <div><dd class="text-xl font-semibold text-indigo-400">{{ number_format($search['clicks']) }}</dd><dt>Clicks</dt></div>
+                    <div><dd class="text-xl font-semibold text-zinc-100">{{ number_format($search['impressions']) }}</dd><dt>Impressions</dt></div>
+                    <div><dd class="text-xl font-semibold text-zinc-100">{{ $search['ctr'] }}%</dd><dt>Clicked</dt></div>
+                    <div><dd class="text-xl font-semibold text-zinc-100">{{ $search['position'] ?? '—' }}</dd><dt>Average position</dt></div>
+                </dl>
+                <p class="mt-3 text-xs text-zinc-400">
+                    @if($search['home'])Home page: <span class="{{ $search['home']['verdict'] === 'PASS' ? 'text-emerald-400' : 'text-red-400' }}">{{ $search['home']['state'] ?: $search['home']['verdict'] }}</span>@endif
+                    @if($search['sitemap_problems'] !== null) · Sitemap errors: <span class="{{ $search['sitemap_problems'] ? 'text-red-400' : 'text-zinc-200' }}">{{ $search['sitemap_problems'] }}</span>@endif
+                </p>
+                @if($search['queries'])
+                    <table class="mt-3 w-full text-xs">
+                        <thead class="text-left text-zinc-500"><tr><th class="py-1 font-normal">Top searches</th><th class="font-normal">Clicks</th><th class="font-normal">Shown</th><th class="font-normal">Position</th></tr></thead>
+                        <tbody class="divide-y divide-zinc-800">@foreach($search['queries'] as $query)<tr><td class="max-w-0 truncate py-1 text-zinc-200">{{ $query['query'] }}</td><td>{{ $query['clicks'] }}</td><td>{{ $query['impressions'] }}</td><td>{{ $query['position'] }}</td></tr>@endforeach</tbody>
+                    </table>
+                @endif
+            </div>
+        </section>
+    @endif
+
     <section class="mt-8">
         <h2 class="{{ $heading }}">Open tasks</h2>
         <ul class="divide-y divide-zinc-800 border border-zinc-800 bg-zinc-900 text-sm">
