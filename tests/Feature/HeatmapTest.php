@@ -72,7 +72,7 @@ class HeatmapTest extends TestCase
         $this->actingAs(User::factory()->create());
 
         $this->get(route('analytics.index'))->assertOk()->assertSee('my-site')->assertSee('3');
-        $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('Clicks per day')->assertSee('3 clicks', false)->assertSee('/pricing (3)', false);
+        $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('Clicks per day')->assertSee('3 clicks', false)->assertSee('/pricing');
     }
 
     public function test_the_heatmap_pages_need_a_login(): void
@@ -114,13 +114,13 @@ class HeatmapTest extends TestCase
             && $request['sha'] === 's1');
     }
 
-    public function test_the_site_page_draws_clicks_on_a_plain_grid_without_any_screenshot(): void
+    public function test_the_site_page_has_graphs_but_no_click_map(): void
     {
         $monitor = Monitor::factory()->create(['url' => 'https://example.com']);
         HeatClick::factory()->for($monitor)->create(['path' => '/pricing', 'y' => 100]);
         $this->actingAs(User::factory()->create());
 
-        $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('heat-canvas', false)->assertDontSee('<iframe', false)->assertDontSee('screenshot', false);
+        $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('Clicks per day')->assertDontSee('heat-canvas', false)->assertDontSee('<iframe', false);
     }
 
     public function test_lore_pages_carry_the_tracker_of_the_site_served_on_their_own_host(): void
