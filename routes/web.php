@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\ArcadeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeployController;
@@ -10,7 +9,6 @@ use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
-use App\Http\Controllers\MoodController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PointyBookingController;
@@ -44,8 +42,6 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
-    Route::get('arcade', ArcadeController::class)->name('arcade');
-    Route::post('mood', [MoodController::class, 'store'])->name('mood.store');
     Route::get('weather', WeatherController::class)->name('weather');
     Route::post('world-clocks', [WorldClockController::class, 'store'])->name('world-clocks.store');
     Route::post('world-clocks/reorder', [WorldClockController::class, 'reorder'])->name('world-clocks.reorder');

@@ -3,14 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Deployment;
-use App\Models\Incident;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\MonitorDay;
-use App\Models\Mood;
 use App\Models\User;
 use App\Services\CommitStreak;
-use App\Services\MoodInsights;
 use App\Services\UptimeWall;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -22,15 +19,14 @@ class CornerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_dashboard_shows_the_corner_with_streak_fortune_and_mood_buttons(): void
+    public function test_the_header_shows_the_commit_streak_small_on_every_page(): void
     {
         Process::fake(['*' => Process::result((string) now()->timestamp."\n".now()->subDay()->timestamp."\n")]);
         Cache::flush();
         $this->actingAs(User::factory()->create());
 
-        $this->get(route('dashboard'))->assertOk()
-            ->assertSee('Commit streak')->assertSee('🔥 2')->assertSee('Committed today.')
-            ->assertSee('How is today?')->assertSee(route('arcade'));
+        $this->get(route('dashboard'))->assertOk()->assertSee('🔥 2')->assertSee('2-day commit streak')->assertSee('Committed today.');
+        $this->get(route('tasks.index'))->assertOk()->assertSee('🔥 2');
     }
 
     public function test_a_streak_survives_a_quiet_today_until_the_evening(): void
@@ -58,37 +54,6 @@ class CornerTest extends TestCase
         Cache::flush();
         $this->artisan('lore:streak-nudge')->assertSuccessful();
         Http::assertSentCount(1);
-    }
-
-    public function test_the_mood_is_saved_once_a_day_and_compared_with_rough_days(): void
-    {
-        $this->actingAs(User::factory()->create());
-        $this->post(route('mood.store'), ['level' => 2]);
-        $this->post(route('mood.store'), ['level' => 4]);
-        $this->post(route('mood.store'), ['level' => 9])->assertSessionHasErrors('level');
-
-        $this->assertSame(1, Mood::count());
-        $this->assertSame(4, Mood::firstOrFail()->level);
-
-        Mood::query()->delete();
-        foreach ([1, 2, 3] as $ago) {
-            Mood::create(['day' => today()->subDays($ago), 'level' => 1]);
-            Incident::factory()->create(['monitor_id' => null, 'started_at' => today()->subDays($ago)->setHour(10)]);
-        }
-        foreach ([4, 5, 6] as $ago) {
-            Mood::create(['day' => today()->subDays($ago), 'level' => 5]);
-        }
-
-        $insight = app(MoodInsights::class)->insight(app(MoodInsights::class)->days());
-
-        $this->assertStringContainsString('4 lower', $insight);
-    }
-
-    public function test_the_arcade_page_loads_with_a_target(): void
-    {
-        $this->actingAs(User::factory()->create());
-
-        $this->get(route('arcade'))->assertOk()->assertSee('data-target="10"', false);
     }
 
     public function test_the_uptime_rollup_feeds_the_wall_and_the_wall_renders_on_the_site_page(): void

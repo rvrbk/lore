@@ -28,38 +28,6 @@
         </a>
     @endif
 
-    @php($skyClock = $clocks->firstWhere('is_header', true) ?? $clocks->first())
-    <section class="mt-12">
-        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Corner</h2>
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <div class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
-                <div class="text-xs uppercase text-zinc-400">Commit streak</div>
-                <div class="mt-1 text-2xl font-semibold {{ $streak['days'] ? 'text-amber-300' : 'text-zinc-500' }}">{{ $streak['days'] ? '🔥 '.$streak['days'] : '—' }}<span class="ml-1 text-sm font-normal text-zinc-400">{{ \Illuminate\Support\Str::plural('day', $streak['days']) }}</span></div>
-                <p class="mt-1 text-xs {{ $streak['at_risk'] ? 'text-red-400' : 'text-zinc-500' }}">{{ $streak['at_risk'] ? 'No commit yet today. Keep it alive!' : ($streak['committed_today'] ? 'Committed today.' : 'Best in 90 days: '.$streak['best']) }}</p>
-            </div>
-            <div class="border border-zinc-800 bg-zinc-900 p-3 text-sm" data-sky @if($skyClock) data-sky-zone="{{ $skyClock->timezone }}" @endif>
-                <div class="text-xs uppercase text-zinc-400">Sky{{ $skyClock ? ' · '.\Illuminate\Support\Str::before($skyClock->city, ' (') : '' }}</div>
-                <svg viewBox="0 0 100 40" class="mt-1 h-10 w-full text-amber-300" aria-hidden="true"><path d="M5 36A45 32 0 0 1 95 36" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="2 2"/><line x1="0" y1="36" x2="100" y2="36" stroke="currentColor" stroke-opacity=".3"/><circle data-sky-sun cx="5" cy="36" r="3" fill="currentColor" hidden/></svg>
-                <div class="text-xs text-zinc-300" data-sky-sun-text></div>
-                <div class="mt-1 text-xs text-zinc-400" data-sky-moon></div>
-            </div>
-            <div class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
-                <div class="text-xs uppercase text-zinc-400">How is today?</div>
-                <form method="POST" action="{{ route('mood.store') }}" class="mt-1 flex gap-1">
-                    @csrf
-                    @foreach(\App\Models\Mood::FACES as $level => $face)<button name="level" value="{{ $level }}" title="{{ $level }} of 5" aria-label="Mood {{ $level }} of 5" class="border px-1.5 py-0.5 text-lg {{ $todayMood === $level ? 'border-indigo-500 bg-indigo-500/20' : 'border-zinc-800 hover:bg-zinc-800' }}">{{ $face }}</button>@endforeach
-                </form>
-                <div class="mt-2 flex gap-px" role="img" aria-label="Mood over the last 30 days">
-                    @foreach($moodDays as $day)<span class="h-4 flex-1 {{ $day['level'] === null ? 'bg-zinc-800' : ['', 'bg-red-500', 'bg-amber-500', 'bg-zinc-500', 'bg-emerald-700', 'bg-emerald-500'][$day['level']] }} {{ $day['rough'] ? 'border-b-2 border-red-400' : '' }}" title="{{ $day['day'] }}{{ $day['level'] ? ': '.\App\Models\Mood::FACES[$day['level']] : '' }}{{ $day['rough'] ? ' · incident or failed deploy' : '' }}"></span>@endforeach
-                </div>
-                @if($moodInsight)<p class="mt-1 text-xs text-zinc-500">{{ $moodInsight }}</p>@endif
-            </div>
-        </div>
-        <div class="mt-3 flex flex-wrap gap-2 text-sm">
-            <a href="{{ route('arcade') }}" class="border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">🛸 Arcade corner</a>
-        </div>
-    </section>
-
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">World clocks</h2>
         <ul class="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-1 py-1 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0 xl:grid-cols-8" data-clock-list data-reorder-url="{{ route('world-clocks.reorder') }}">

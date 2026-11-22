@@ -9,6 +9,7 @@ use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Space;
 use App\Models\WorldClock;
+use App\Services\CommitStreak;
 use App\Support\NavMenu;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\View;
@@ -34,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('components.layouts.app', fn ($view) => $view->with([
             'navItems' => NavMenu::sorted(),
+            'commitStreak' => app(CommitStreak::class)->current(),
             'navSpaces' => Space::orderBy('name')->get(),
             'headerClock' => WorldClock::where('is_header', true)->first(),
             'activeDeployments' => Deployment::active()->orderBy('id')->get(['site', 'status']),

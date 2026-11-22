@@ -5,15 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\BookingType;
 use App\Models\JobScoutSnapshot;
 use App\Models\Monitor;
-use App\Models\Mood;
 use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\WorldClock;
 use App\Services\CommitLog;
-use App\Services\CommitStreak;
 use App\Services\GoogleAnalytics;
 use App\Services\JobScout;
-use App\Services\MoodInsights;
 
 class DashboardController extends Controller
 {
@@ -24,10 +21,6 @@ class DashboardController extends Controller
             'cities' => WorldClock::cities(),
             'commits' => app(CommitLog::class)->latest(),
             'jobScout' => app(JobScout::class)->newMatches(),
-            'streak' => app(CommitStreak::class)->current(),
-            'moodDays' => $moodDays = app(MoodInsights::class)->days(),
-            'moodInsight' => app(MoodInsights::class)->insight($moodDays),
-            'todayMood' => Mood::where('day', today()->toDateString())->value('level'),
             'jobScoutTrend' => JobScoutSnapshot::trend(30),
             'analytics' => app(GoogleAnalytics::class)->summary(),
             'monitors' => $monitors = Monitor::orderBy('name')->get(),
