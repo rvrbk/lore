@@ -12,7 +12,7 @@
 </header>
 <div data-nav-backdrop hidden class="fixed inset-0 z-40 bg-black/70 lg:hidden"></div>
 <div class="flex min-h-screen">
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] -translate-x-full flex-col gap-5 overflow-y-auto border-r border-zinc-800 bg-zinc-900 p-4 transition-transform duration-200 data-[open]:translate-x-0 lg:sticky lg:top-0 lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] -translate-x-full flex-col gap-5 overflow-y-auto border-r border-zinc-800 bg-zinc-900 p-4 pb-8 transition-transform duration-200 data-[open]:translate-x-0 lg:sticky lg:top-0 lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-pixel text-base text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-7" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
         <form action="{{ route('search') }}">
             <input name="q" value="{{ request('q') }}" placeholder="Search pages…  ( / )" data-search-input class="w-full rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
