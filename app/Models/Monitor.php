@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\IncidentReporter;
+use App\Services\Sql;
 use App\Services\Telegram;
 use Database\Factories\MonitorFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -192,6 +194,14 @@ class Monitor extends Model
             ->selectRaw('count(*) as total, sum(case when is_up then 1 else 0 end) as up')->toBase()->first();
 
         return $counts->total > 0 ? round($counts->up / $counts->total * 100, 2) : null;
+    }
+
+    /**
+     * The heatmap key of the monitored site served on the given host, so Lore can track its own pages too.
+     */
+    public static function heatKeyForHost(string $host): ?string
+    {
+        return Cache::remember('heat-key:'.$host, 600, fn () => static::where('url', Sql::like(), '%://'.$host.'%')->value('heat_key') ?? '');
     }
 
     public function host(): string

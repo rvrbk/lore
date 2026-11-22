@@ -18,7 +18,6 @@ class NavMenu
         'pointy' => ['label' => 'Pointy', 'route' => 'pointy.index', 'pattern' => 'pointy.*'],
         'deploy' => ['label' => 'Deploy', 'route' => 'deploy.index', 'pattern' => 'deploy.*'],
         'analytics' => ['label' => 'Analytics', 'route' => 'analytics.index', 'pattern' => 'analytics.*'],
-        'heatmaps' => ['label' => 'Heatmaps', 'route' => 'heatmaps.index', 'pattern' => 'heatmaps.*'],
         'monitors' => ['label' => 'Server health', 'route' => 'monitors.index', 'pattern' => 'monitors.*'],
         'incidents' => ['label' => 'Incidents', 'route' => 'incidents.index', 'pattern' => 'incidents.*'],
     ];

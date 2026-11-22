@@ -1,5 +1,5 @@
 <x-layouts.app :title="'Heatmap · '.$monitor->name">
-    <a href="{{ route('heatmaps.index') }}" class="text-sm text-zinc-400 hover:underline">← Heatmaps</a>
+    <a href="{{ route('analytics.index') }}#heatmaps" class="text-sm text-zinc-400 hover:underline">← Analytics</a>
     <h1 class="mt-1 text-2xl font-semibold">{{ $monitor->name }}</h1>
 
     <form method="GET" class="mt-4 flex flex-wrap items-center gap-2 text-sm">
@@ -49,7 +49,7 @@
         <div class="border border-zinc-800 bg-zinc-900 p-3 lg:col-span-3">
             <div class="text-xs uppercase text-zinc-400">Most clicked pages</div>
             @forelse($topPages as $page => $count)
-                <a href="{{ route('heatmaps.show', ['monitor' => $monitor, 'path' => $page, 'device' => $device, 'days' => $days]) }}" class="mt-2 block text-sm hover:bg-zinc-800">
+                <a href="{{ route('analytics.heatmaps.show', ['monitor' => $monitor, 'path' => $page, 'device' => $device, 'days' => $days]) }}" class="mt-2 block text-sm hover:bg-zinc-800">
                     <div class="flex justify-between gap-3"><span class="truncate">{{ $page }}</span><span class="shrink-0 text-zinc-400">{{ number_format($count) }}</span></div>
                     <div class="mt-1 h-1.5 bg-zinc-800"><div class="h-1.5 bg-indigo-500" style="width: {{ $count / $maxPage * 100 }}%"></div></div>
                 </a>
@@ -67,7 +67,7 @@
             <button type="button" data-heat-mode="dots" class="rounded-md border border-zinc-700 px-3 py-1 data-[active]:bg-indigo-600 data-[active]:text-white">Dots</button>
             <label class="ml-2 flex items-center gap-1.5 text-zinc-400"><input type="checkbox" id="heat-hide-page"> Hide page</label>
             @if($canCapture)
-                <form method="POST" action="{{ route('heatmaps.refresh', $monitor) }}" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Capturing…'">@csrf
+                <form method="POST" action="{{ route('analytics.heatmaps.refresh', $monitor) }}" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Capturing…'">@csrf
                     <input type="hidden" name="path" value="{{ $path }}"><input type="hidden" name="device" value="{{ $device }}"><input type="hidden" name="days" value="{{ $days }}">
                     <button class="rounded-md border border-zinc-700 px-3 py-1 hover:bg-zinc-800">{{ $screenshotHeight ? 'Retake screenshot' : 'Take screenshot' }}</button>
                 </form>
@@ -77,7 +77,7 @@
         <div class="mt-3 overflow-x-auto border border-zinc-800">
             <div id="heat-stage" class="relative bg-white" style="width: {{ $width }}px">
                 @if($screenshotHeight)
-                    <img id="heat-frame" src="{{ route('heatmaps.screenshot', ['monitor' => $monitor, 'path' => $path, 'device' => $device]) }}" alt="Screenshot of {{ $monitor->name }} {{ $path }}" class="block max-w-none" style="width: {{ $width }}px; height: {{ $screenshotHeight }}px">
+                    <img id="heat-frame" src="{{ route('analytics.heatmaps.screenshot', ['monitor' => $monitor, 'path' => $path, 'device' => $device]) }}" alt="Screenshot of {{ $monitor->name }} {{ $path }}" class="block max-w-none" style="width: {{ $width }}px; height: {{ $screenshotHeight }}px">
                 @else
                     <iframe id="heat-frame" src="{{ $pageUrl }}" title="{{ $monitor->name }} {{ $path }}" tabindex="-1" class="block border-0" style="width: {{ $width }}px; height: 1200px"></iframe>
                 @endif

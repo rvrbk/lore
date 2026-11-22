@@ -7,6 +7,7 @@ use App\Models\Monitor;
 use App\Services\GitHubDeployHook;
 use App\Services\GitHubHeatmapSnippet;
 use App\Services\GoogleAnalytics;
+use App\Services\HeatmapOverview;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,9 +16,14 @@ use Throwable;
 
 class AnalyticsController extends Controller
 {
-    public function index(GoogleAnalytics $analytics): View
+    public function index(GoogleAnalytics $analytics, HeatmapOverview $heatmaps, GitHubHeatmapSnippet $snippet): View
     {
+        $monitors = Monitor::orderBy('name')->get();
+
         return view('analytics.index', [
+            'monitors' => $monitors,
+            'snippet' => $snippet,
+            ...$heatmaps->for($monitors),
             'sites' => AnalyticsSite::orderBy('name')->get(),
             'analytics' => $analytics->summary(),
             'configured' => $analytics->isConfigured(),

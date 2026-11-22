@@ -1,6 +1,6 @@
 <x-layouts.app title="Analytics">
     <h1 class="text-2xl font-semibold">Analytics</h1>
-    <p class="mt-2 text-sm text-zinc-400">Add a site once to monitor its uptime and show its Google Analytics on Home. The service account must be a Viewer on each property.</p>
+    <p class="mt-2 text-sm text-zinc-400">Add a site once to monitor its uptime, show its Google Analytics on Home and collect its click heatmaps. The service account must be a Viewer on each property.</p>
 
     @unless($hasCredentials)
         <p class="mt-4 border border-red-500/50 bg-zinc-900 p-3 text-sm text-red-400">No service account key found. Set <code>GA_CREDENTIALS</code> in the server's .env to the path of the JSON key.</p>
@@ -36,4 +36,6 @@
     @if($analytics)
         <div class="mt-6">@include('partials.world-map')</div>
     @endif
+
+    @include('partials.heatmap-overview')
 </x-layouts.app>

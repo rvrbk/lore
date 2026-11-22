@@ -104,10 +104,10 @@ Route::middleware('auth')->group(function () {
     Route::post('analytics', [AnalyticsController::class, 'store'])->name('analytics.store');
     Route::delete('analytics/{site}', [AnalyticsController::class, 'destroy'])->name('analytics.destroy');
 
-    Route::get('heatmaps', [HeatmapController::class, 'index'])->name('heatmaps.index');
-    Route::get('heatmaps/{monitor}', [HeatmapController::class, 'show'])->name('heatmaps.show');
-    Route::get('heatmaps/{monitor}/screenshot', [HeatmapController::class, 'screenshot'])->name('heatmaps.screenshot');
-    Route::post('heatmaps/{monitor}/screenshot', [HeatmapController::class, 'refresh'])->name('heatmaps.refresh');
+    Route::redirect('heatmaps', '/analytics');
+    Route::get('analytics/heatmaps/{monitor}', [HeatmapController::class, 'show'])->name('analytics.heatmaps.show');
+    Route::get('analytics/heatmaps/{monitor}/screenshot', [HeatmapController::class, 'screenshot'])->name('analytics.heatmaps.screenshot');
+    Route::post('analytics/heatmaps/{monitor}/screenshot', [HeatmapController::class, 'refresh'])->name('analytics.heatmaps.refresh');
 
     Route::get('reminders', [ReminderController::class, 'index'])->name('reminders.index');
     Route::post('reminders', [ReminderController::class, 'store'])->name('reminders.store');

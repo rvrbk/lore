@@ -73,13 +73,13 @@ class HeatmapTest extends TestCase
         HeatClick::factory()->count(3)->for($monitor)->create(['path' => '/pricing']);
         $this->actingAs(User::factory()->create());
 
-        $this->get(route('heatmaps.index'))->assertOk()->assertSee('my-site')->assertSee('3');
-        $this->get(route('heatmaps.show', $monitor))->assertOk()->assertSee('Clicks per day')->assertSee('3 clicks', false)->assertSee('/pricing (3)', false)->assertSee('https://example.com/pricing');
+        $this->get(route('analytics.index'))->assertOk()->assertSee('my-site')->assertSee('3');
+        $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('Clicks per day')->assertSee('3 clicks', false)->assertSee('/pricing (3)', false)->assertSee('https://example.com/pricing');
     }
 
     public function test_the_heatmap_pages_need_a_login(): void
     {
-        $this->get(route('heatmaps.index'))->assertRedirect(route('login'));
+        $this->get(route('analytics.index'))->assertRedirect(route('login'));
     }
 
     public function test_the_tracker_tag_goes_before_head_and_is_not_added_twice(): void
@@ -153,12 +153,12 @@ class HeatmapTest extends TestCase
         HeatClick::factory()->for($monitor)->create(['path' => '/pricing', 'y' => 100]);
         $this->actingAs(User::factory()->create());
 
-        $this->get(route('heatmaps.show', $monitor))->assertOk()->assertSee('<iframe', false)->assertDontSee('<img id="heat-frame"', false);
+        $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('<iframe', false)->assertDontSee('<img id="heat-frame"', false);
 
-        $this->post(route('heatmaps.refresh', $monitor), ['path' => '/pricing', 'device' => 'desktop'])->assertRedirect();
-        $this->get(route('heatmaps.show', $monitor))->assertOk()->assertSee('<img id="heat-frame"', false);
-        $this->get(route('heatmaps.screenshot', ['monitor' => $monitor, 'path' => '/pricing', 'device' => 'desktop']))->assertOk();
-        $this->get(route('heatmaps.screenshot', ['monitor' => $monitor, 'path' => '/other']))->assertNotFound();
+        $this->post(route('analytics.heatmaps.refresh', $monitor), ['path' => '/pricing', 'device' => 'desktop'])->assertRedirect();
+        $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('<img id="heat-frame"', false);
+        $this->get(route('analytics.heatmaps.screenshot', ['monitor' => $monitor, 'path' => '/pricing', 'device' => 'desktop']))->assertOk();
+        $this->get(route('analytics.heatmaps.screenshot', ['monitor' => $monitor, 'path' => '/other']))->assertNotFound();
     }
 
     public function test_paths_that_are_not_plain_url_paths_are_never_captured(): void
@@ -168,5 +168,13 @@ class HeatmapTest extends TestCase
 
         $this->assertFalse(app(PageScreenshot::class)->capture($monitor, '/a b;rm', 'desktop', 1200));
         Process::assertNothingRan();
+    }
+
+    public function test_lore_pages_carry_the_tracker_of_the_site_served_on_their_own_host(): void
+    {
+        Monitor::factory()->create(['url' => 'http://localhost/', 'heat_key' => 'lorekey']);
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('analytics.index'))->assertOk()->assertSee('data-key="lorekey"', false)->assertSee('All sites');
     }
 }
