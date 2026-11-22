@@ -18,13 +18,30 @@ class HeatmapController extends Controller
 
     public const DAY_CHOICES = [7, 30, 90];
 
-    public function index(GitHubHeatmapSnippet $snippet): View
+    public function index(GitHubHeatmapSnippet $snippet, PageScreenshot $screenshots): View
     {
         $monitors = Monitor::orderBy('name')->get();
         $since = now()->subDays(30);
         $counts = HeatClick::where('created_at', '>=', $since)->selectRaw('monitor_id, count(*) as clicks')->groupBy('monitor_id')->pluck('clicks', 'monitor_id');
 
-        return view('heatmaps.index', ['monitors' => $monitors, 'counts' => $counts, 'snippet' => $snippet]);
+        $perDay = HeatClick::where('created_at', '>=', $since->copy()->startOfDay())
+            ->selectRaw('monitor_id, date(created_at) as day, count(*) as clicks')->groupBy('monitor_id', 'day')->get()->groupBy('monitor_id');
+        $days = collect(range(29, 0))->map(fn (int $ago) => now()->subDays($ago)->toDateString());
+        $daily = $monitors->mapWithKeys(fn (Monitor $monitor) => [
+            $monitor->id => $days->map(fn (string $day) => (int) ($perDay->get($monitor->id)?->firstWhere('day', $day)?->clicks ?? 0))->all(),
+        ]);
+
+        $thumbnails = [];
+        foreach ($monitors as $monitor) {
+            $top = HeatClick::where('monitor_id', $monitor->id)->where('created_at', '>=', $since)
+                ->selectRaw('path, device, count(*) as clicks')->groupBy('path', 'device')->orderByDesc('clicks')->limit(5)->get()
+                ->first(fn (HeatClick $click) => $screenshots->exists($monitor, $click->path, $click->device));
+            if ($top !== null) {
+                $thumbnails[$monitor->id] = route('heatmaps.screenshot', ['monitor' => $monitor, 'path' => $top->path, 'device' => $top->device]);
+            }
+        }
+
+        return view('heatmaps.index', ['monitors' => $monitors, 'counts' => $counts, 'daily' => $daily, 'thumbnails' => $thumbnails, 'snippet' => $snippet]);
     }
 
     public function show(Request $request, Monitor $monitor, PageScreenshot $screenshots): View
