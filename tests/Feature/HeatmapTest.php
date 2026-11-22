@@ -74,7 +74,7 @@ class HeatmapTest extends TestCase
         $this->actingAs(User::factory()->create());
 
         $this->get(route('heatmaps.index'))->assertOk()->assertSee('my-site')->assertSee('3');
-        $this->get(route('heatmaps.show', $monitor))->assertOk()->assertSee('/pricing (3)', false)->assertSee('https://example.com/pricing');
+        $this->get(route('heatmaps.show', $monitor))->assertOk()->assertSee('Clicks per day')->assertSee('3 clicks', false)->assertSee('/pricing (3)', false)->assertSee('https://example.com/pricing');
     }
 
     public function test_the_heatmap_pages_need_a_login(): void

@@ -43,9 +43,22 @@ class HeatmapController extends Controller
                 ->latest('id')->limit(self::MAX_POINTS)->get(['x', 'y'])->map(fn (HeatClick $click) => [$click->x, $click->y]);
         }
 
+        $perDay = $monitor->heatClicks()->where('created_at', '>=', $since->copy()->startOfDay())
+            ->selectRaw('date(created_at) as day, count(*) as clicks')->groupBy('day')->pluck('clicks', 'day');
+        $daily = collect(range($days - 1, 0))->map(fn (int $ago) => [
+            'day' => now()->subDays($ago)->startOfDay(),
+            'clicks' => (int) $perDay->get(now()->subDays($ago)->toDateString(), 0),
+        ]);
+        $topPages = $monitor->heatClicks()->where('created_at', '>=', $since)->selectRaw('path, count(*) as clicks')
+            ->groupBy('path')->orderByDesc('clicks')->limit(8)->pluck('clicks', 'path');
+        $devices = $monitor->heatClicks()->where('created_at', '>=', $since)->selectRaw('device, count(*) as clicks')->groupBy('device')->pluck('clicks', 'device');
+
         $screenshotHeight = $path === '' ? null : $screenshots->height($monitor, $path, $device);
 
         return view('heatmaps.show', [
+            'daily' => $daily,
+            'topPages' => $topPages,
+            'devices' => $devices,
             'screenshotHeight' => $screenshotHeight,
             'canCapture' => $screenshots->binary() !== null,
             'monitor' => $monitor,
