@@ -122,6 +122,7 @@ class PointyController extends Controller
             'buffer_minutes' => ['required', 'integer', 'min:0', 'max:240'],
             'min_notice_hours' => ['required', 'integer', 'min:0', 'max:720'],
             'max_days_ahead' => ['required', 'integer', 'min:1', 'max:365'],
+            'custom_css' => ['nullable', 'string', 'max:20000'],
             'meet_url' => ['nullable', 'url:https', 'max:255', 'regex:#^https://meet\.google\.com/[a-z0-9-]+(\?.*)?$#i'],
         ], ['slug.regex' => 'Use lowercase letters, numbers and dashes for the link.', 'meet_url.regex' => 'Use a Google Meet link, like https://meet.google.com/abc-defg-hij.']);
 

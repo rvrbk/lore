@@ -65,6 +65,19 @@ class PointyTest extends TestCase
         $this->get(route('pointy.booking', $booking->token))->assertOk()->assertSee('18:00');
     }
 
+    public function test_a_meeting_types_own_css_is_applied_to_its_public_pages_and_cannot_close_the_style_tag(): void
+    {
+        $type = BookingType::factory()->create(['custom_css' => '.pointy-submit { background: hotpink; }</style><script>alert(1)</script>']);
+        $booking = Booking::factory()->create(['booking_type_id' => $type->id]);
+
+        foreach ([route('pointy.show', $type->slug), route('pointy.booking', $booking->token)] as $url) {
+            $this->get($url)->assertOk()->assertSee('background: hotpink', false)->assertDontSee('<script>alert(1)', false);
+        }
+
+        $other = BookingType::factory()->create();
+        $this->get(route('pointy.show', $other->slug))->assertOk()->assertDontSee('hotpink', false);
+    }
+
     public function test_a_taken_or_invalid_slot_cannot_be_booked(): void
     {
         Mail::fake();
