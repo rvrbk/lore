@@ -38,6 +38,7 @@ class AnalyticsController extends Controller
         return response()->json([
             'total' => $sites === null ? null : array_sum($sites),
             'sites' => collect($sites ?? [])->filter()->map(fn (int $users, string $name) => ['name' => $name, 'users' => $users])->values(),
+            'countries' => (object) ($analytics->liveByCountry() ?? []),
         ]);
     }
 

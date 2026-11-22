@@ -91,6 +91,24 @@ class Page extends Model
         ];
     }
 
+    /**
+     * How fresh the page is, as a weather icon: sunny when edited this week, fog when untouched for months.
+     *
+     * @return array{icon: string, label: string}
+     */
+    public function weather(): array
+    {
+        $days = $this->updated_at?->diffInDays(now(), true) ?? 0;
+
+        return match (true) {
+            $days < 7 => ['icon' => '☀️', 'label' => 'Sunny: edited this week'],
+            $days < 30 => ['icon' => '🌤️', 'label' => 'Fair: edited this month'],
+            $days < 90 => ['icon' => '☁️', 'label' => 'Cloudy: untouched for over a month'],
+            $days < 180 => ['icon' => '🌧️', 'label' => 'Rainy: untouched for over 3 months'],
+            default => ['icon' => '🌫️', 'label' => 'Foggy: untouched for over 6 months'],
+        };
+    }
+
     public function space(): BelongsTo
     {
         return $this->belongsTo(Space::class);

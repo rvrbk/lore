@@ -59,13 +59,17 @@ class GoogleAnalyticsTest extends TestCase
         Http::fake([
             'oauth2.googleapis.com/*' => Http::response(['access_token' => 'tok']),
             '*properties/111:runRealtimeReport' => Http::response([]),
-            '*properties/222:runRealtimeReport' => Http::response(['rows' => [['metricValues' => [['value' => '5']]]]]),
+            '*properties/222:runRealtimeReport' => Http::response(['rows' => [
+                ['dimensionValues' => [['value' => 'NL']], 'metricValues' => [['value' => '3']]],
+                ['dimensionValues' => [['value' => 'ug']], 'metricValues' => [['value' => '2']]],
+                ['dimensionValues' => [['value' => '(not set)']], 'metricValues' => [['value' => '1']]],
+            ]]),
         ]);
 
         $this->get(route('analytics.live'))->assertRedirect(route('login'));
 
         $this->actingAs(User::factory()->create());
-        $this->getJson(route('analytics.live'))->assertOk()->assertExactJson(['total' => 5, 'sites' => [['name' => 'Busy', 'users' => 5]]]);
+        $this->getJson(route('analytics.live'))->assertOk()->assertExactJson(['total' => 6, 'sites' => [['name' => 'Busy', 'users' => 6]], 'countries' => ['NL' => 3, 'UG' => 2]]);
 
         unlink($path);
     }
@@ -74,7 +78,7 @@ class GoogleAnalyticsTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
-        $this->getJson(route('analytics.live'))->assertOk()->assertExactJson(['total' => null, 'sites' => []]);
+        $this->getJson(route('analytics.live'))->assertOk()->assertExactJson(['total' => null, 'sites' => [], 'countries' => []]);
     }
 
     public function test_a_failed_fetch_is_not_cached_so_the_next_request_recovers(): void

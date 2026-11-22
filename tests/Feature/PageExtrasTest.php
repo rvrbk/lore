@@ -57,12 +57,23 @@ class PageExtrasTest extends TestCase
         $this->get(route('pages.create', [$space, 'template' => 'does-not-exist']))->assertOk();
     }
 
+    public function test_a_page_weather_follows_how_long_ago_it_was_edited(): void
+    {
+        $space = Space::create(['name' => 'Ops']);
+        $page = $space->pages()->create(['title' => 'Handbook']);
+
+        foreach ([[0, '☀️'], [10, '🌤️'], [45, '☁️'], [120, '🌧️'], [400, '🌫️']] as [$days, $icon]) {
+            $page->updated_at = now()->subDays($days);
+            $this->assertSame($icon, $page->weather()['icon'], "{$days} days old");
+        }
+    }
+
     public function test_palette_lists_pages_for_the_quick_switcher(): void
     {
         $space = Space::create(['name' => 'Ops']);
         $page = $space->pages()->create(['title' => 'Handbook']);
 
-        $this->getJson(route('palette'))->assertOk()->assertExactJson([['title' => 'Handbook', 'space' => 'Ops', 'url' => route('pages.show', $page)]]);
+        $this->getJson(route('palette'))->assertOk()->assertExactJson([['title' => 'Handbook', 'space' => 'Ops', 'url' => route('pages.show', $page), 'weather' => $page->weather()]]);
         $this->get(route('dashboard'))->assertSee('data-palette', false)->assertSee('New task');
 
         auth()->logout();

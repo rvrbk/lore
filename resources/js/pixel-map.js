@@ -57,6 +57,15 @@ const THEMES = {
         night: true,
         sky: true,
     },
+    arcade: {
+        label: 'Arcade',
+        hidden: true,
+        sea: ['#0a0014', '#1d0033'],
+        land: 'rgb(255, 255, 255)',
+        landAt: (x, shift) => `hsl(${(x * 2.5 + shift) % 360}, 85%, 62%)`,
+        visited: (heat) => mix([255, 70, 170], [255, 240, 120], heat),
+        visitedAt: (x, heat, shift) => `hsl(${(x * 2.5 + shift) % 360}, 100%, ${55 + heat * 15}%)`,
+    },
     terminal: {
         label: 'Terminal',
         sea: ['#020a04', '#04140a'],
@@ -222,7 +231,7 @@ const readStyle = () => {
     try {
         const saved = localStorage.getItem(STYLE_KEY);
 
-        return saved && THEMES[saved] ? saved : 'ocean';
+        return saved && THEMES[saved] && !THEMES[saved].hidden ? saved : 'ocean';
     } catch {
         return 'ocean';
     }
@@ -255,7 +264,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const box = path.getBBox();
         const shape = new Path2D(path.getAttribute('d'));
         const title = path.querySelector('title')?.textContent ?? '';
-        countries.push({ shape, title, visited: title.includes(':'), opacity: parseFloat(style.fillOpacity) });
+        countries.push({ shape, title, code: path.dataset.code ?? '', visited: title.includes(':'), opacity: parseFloat(style.fillOpacity) });
 
         const fromX = Math.max(0, Math.floor(box.x / CELL));
         const toX = Math.min(cols - 1, Math.floor((box.x + box.width) / CELL));
@@ -288,6 +297,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const startedAt = Date.now();
     const startedPerf = performance.now();
     const animateSun = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const lite = window.matchMedia('(pointer: coarse), (max-width: 640px)').matches;
+    const glow = lite ? 0 : 1;
+    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, lite ? 1.5 : 2);
+    let onScreen = true;
 
     const sunPosition = () => {
         const moment = new Date(startedAt + (animateSun ? (performance.now() - startedPerf) * (86400 / DAY_SECONDS) : 0));
@@ -324,6 +337,8 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const landDiameter = Math.max(2, Math.round(cell * 0.46));
         const visitedDiameter = Math.max(2, Math.round(cell * 0.62));
 
+        const hueShift = (performance.now() / 40) % 360;
+
         for (let position = 0; position < owner.length; position++) {
             const country = countries[owner[position]];
 
@@ -333,9 +348,12 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
             const elevation = sinLatitude[position] * sinDeclination + cosLatitude[position] * cosDeclination * Math.cos(longitude[position] - sun.longitude);
             const light = Math.min(1, Math.max(0, (elevation + 0.08) / 0.2));
+            const column = position % cols;
             const brightness = theme.night ? (country.visited ? 0.25 + 0.75 * (1 - light) : 0.35 + 0.4 * light) : 0.2 + 0.8 * light;
             ctx.globalAlpha = (Math.round(brightness * 16) / 16) * (theme.fade ?? 1);
-            ctx.fillStyle = country.visited ? theme.visited(country.opacity) : theme.land;
+            ctx.fillStyle = country.visited
+                ? (theme.visitedAt ? theme.visitedAt(column, country.opacity, hueShift) : theme.visited(country.opacity))
+                : (theme.landAt ? theme.landAt(column, hueShift) : theme.land);
             disc(position % cols, Math.floor(position / cols), country.visited ? visitedDiameter : landDiameter);
         }
         ctx.globalAlpha = 1;
@@ -360,7 +378,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         if (!available) {
             return false;
         }
-        const ratio = window.devicePixelRatio || 1;
+        const ratio = pixelRatio();
         const cellPixels = Math.max(3, Math.floor((available * ratio) / cols));
         const width = cols * cellPixels;
         const height = rows * cellPixels;
@@ -396,7 +414,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 }
                 const color = colors[symbol] ?? PALETTE[symbol];
                 view.shadowColor = color;
-                view.shadowBlur = 6 * res;
+                view.shadowBlur = 6 * res * glow;
                 view.fillStyle = color;
                 view.beginPath();
                 view.arc((columnIndex - bitmapWidth / 2 + 0.5) * FLY, (rowIndex - bitmapHeight / 2 + 0.5) * FLY, FLY * 0.5, 0, Math.PI * 2);
@@ -415,7 +433,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             view.globalAlpha = 1 - t;
             view.fillStyle = t < 0.5 ? '#ffe600' : '#ff8a00';
             view.shadowColor = '#ff8a00';
-            view.shadowBlur = 10 * res;
+            view.shadowBlur = 10 * res * glow;
             for (let i = 0; i < 8; i++) {
                 const angle = (i / 8) * Math.PI * 2;
                 view.beginPath();
@@ -522,7 +540,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     view.globalAlpha = glow * (0.6 + Math.sin(time / 90) * 0.4);
                     view.fillStyle = atRoswell ? '#39ff14' : '#ff8a00';
                     view.shadowColor = view.fillStyle;
-                    view.shadowBlur = 8 * res;
+                    view.shadowBlur = 8 * res * glow;
                     view.beginPath();
                     view.arc(impact.x, impact.y, 1.6, 0, Math.PI * 2);
                     view.fill();
@@ -634,7 +652,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     const tail = Math.max(0, t - 0.12);
                     view.strokeStyle = sides[laser.from.side].laser;
                     view.shadowColor = sides[laser.from.side].laser;
-                    view.shadowBlur = 8 * res;
+                    view.shadowBlur = 8 * res * glow;
                     view.lineWidth = 1;
                     view.beginPath();
                     view.moveTo(laser.from.x + (laser.target.x - laser.from.x) * tail, laser.from.y + (laser.target.y - laser.from.y) * tail);
@@ -767,7 +785,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                     const tail = Math.max(0, t - 0.15);
                     view.strokeStyle = '#ff5577';
                     view.shadowColor = '#ff5577';
-                    view.shadowBlur = 8 * res;
+                    view.shadowBlur = 8 * res * glow;
                     view.lineWidth = 1;
                     view.beginPath();
                     view.moveTo(jet.x + (ufo.x - jet.x) * tail, jet.y + (ufo.y - jet.y) * tail);
@@ -876,7 +894,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
                 view.strokeStyle = '#bfefff';
                 view.fillStyle = '#ffffff';
                 view.shadowColor = '#7fdfff';
-                view.shadowBlur = 10 * res;
+                view.shadowBlur = 10 * res * glow;
                 view.globalAlpha = 1 - t;
                 view.lineWidth = 1.5;
                 view.beginPath();
@@ -900,13 +918,109 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const actors = [];
     let running = false;
 
+    const visitors = [];
+    const countryByCode = new Map();
+    const cellsByCode = new Map();
+    countries.forEach((country, index) => {
+        if (country.code) {
+            countryByCode.set(country.code, index);
+        }
+    });
+    owner.forEach((index, position) => {
+        const code = countries[index]?.code;
+        if (code) {
+            if (!cellsByCode.has(code)) {
+                cellsByCode.set(code, []);
+            }
+            cellsByCode.get(code).push(position);
+        }
+    });
+
+    const MAX_VISITORS_PER_COUNTRY = 8;
+    const MAX_VISITORS = lite ? 24 : 60;
+    const STEP_MS = 4500;
+
+    const pickCell = (cells, nearX, nearY) => {
+        const close = nearX === undefined ? cells : cells.filter((cell) => Math.abs((cell % cols) - nearX) < 9 && Math.abs(Math.floor(cell / cols) - nearY) < 9);
+        const list = close.length ? close : cells;
+        const cell = list[Math.floor(Math.random() * list.length)];
+
+        return { x: cell % cols, y: Math.floor(cell / cols) };
+    };
+
+    const addVisitor = (code, now) => {
+        const cells = cellsByCode.get(code);
+        const start = pickCell(cells);
+        visitors.push({ code, cells, x: start.x, y: start.y, fromX: start.x, fromY: start.y, toX: start.x, toY: start.y, movedAt: now - Math.random() * STEP_MS, born: now, phase: Math.random() * 2500 });
+    };
+
+    const syncVisitors = (counts) => {
+        const now = performance.now();
+        for (let i = visitors.length - 1; i >= 0; i--) {
+            if (!counts[visitors[i].code]) {
+                visitors.splice(i, 1);
+            }
+        }
+        Object.entries(counts).forEach(([code, users]) => {
+            if (!cellsByCode.has(code)) {
+                return;
+            }
+            const want = Math.min(MAX_VISITORS_PER_COUNTRY, Number(users) || 0);
+            let have = visitors.filter((visitor) => visitor.code === code);
+            while (have.length > want) {
+                visitors.splice(visitors.indexOf(have.pop()), 1);
+            }
+            while (have.length < want && visitors.length < MAX_VISITORS) {
+                addVisitor(code, now);
+                have = visitors.filter((visitor) => visitor.code === code);
+            }
+        });
+    };
+
+    const drawVisitors = (time) => {
+        visitors.forEach((visitor) => {
+            if (animateSun) {
+                const elapsed = time - visitor.movedAt;
+                if (elapsed >= STEP_MS) {
+                    visitor.fromX = visitor.x;
+                    visitor.fromY = visitor.y;
+                    const next = pickCell(visitor.cells, visitor.x, visitor.y);
+                    visitor.toX = next.x;
+                    visitor.toY = next.y;
+                    visitor.movedAt = time;
+                }
+                const t = Math.min(1, (time - visitor.movedAt) / (STEP_MS * 0.7));
+                const eased = t * t * (3 - 2 * t);
+                visitor.x = visitor.fromX + (visitor.toX - visitor.fromX) * eased;
+                visitor.y = visitor.fromY + (visitor.toY - visitor.fromY) * eased;
+            }
+            const x = (visitor.x + 0.5) * SCALE;
+            const y = (visitor.y + 0.5) * SCALE;
+            const ring = animateSun ? ((time + visitor.phase) % 2500) / 2500 : 0.3;
+            view.save();
+            view.globalCompositeOperation = 'lighter';
+            view.strokeStyle = `rgba(255, 226, 140, ${(1 - ring) * 0.7})`;
+            view.lineWidth = 0.8;
+            view.beginPath();
+            view.arc(x, y, 1.5 + ring * 6, 0, Math.PI * 2);
+            view.stroke();
+            view.shadowColor = '#ffe28c';
+            view.shadowBlur = 8 * res * glow;
+            view.fillStyle = '#fff6c4';
+            view.beginPath();
+            view.arc(x, y, 1.4, 0, Math.PI * 2);
+            view.fill();
+            view.restore();
+        });
+    };
+
     const radarOn = () => animateSun && styleName === 'terminal';
 
     const mistOn = () => Boolean(THEMES[styleName].mist);
 
     const skyOn = () => Boolean(THEMES[styleName].sky);
 
-    const STARS = Array.from({ length: 140 }, (_, index) => ({
+    const STARS = Array.from({ length: lite ? 70 : 140 }, (_, index) => ({
         x: (index * 0.6180339) % 1,
         y: (index * 0.7548777 + Math.sin(index) * 0.1 + 1) % 1,
         size: 0.4 + ((index * 37) % 10) / 10,
@@ -934,7 +1048,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         if (!width || !height || !canvas.offsetWidth) {
             return;
         }
-        const ratio = window.devicePixelRatio || 1;
+        const ratio = pixelRatio();
         if (skyLayer.width !== Math.round(width * ratio) || skyLayer.height !== Math.round(height * ratio)) {
             skyLayer.width = Math.round(width * ratio);
             skyLayer.height = Math.round(height * ratio);
@@ -971,7 +1085,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         sky.globalAlpha = 1;
     };
 
-    const MIST = Array.from({ length: 13 }, (_, index) => ({
+    const MIST = Array.from({ length: lite ? 7 : 13 }, (_, index) => ({
         x: (index * 0.618) % 1,
         y: 0.08 + ((index * 0.37) % 0.84),
         radius: 0.11 + ((index * 0.07) % 0.12),
@@ -1003,7 +1117,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         if (!width || !height) {
             return;
         }
-        const ratio = window.devicePixelRatio || 1;
+        const ratio = pixelRatio();
         if (mistLayer.width !== Math.round(width * ratio) || mistLayer.height !== Math.round(height * ratio)) {
             mistLayer.width = Math.round(width * ratio);
             mistLayer.height = Math.round(height * ratio);
@@ -1068,7 +1182,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
         view.strokeStyle = 'rgba(170, 255, 140, 0.85)';
         view.shadowColor = '#39ff14';
-        view.shadowBlur = 6 * res;
+        view.shadowBlur = 6 * res * glow;
         view.lineWidth = 1.5;
         view.beginPath();
         view.moveTo(centerX, centerY);
@@ -1089,6 +1203,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         }
         drawSky(time);
         drawMist(time);
+        drawVisitors(time);
 
         for (let i = actors.length - 1; i >= 0; i--) {
             if (actors[i].update(time)) {
@@ -1101,9 +1216,22 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     };
 
+    let lastFrame = 0;
+
     const frame = (time) => {
+        if (!onScreen || !canvas.isConnected) {
+            running = false;
+
+            return;
+        }
+        if (lite && time - lastFrame < 33) {
+            requestAnimationFrame(frame);
+
+            return;
+        }
+        lastFrame = time;
         render(time);
-        if ((actors.length || radarOn() || ((mistOn() || skyOn()) && animateSun)) && canvas.isConnected) {
+        if (actors.length || radarOn() || ((mistOn() || skyOn() || visitors.length) && animateSun)) {
             requestAnimationFrame(frame);
         } else {
             running = false;
@@ -1119,7 +1247,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const spawn = () => {
         const now = performance.now();
-        if (!document.hidden && actors.length < 4) {
+        if (!document.hidden && onScreen && actors.length < (lite ? 2 : 4)) {
             const battleActive = actors.some((actor) => actor.isBattle);
             const roll = Math.random();
             if (!battleActive && roll < 0.15) {
@@ -1144,7 +1272,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
             startLoop();
         }
         if (canvas.isConnected) {
-            setTimeout(spawn, 8000 + Math.random() * 10000);
+            setTimeout(spawn, (lite ? 14000 : 8000) + Math.random() * 10000);
         }
     };
 
@@ -1155,14 +1283,14 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
                 return;
             }
-            if (document.hidden || !canvas.width) {
+            if (document.hidden || !onScreen || !canvas.width) {
                 return;
             }
             paint();
             if (!running) {
                 render(performance.now());
             }
-        }, 250);
+        }, lite ? 1000 : 250);
     }
 
     if (animateSun) {
@@ -1350,6 +1478,87 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     svg.replaceWith(sea);
     startLoop();
 
+    if ('IntersectionObserver' in window) {
+        new IntersectionObserver(([entry]) => {
+            onScreen = entry.isIntersecting;
+            if (onScreen) {
+                paint();
+                render(performance.now());
+                startLoop();
+            }
+        }).observe(sea);
+    }
+
+    const liveUrl = svg.dataset.liveUrl;
+    if (liveUrl) {
+        const pollLive = async () => {
+            if (!sea.isConnected) {
+                return;
+            }
+            if (!document.hidden && onScreen) {
+                try {
+                    const response = await fetch(liveUrl, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                    if (response.ok) {
+                        syncVisitors((await response.json()).countries ?? {});
+                        if (visitors.length) {
+                            startLoop();
+                        }
+                        render(performance.now());
+                    }
+                } catch {
+                    // keep the visitors we have until the next poll
+                }
+            }
+            setTimeout(pollLive, 30000);
+        };
+        setTimeout(pollLive, 1500);
+    }
+
+    let styleBeforeArcade = null;
+    window.addEventListener('lore:arcade', (event) => {
+        if (!sea.isConnected) {
+            return;
+        }
+        if (event.detail.on) {
+            styleBeforeArcade ??= styleName;
+            styleName = 'arcade';
+        } else if (styleBeforeArcade) {
+            styleName = styleBeforeArcade;
+            styleBeforeArcade = null;
+        }
+        paint();
+        paintSea();
+        render(performance.now());
+        startLoop();
+    });
+
+    const tapLabel = document.createElement('div');
+    tapLabel.setAttribute('aria-hidden', 'true');
+    tapLabel.style.cssText = 'position:absolute;z-index:3;display:none;max-width:70%;padding:2px 6px;background:rgba(0,0,0,0.8);color:#e4e4e7;font-size:11px;pointer-events:none;white-space:nowrap';
+    sea.append(tapLabel);
+    let tapTimer = null;
+    canvas.addEventListener('pointerup', (event) => {
+        if (event.pointerType === 'mouse') {
+            return;
+        }
+        const rect = canvas.getBoundingClientRect();
+        const index = owner[Math.floor(((event.clientY - rect.top) / rect.height) * rows) * cols + Math.floor(((event.clientX - rect.left) / rect.width) * cols)] ?? -1;
+        clearTimeout(tapTimer);
+        if (index < 0) {
+            tapLabel.style.display = 'none';
+
+            return;
+        }
+        const seaRect = sea.getBoundingClientRect();
+        tapLabel.textContent = countries[index].title;
+        tapLabel.style.display = 'block';
+        tapLabel.style.left = `${Math.max(4, Math.min(event.clientX - seaRect.left - tapLabel.offsetWidth / 2, seaRect.width - tapLabel.offsetWidth - 4))}px`;
+        tapLabel.style.top = `${Math.max(4, event.clientY - seaRect.top - 34)}px`;
+        tapTimer = setTimeout(() => {
+            tapLabel.style.display = 'none';
+        }, 2500);
+    });
+
     const soundButton = sea.parentElement.querySelector('button[data-map-sound]');
     if (soundButton) {
         const running = () => sound.wanted && sound.context?.state === 'running';
@@ -1401,6 +1610,7 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const selector = sea.parentElement.querySelector('select[data-map-style]');
     if (selector) {
         selector.innerHTML = Object.entries(THEMES)
+            .filter(([, theme]) => !theme.hidden)
             .map(([name, theme]) => `<option value="${name}">${theme.label}</option>`)
             .join('');
         selector.value = styleName;

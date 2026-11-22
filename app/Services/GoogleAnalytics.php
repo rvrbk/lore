@@ -104,28 +104,57 @@ class GoogleAnalytics
      */
     public function liveBySite(): ?array
     {
+        return $this->liveReport()['sites'] ?? null;
+    }
+
+    /**
+     * Users active in the last five minutes per country (ISO 3166-1 alpha-2) over all sites, busiest first; null when unavailable.
+     *
+     * @return array<string, int>|null
+     */
+    public function liveByCountry(): ?array
+    {
+        return $this->liveReport()['countries'] ?? null;
+    }
+
+    /**
+     * @return array{sites: array<string, int>, countries: array<string, int>}|null
+     */
+    private function liveReport(): ?array
+    {
         if (! $this->isConfigured()) {
             return null;
         }
 
-        $result = $this->rememberUnlessFailed('google-analytics.live-sites', now()->addSeconds(30), function (): array|false {
+        $result = $this->rememberUnlessFailed('google-analytics.live-report', now()->addSeconds(30), function (): array|false {
             try {
                 $token = $this->accessToken();
                 $sites = [];
+                $countries = [];
                 $answered = false;
                 foreach (AnalyticsSite::orderBy('name')->pluck('property_id', 'name') as $name => $id) {
                     $response = Http::withToken($token)->timeout(8)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$id}:runRealtimeReport", [
+                        'dimensions' => [['name' => 'countryId']],
                         'metrics' => [['name' => 'activeUsers']],
                         'minuteRanges' => [['startMinutesAgo' => 4, 'endMinutesAgo' => 0]],
                     ]);
                     if ($response->successful()) {
                         $answered = true;
-                        $sites[$name] = (int) collect($response->json('rows') ?? [])->sum(fn (array $row) => (int) ($row['metricValues'][0]['value'] ?? 0));
+                        $sites[$name] = 0;
+                        foreach ($response->json('rows') ?? [] as $row) {
+                            $users = (int) ($row['metricValues'][0]['value'] ?? 0);
+                            $code = strtoupper((string) ($row['dimensionValues'][0]['value'] ?? ''));
+                            $sites[$name] += $users;
+                            if (preg_match('/^[A-Z]{2}$/', $code)) {
+                                $countries[$code] = ($countries[$code] ?? 0) + $users;
+                            }
+                        }
                     }
                 }
                 arsort($sites);
+                arsort($countries);
 
-                return $answered ? $sites : false;
+                return $answered ? ['sites' => $sites, 'countries' => $countries] : false;
             } catch (Throwable) {
                 return false;
             }

@@ -40,7 +40,7 @@
                     <div class="text-xs font-semibold uppercase tracking-wide text-zinc-400">{{ $heading }}</div>
                     <nav class="mt-2 space-y-0.5 text-sm">
                         @foreach($list as $p)
-                            <a href="{{ route('pages.show', $p) }}" title="{{ $p->title }}" class="block truncate rounded px-2 py-1 hover:bg-zinc-800 {{ isset($page) && $page?->is($p) ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">{{ $p->title }}</a>
+                            <a href="{{ route('pages.show', $p) }}" title="{{ $p->title }}" class="block truncate rounded px-2 py-1 hover:bg-zinc-800 {{ isset($page) && $page?->is($p) ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}"><span title="{{ $p->weather()['label'] }}" class="mr-1 text-xs">{{ $p->weather()['icon'] }}</span>{{ $p->title }}</a>
                         @endforeach
                     </nav>
                 </div>
@@ -108,7 +108,7 @@
     ]));
 @endphp
 <dialog data-palette data-url="{{ route('palette') }}" data-actions="{{ json_encode($paletteActions) }}" class="m-auto mt-[12vh] w-full max-w-xl border border-zinc-700 bg-zinc-900 p-0 text-zinc-200 backdrop:bg-black/70">
-    <input data-palette-input placeholder="Jump to a page or action…" autocomplete="off" class="w-full border-0 border-b border-zinc-700 bg-transparent px-4 py-3 text-base focus:ring-0">
+    <input data-palette-input placeholder="Jump to a page, or type / for commands" autocomplete="off" class="w-full border-0 border-b border-zinc-700 bg-transparent px-4 py-3 text-base focus:ring-0">
     <ul data-palette-list class="max-h-80 overflow-y-auto py-1 text-sm"></ul>
     <div class="border-t border-zinc-800 px-4 py-1.5 text-xs text-zinc-500">↑↓ to move · Enter to open · Esc to close</div>
 </dialog>

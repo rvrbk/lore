@@ -35,6 +35,7 @@ class SearchController extends Controller
             'title' => $page->title,
             'space' => $page->space->name,
             'url' => route('pages.show', $page),
+            'weather' => $page->weather(),
         ])->all());
     }
 }

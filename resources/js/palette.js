@@ -17,6 +17,78 @@ if (dialog) {
         }
     };
 
+    const CITIES = {
+        amsterdam: 'Europe/Amsterdam', london: 'Europe/London', paris: 'Europe/Paris', berlin: 'Europe/Berlin', kampala: 'Africa/Kampala',
+        nairobi: 'Africa/Nairobi', cairo: 'Africa/Cairo', dubai: 'Asia/Dubai', mumbai: 'Asia/Kolkata', delhi: 'Asia/Kolkata',
+        singapore: 'Asia/Singapore', tokyo: 'Asia/Tokyo', seoul: 'Asia/Seoul', sydney: 'Australia/Sydney', auckland: 'Pacific/Auckland',
+        'new york': 'America/New_York', chicago: 'America/Chicago', denver: 'America/Denver', 'los angeles': 'America/Los_Angeles',
+        'sao paulo': 'America/Sao_Paulo', utc: 'UTC',
+    };
+
+    const randomBelow = (limit) => {
+        const value = new Uint32Array(1);
+        crypto.getRandomValues(value);
+
+        return value[0] % limit;
+    };
+
+    const timeIn = (zone) => new Intl.DateTimeFormat('en-GB', { timeZone: zone, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+
+    const COMMANDS = [
+        ['/roll', 'Roll dice, e.g. /roll 2d20'],
+        ['/coin', 'Flip a coin'],
+        ['/uuid', 'Generate a UUID'],
+        ['/time', 'Time in a city, e.g. /time Tokyo'],
+        ['/random', 'Open a random page'],
+    ];
+
+    const runCommand = (raw) => {
+        const [name, ...rest] = raw.trim().toLowerCase().split(/\s+/);
+        const argument = rest.join(' ');
+        const result = (title, hint, copy) => [{ title, hint, kind: 'result', copy }];
+
+        if (name === '/roll') {
+            const match = /^(\d{1,2})?d(\d{1,4})$/.exec(argument || 'd6');
+            if (!match) {
+                return result('Try /roll d20 or /roll 3d6', '', null);
+            }
+            const count = Math.max(1, Number(match[1] ?? 1));
+            const sides = Math.max(2, Number(match[2]));
+            const rolls = Array.from({ length: count }, () => randomBelow(sides) + 1);
+            const total = rolls.reduce((sum, value) => sum + value, 0);
+
+            return result(`🎲 ${total}`, count > 1 ? `${rolls.join(' + ')} · Enter copies` : 'Enter copies', String(total));
+        }
+        if (name === '/coin') {
+            const face = randomBelow(2) === 0 ? 'Heads' : 'Tails';
+
+            return result(`🪙 ${face}`, 'Enter copies', face);
+        }
+        if (name === '/uuid') {
+            const uuid = crypto.randomUUID();
+
+            return result(uuid, 'Enter copies', uuid);
+        }
+        if (name === '/time') {
+            const key = argument.replace(/^in\s+/, '');
+            const zone = key === '' ? Intl.DateTimeFormat().resolvedOptions().timeZone : (CITIES[key] ?? (key.includes('/') ? key.replace(/(^|[/_])(\w)/g, (_, edge, letter) => edge + letter.toUpperCase()) : null));
+            try {
+                return result(`🕒 ${timeIn(zone)}`, zone, null);
+            } catch {
+                return result(`Unknown city "${key}"`, 'Try Tokyo, Kampala, New York or Europe/Paris', null);
+            }
+        }
+        if (name === '/random') {
+            const list = pages ?? [];
+
+            return list.length ? [{ ...list[randomBelow(list.length)], hint: 'Random page', kind: 'page' }] : result('No pages yet', '', null);
+        }
+
+        return COMMANDS.filter(([command]) => command.startsWith(name)).map(([command, hint]) => ({ title: command, hint, kind: 'command', fill: `${command} ` }));
+    };
+
+    let commandItems = [];
+
     const score = (item, query) => {
         const haystack = `${item.title} ${item.space ?? ''}`.toLowerCase();
         const title = item.title.toLowerCase();
@@ -36,7 +108,7 @@ if (dialog) {
             ...actions.map((a) => ({ ...a, kind: 'action' })),
             ...(pages ?? []).map((p) => ({ ...p, hint: p.space, kind: 'page' })),
         ];
-        results = (query === '' ? items.filter((i) => i.kind === 'action').concat(items.filter((i) => i.kind === 'page').slice(0, 8)) : items
+        results = query.startsWith('/') ? commandItems : (query === '' ? items.filter((i) => i.kind === 'action').concat(items.filter((i) => i.kind === 'page').slice(0, 8)) : items
             .map((item) => [score(item, query), item])
             .filter(([s]) => s < 3)
             .sort((a, b) => a[0] - b[0] || (a[1].kind === 'action' ? -1 : 1))
@@ -48,7 +120,7 @@ if (dialog) {
             li.className = `flex cursor-pointer items-center justify-between gap-3 px-4 py-1.5 ${index === active ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-300'}`;
             const title = document.createElement('span');
             title.className = 'truncate';
-            title.textContent = item.title;
+            title.textContent = item.kind === 'page' && item.weather ? `${item.weather.icon} ${item.title}` : item.title;
             const hint = document.createElement('span');
             hint.className = 'shrink-0 text-xs text-zinc-500';
             hint.textContent = item.hint ?? '';
@@ -69,24 +141,45 @@ if (dialog) {
         }
     };
 
-    const go = (item) => {
-        if (item) {
+    const go = async (item) => {
+        if (!item) {
+            return;
+        }
+        if (item.kind === 'command') {
+            input.value = item.fill;
+            input.dispatchEvent(new Event('input'));
+        } else if (item.kind === 'result') {
+            if (item.copy) {
+                try {
+                    await navigator.clipboard.writeText(item.copy);
+                    item.hint = 'Copied';
+                } catch {
+                    item.hint = 'Copy not allowed here';
+                }
+                render();
+            }
+        } else {
             window.location.href = item.url;
         }
     };
 
     const open = async () => {
         input.value = '';
+        commandItems = [];
         active = 0;
         dialog.showModal();
         render();
         await loadPages();
+        if (input.value.trimStart().startsWith('/')) {
+            commandItems = runCommand(input.value.trimStart());
+        }
         render();
         input.focus();
     };
 
     input.addEventListener('input', () => {
         active = 0;
+        commandItems = input.value.trimStart().startsWith('/') ? runCommand(input.value.trimStart()) : [];
         render();
     });
 
