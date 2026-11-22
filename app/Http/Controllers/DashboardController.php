@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookingType;
-use App\Models\Incident;
 use App\Models\JobScoutSnapshot;
 use App\Models\Monitor;
 use App\Models\Mood;
@@ -31,7 +30,6 @@ class DashboardController extends Controller
             'moodDays' => $moodDays = app(MoodInsights::class)->days(),
             'moodInsight' => app(MoodInsights::class)->insight($moodDays),
             'todayMood' => Mood::where('day', today()->toDateString())->value('level'),
-            'openMonitorIds' => Incident::open()->whereNotNull('monitor_id')->pluck('monitor_id')->all(),
             'jobScoutTrend' => JobScoutSnapshot::trend(30),
             'analytics' => app(GoogleAnalytics::class)->summary(),
             'monitors' => $monitors = Monitor::orderBy('name')->get(),

@@ -15,7 +15,7 @@
     @include('monitors.resources', ['metrics' => $metrics, 'diskDaysLeft' => $diskDaysLeft])
 
     @if($monitors->isNotEmpty())
-        <ul class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">@foreach($monitors as $monitor) @include('partials.monitor-tile', ['monitor' => $monitor, 'sparks' => $sparks, 'errorCounts' => $errorCounts, 'openMonitorIds' => $openMonitorIds]) @endforeach</ul>
+        <ul class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">@foreach($monitors as $monitor) @include('partials.monitor-tile', ['monitor' => $monitor, 'sparks' => $sparks, 'errorCounts' => $errorCounts]) @endforeach</ul>
 
         <h2 class="mt-8 mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Edit apps</h2>
         <ul class="divide-y divide-zinc-800 border border-zinc-800 bg-zinc-900">

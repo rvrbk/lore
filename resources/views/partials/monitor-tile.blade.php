@@ -7,7 +7,7 @@
 @endphp
 <li class="border bg-zinc-900 p-3 {{ $state['border'] }}">
     <div class="flex items-center justify-between gap-2">
-        <span class="flex min-w-0 items-center gap-2">@include('partials.site-pet', ['monitor' => $monitor, 'openMonitorIds' => $openMonitorIds ?? []])<a href="{{ route('monitors.show', $monitor) }}" class="truncate font-medium text-zinc-100 hover:underline" title="{{ $monitor->name }}: uptime history">{{ $monitor->name }}</a></span>
+        <a href="{{ route('monitors.show', $monitor) }}" class="truncate font-medium text-zinc-100 hover:underline" title="{{ $monitor->name }}: uptime history">{{ $monitor->name }}</a>
         <span class="flex shrink-0 items-center gap-1.5 text-xs font-semibold uppercase {{ $state['text'] }}">
             <span class="size-2.5 {{ $state['dot'] }}"></span>{{ $state['label'] }}
         </span>

@@ -199,15 +199,6 @@ class CornerTest extends TestCase
         $this->get(route('monitors.show', $monitor))->assertOk()->assertSee('Uptime wall');
     }
 
-    public function test_site_pets_reflect_the_state_of_the_site(): void
-    {
-        $this->actingAs(User::factory()->create());
-        Monitor::factory()->create(['name' => 'happy-one', 'is_up' => true, 'status_changed_at' => now()->subDays(40)]);
-        Monitor::factory()->create(['name' => 'sick-one', 'is_up' => false, 'status_changed_at' => now()]);
-
-        $this->get(route('monitors.index'))->assertOk()->assertSee('data-pet="happy"', false)->assertSee('data-pet="sick"', false)->assertSee('happy and has been up for a month');
-    }
-
     public function test_the_deploy_endpoint_reports_the_latest_finished_deploy_for_the_celebration(): void
     {
         $this->actingAs(User::factory()->create());

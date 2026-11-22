@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\AnalyticsSite;
 use App\Models\Deployment;
-use App\Models\Incident;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\Page;
@@ -32,7 +31,6 @@ class MonitorController extends Controller
             'sparks' => Monitor::sparklines($monitors),
             'metrics' => $health->recent(),
             'diskDaysLeft' => $health->daysUntilDiskFull(),
-            'openMonitorIds' => Incident::open()->whereNotNull('monitor_id')->pluck('monitor_id')->all(),
             'errorCounts' => $monitors->mapWithKeys(fn (Monitor $monitor) => [$monitor->id => $errors->forMonitor($monitor)['last_day'] ?? null]),
         ]);
     }
