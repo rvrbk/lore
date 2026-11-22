@@ -62,11 +62,7 @@
     @if($path === '')
         <p class="mt-6 text-sm text-zinc-400">No {{ $device }} clicks in the last {{ $days }} days. Once the tracker is live on {{ $monitor->host() }}, clicks appear here.</p>
     @else
-        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="View">
-            <button type="button" data-heat-mode="heat" class="rounded-md border border-zinc-700 px-3 py-1 data-[active]:bg-indigo-600 data-[active]:text-white">Heat</button>
-            <button type="button" data-heat-mode="dots" class="rounded-md border border-zinc-700 px-3 py-1 data-[active]:bg-indigo-600 data-[active]:text-white">Dots</button>
-            <span class="text-xs text-zinc-500">Heat blurs busy areas red; Dots marks every single click. Left to right is the page width, top to bottom is how far down the page (px).</span>
-        </div>
+        <p class="mt-2 text-xs text-zinc-500">Busy areas glow red, quiet ones blue. Left to right is the page width, top to bottom is how far down the page.</p>
         <div class="mt-3 overflow-x-auto border border-zinc-800">
             <div id="heat-stage" class="relative bg-zinc-900" style="width: {{ $width }}px">
                 <canvas id="heat-canvas" class="block"></canvas>
@@ -84,6 +80,8 @@
                 canvas.height = height;
 
                 var radius = width > 600 ? 28 : 18;
+                // A few clicks need to stay visible; many clicks must not saturate everything at once.
+                var strength = points.length < 50 ? 0.5 : (points.length < 500 ? 0.25 : 0.12);
                 var palette = (function () {
                     var ramp = document.createElement('canvas');
                     ramp.width = 1;
@@ -96,23 +94,6 @@
                     return rctx.getImageData(0, 0, 1, 256).data;
                 })();
 
-                function drawGrid() {
-                    ctx.font = '11px monospace';
-                    ctx.textBaseline = 'top';
-                    for (var y = 0; y < height; y += 250) {
-                        ctx.fillStyle = y % 500 === 0 ? 'rgba(161,161,170,0.35)' : 'rgba(161,161,170,0.15)';
-                        ctx.fillRect(0, y, width, 1);
-                        if (y % 500 === 0) {
-                            ctx.fillStyle = 'rgba(161,161,170,0.8)';
-                            ctx.fillText(y + ' px', 6, y + 4);
-                        }
-                    }
-                    for (var i = 1; i < 4; i++) {
-                        ctx.fillStyle = 'rgba(161,161,170,0.15)';
-                        ctx.fillRect(Math.round(width * i / 4), 0, 1, height);
-                    }
-                }
-
                 function drawHeat() {
                     var shadow = document.createElement('canvas');
                     shadow.width = width;
@@ -121,7 +102,7 @@
                     points.forEach(function (p) {
                         var x = p[0] / 1000 * width, y = p[1];
                         var gradient = sctx.createRadialGradient(x, y, 0, x, y, radius);
-                        gradient.addColorStop(0, 'rgba(0,0,0,0.12)');
+                        gradient.addColorStop(0, 'rgba(0,0,0,' + strength + ')');
                         gradient.addColorStop(1, 'rgba(0,0,0,0)');
                         sctx.fillStyle = gradient;
                         sctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
@@ -142,28 +123,7 @@
                     ctx.drawImage(shadow, 0, 0);
                 }
 
-                function drawDots() {
-                    points.forEach(function (p) {
-                        var x = p[0] / 1000 * width, y = p[1];
-                        ctx.beginPath();
-                        ctx.arc(x, y, 9, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(239,68,68,0.55)';
-                        ctx.fill();
-                        ctx.lineWidth = 2;
-                        ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-                        ctx.stroke();
-                    });
-                }
-
-                var buttons = document.querySelectorAll('[data-heat-mode]');
-                function setMode(mode) {
-                    ctx.clearRect(0, 0, width, height);
-                    drawGrid();
-                    (mode === 'dots' ? drawDots : drawHeat)();
-                    buttons.forEach(function (b) { b.toggleAttribute('data-active', b.dataset.heatMode === mode); });
-                }
-                buttons.forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.heatMode); }); });
-                setMode(points.length < 200 ? 'dots' : 'heat');
+                drawHeat();
             })();
         </script>
     @endif
