@@ -18,7 +18,7 @@
     @if($funnel)
         <section class="mt-8">
             <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-400">Bookings vs traffic <span class="ml-2 normal-case">last 7 days</span></h2>
-            <p class="mb-3 text-xs text-zinc-500">A Pointy site is matched to the analytics site with the same name.</p>
+            <p class="mb-3 text-xs text-zinc-500">A Pointy site is matched to the analytics site with the same name or key, ignoring case and punctuation.</p>
             <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 @foreach($funnel as $row)
                     <li class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
@@ -31,7 +31,7 @@
                             <div><dd class="text-xl font-semibold text-indigo-400">{{ $row['bookings'] }}</dd><dt>Bookings</dt></div>
                             <div><dd class="text-xl font-semibold text-zinc-100">{{ $row['rate'] === null ? '—' : $row['rate'].'%' }}</dd><dt>Booked</dt></div>
                         </dl>
-                        @if($row['users'] === null)<p class="mt-2 text-xs text-zinc-500">No analytics site named “{{ $row['name'] }}”.</p>@endif
+                        @if($row['users'] === null)<p class="mt-2 text-xs text-zinc-500">No analytics site named like “{{ $row['name'] }}”.</p>@endif
                     </li>
                 @endforeach
             </ul>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnalyticsSite;
 use App\Models\Deployment;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
@@ -75,7 +76,7 @@ class MonitorController extends Controller
             'reminders' => $reminders,
             'siteIncidents' => $monitor->incidents()->latest('started_at')->limit(10)->get(),
             'deployments' => $monitor->deploy_path ? Deployment::where('path', $monitor->deploy_path)->latest('id')->limit(8)->get() : collect(),
-            'traffic' => collect($analytics->summary() ?? [])->firstWhere('name', $monitor->name),
+            'traffic' => collect($analytics->summary() ?? [])->first(fn (array $site) => AnalyticsSite::normalize($site['name']) === AnalyticsSite::normalize($monitor->name)),
             'checks' => $recent,
             'hours' => $hours,
             'incidents' => array_reverse($incidents),

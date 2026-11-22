@@ -26,6 +26,14 @@ class DeployImpactTest extends TestCase
         $this->assertSame(-50, $result['change']['percent']);
     }
 
+    public function test_the_analytics_name_may_differ_from_the_monitor_name_in_case_and_punctuation(): void
+    {
+        Monitor::factory()->create(['name' => 'Job Scout', 'deploy_path' => '/var/www/job-scout']);
+        Deployment::factory()->create(['path' => '/var/www/job-scout', 'finished_at' => now()]);
+
+        $this->assertSame([6], app(DeployImpact::class)->forTraffic('job-scout', [1, 1, 1, 1, 1, 1, 1])['markers']);
+    }
+
     public function test_failed_deploys_and_other_sites_are_ignored(): void
     {
         Monitor::factory()->create(['name' => 'shop', 'deploy_path' => '/var/www/shop']);

@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\AnalyticsSite;
 use App\Models\Booking;
 use App\Models\PointySite;
 use Illuminate\Support\Collection;
 
 /**
- * Pointy bookings next to the visitors of the website they came from. A Pointy site is matched to the analytics site that has the same name.
+ * Pointy bookings next to the visitors of the website they came from. A Pointy site is matched to the analytics site with the same name or key, ignoring case and punctuation.
  */
 class BookingFunnel
 {
@@ -33,7 +34,8 @@ class BookingFunnel
                     $daily[$index]++;
                 }
             }
-            $traffic = collect($analytics ?? [])->first(fn (array $row) => mb_strtolower($row['name']) === mb_strtolower($site->name) && $row['users'] !== null);
+            $names = [AnalyticsSite::normalize($site->name), AnalyticsSite::normalize($site->key)];
+            $traffic = collect($analytics ?? [])->first(fn (array $row) => $row['users'] !== null && in_array(AnalyticsSite::normalize($row['name']), $names, true));
             $users = $traffic['users'] ?? null;
 
             $rows[] = [

@@ -12,6 +12,17 @@ class BookingFunnelTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_a_site_matches_on_its_key_when_the_name_differs_in_punctuation(): void
+    {
+        $site = PointySite::factory()->create(['name' => 'verbeek.ug', 'key' => 'verbeek-ug']);
+        Booking::factory()->create(['pointy_site_id' => $site->id]);
+
+        $rows = app(BookingFunnel::class)->for(PointySite::all(), [['name' => 'verbeek-ug', 'users' => 50, 'daily' => [1, 1, 1, 1, 1, 1, 1]]]);
+
+        $this->assertSame(50, $rows[0]['users']);
+        $this->assertSame(2.0, $rows[0]['rate']);
+    }
+
     public function test_bookings_are_set_against_the_visitors_of_the_analytics_site_with_the_same_name(): void
     {
         $site = PointySite::factory()->create(['name' => 'Verbeek']);

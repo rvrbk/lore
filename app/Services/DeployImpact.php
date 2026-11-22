@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AnalyticsSite;
 use App\Models\Deployment;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
@@ -20,7 +21,8 @@ class DeployImpact
      */
     public function deploysFor(string $siteName, int $days = 7): Collection
     {
-        $path = Monitor::where('name', $siteName)->value('deploy_path');
+        $wanted = AnalyticsSite::normalize($siteName);
+        $path = Monitor::whereNotNull('deploy_path')->get(['name', 'deploy_path'])->first(fn (Monitor $monitor) => AnalyticsSite::normalize($monitor->name) === $wanted)?->deploy_path;
         if ($path === null) {
             return collect();
         }
