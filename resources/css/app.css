@@ -85,7 +85,8 @@ html[data-theme='night'] {
 html[data-theme='night'] body { background-image: linear-gradient(to bottom, transparent 60%, rgb(189 122 64 / 0.07)); }
 html[data-theme='night'] .text-white { color: var(--color-zinc-100); }
 html[data-theme='night'] body::after { background: transparent; }
-html[data-theme='night'] canvas { filter: sepia(0.85) saturate(1.2) hue-rotate(-12deg) brightness(0.75); }
+html[data-theme='night'] div:has(> canvas) { filter: sepia(1) saturate(0.9) hue-rotate(-18deg) brightness(0.6); }
+html[data-theme='night'] [aria-label='Latest commits'] { filter: brightness(0.8); }
 html[data-theme='night'] .css-editor { border-color: #4c3f2e; background: #17110b; }
 html[data-theme='night'] .css-editor-gutter { border-right-color: #31281c; background: #231b13; color: #6e5a42; }
 html[data-theme='night'] .css-editor-body pre { color: #cfb68f; }
