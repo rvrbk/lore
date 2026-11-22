@@ -9,8 +9,9 @@
     $area = '0,'.$height.' '.$points->implode(' ').' '.$width.','.$height;
 @endphp
 @if($count > 1)
-    <svg viewBox="0 0 {{ $width }} {{ $height }}" preserveAspectRatio="none" class="h-7 w-full text-indigo-400" role="img" aria-label="{{ $label }}: {{ implode(', ', $values) }}">
+    <svg viewBox="0 0 {{ $width }} {{ $height }}" preserveAspectRatio="none" class="h-7 w-full text-indigo-400" role="img" aria-label="{{ $label }}: {{ implode(', ', $values) }}{{ ! empty($markers) ? '. Dashed lines mark deploys.' : '' }}">
         <polygon points="{{ $area }}" fill="currentColor" fill-opacity="0.15"/>
         <polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" points="{{ $points->implode(' ') }}"/>
+        @foreach($markers ?? [] as $marker)<line x1="{{ round($marker * $step, 1) }}" x2="{{ round($marker * $step, 1) }}" y1="0" y2="{{ $height }}" stroke="var(--color-red-400)" stroke-width="1" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"><title>Deploy</title></line>@endforeach
     </svg>
 @endif

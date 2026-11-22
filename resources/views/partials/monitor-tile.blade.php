@@ -25,5 +25,6 @@
             <span class="shrink-0" title="Down since {{ $monitor->status_changed_at?->format('j M Y H:i') }}">down {{ $monitor->status_changed_at?->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}</span>
         @endif
     </div>
+    @if(($errorCounts[$monitor->id] ?? null) !== null)<div class="mt-1 text-xs {{ $errorCounts[$monitor->id] ? 'text-amber-300' : 'text-zinc-500' }}"><a href="{{ route('monitors.show', $monitor) }}" class="hover:underline">{{ $errorCounts[$monitor->id] }} logged {{ \Illuminate\Support\Str::plural('error', $errorCounts[$monitor->id]) }} in 24 h</a></div>@endif
     @if($monitor->checked_at)<div class="mt-1 text-xs text-zinc-500">checked {{ $monitor->checked_at->diffForHumans() }}</div>@endif
 </li>

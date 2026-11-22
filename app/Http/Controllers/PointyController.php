@@ -7,7 +7,9 @@ use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
 use App\Models\PointySite;
+use App\Services\BookingFunnel;
 use App\Services\BookingNotifier;
+use App\Services\GoogleAnalytics;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,13 +20,16 @@ use Illuminate\Validation\ValidationException;
 
 class PointyController extends Controller
 {
-    public function index()
+    public function index(BookingFunnel $funnel, GoogleAnalytics $analytics)
     {
+        $sites = PointySite::orderBy('name')->get();
+
         return view('pointy.index', [
+            'funnel' => $funnel->for($sites, $analytics->summary()),
             'types' => BookingType::with(['exceptions' => fn ($query) => $query->where('date', '>=', now()->toDateString())->orderBy('date')])->withCount(['bookings' => fn ($query) => $query->active()->where('starts_at', '>=', now())])->orderBy('name')->get(),
             'bookings' => Booking::active()->where('ends_at', '>=', now())->with('type')->orderBy('starts_at')->get(),
             'timezones' => DateTimeZone::listIdentifiers(),
-            'sites' => PointySite::orderBy('name')->get(),
+            'sites' => $sites,
         ]);
     }
 

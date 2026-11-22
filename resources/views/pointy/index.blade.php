@@ -15,6 +15,29 @@
         <div class="mt-3">@include('partials.pointy-type-form', ['type' => null])</div>
     </details>
 
+    @if($funnel)
+        <section class="mt-8">
+            <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-400">Bookings vs traffic <span class="ml-2 normal-case">last 7 days</span></h2>
+            <p class="mb-3 text-xs text-zinc-500">A Pointy site is matched to the analytics site with the same name.</p>
+            <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach($funnel as $row)
+                    <li class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
+                        <div class="truncate font-medium text-zinc-100">{{ $row['name'] }}</div>
+                        @if($row['users'] !== null)
+                            <div class="mt-2">@include('partials.trend', ['values' => $row['daily_users'], 'label' => 'Daily visitors for '.$row['name']])</div>
+                        @endif
+                        <dl class="mt-2 grid grid-cols-3 gap-2 text-xs text-zinc-400">
+                            <div><dd class="text-xl font-semibold text-zinc-100">{{ $row['users'] === null ? '—' : number_format($row['users']) }}</dd><dt>Visitors</dt></div>
+                            <div><dd class="text-xl font-semibold text-indigo-400">{{ $row['bookings'] }}</dd><dt>Bookings</dt></div>
+                            <div><dd class="text-xl font-semibold text-zinc-100">{{ $row['rate'] === null ? '—' : $row['rate'].'%' }}</dd><dt>Booked</dt></div>
+                        </dl>
+                        @if($row['users'] === null)<p class="mt-2 text-xs text-zinc-500">No analytics site named “{{ $row['name'] }}”.</p>@endif
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
     <section class="mt-8">
         <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-400">Sites</h2>
         <p class="mb-3 text-xs text-zinc-500">Each website that embeds Pointy gets its own CSS. Add <code>?site=key</code> to the booking link (or iframe URL) and the pages use that site's CSS on top of the default look, whichever meeting type is shown. Hooks: body.pointy, .pointy-main, .pointy-brand, .pointy-title, .pointy-meta, .pointy-zone, .pointy-days, .pointy-day, .pointy-day-active, .pointy-slots, .pointy-slot, .pointy-form, .pointy-input, .pointy-submit, .pointy-error, .pointy-card, .pointy-join, .pointy-cancel, .pointy-link.</p>

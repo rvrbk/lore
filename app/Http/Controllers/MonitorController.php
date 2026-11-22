@@ -8,6 +8,8 @@ use App\Models\MonitorCheck;
 use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Task;
+use App\Services\DeployImpact;
+use App\Services\ErrorLog;
 use App\Services\GoogleAnalytics;
 use App\Services\ServerHealth;
 use App\Services\Sql;
@@ -17,7 +19,7 @@ use Illuminate\View\View;
 
 class MonitorController extends Controller
 {
-    public function index(ServerHealth $health): View
+    public function index(ServerHealth $health, ErrorLog $errors): View
     {
         $monitors = Monitor::orderBy('name')->get();
 
@@ -26,10 +28,11 @@ class MonitorController extends Controller
             'sparks' => Monitor::sparklines($monitors),
             'metrics' => $health->recent(),
             'diskDaysLeft' => $health->daysUntilDiskFull(),
+            'errorCounts' => $monitors->mapWithKeys(fn (Monitor $monitor) => [$monitor->id => $errors->forMonitor($monitor)['last_day'] ?? null]),
         ]);
     }
 
-    public function show(Monitor $monitor, GoogleAnalytics $analytics): View
+    public function show(Monitor $monitor, GoogleAnalytics $analytics, DeployImpact $impact, ErrorLog $errors): View
     {
         $recent = $monitor->checks()->where('checked_at', '>=', now()->subDay())->orderBy('checked_at')->get();
 
@@ -60,8 +63,12 @@ class MonitorController extends Controller
             ->where(fn ($query) => $query->whereIn('task_id', $tasks->modelKeys())->orWhereIn('page_id', $pages->modelKeys())->orWhere('title', Sql::like(), $monitor->name.': %'))
             ->limit(10)->get();
 
+        $deploys = $monitor->deploy_path ? Deployment::where('path', $monitor->deploy_path)->where('status', Deployment::SUCCEEDED)->where('finished_at', '>=', now()->subDay())->orderBy('finished_at')->get() : collect();
+
         return view('monitors.show', [
             'monitor' => $monitor,
+            'responseImpact' => $impact->forResponse($recent, $deploys),
+            'errorLog' => $errors->forMonitor($monitor),
             'tag' => $tag,
             'tasks' => $tasks,
             'pages' => $pages,

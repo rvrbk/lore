@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookingType;
+use App\Models\JobScoutSnapshot;
 use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Reminder;
@@ -20,6 +21,7 @@ class DashboardController extends Controller
             'cities' => WorldClock::cities(),
             'commits' => app(CommitLog::class)->latest(),
             'jobScout' => app(JobScout::class)->newMatches(),
+            'jobScoutTrend' => JobScoutSnapshot::trend(30),
             'analytics' => app(GoogleAnalytics::class)->summary(),
             'monitors' => $monitors = Monitor::orderBy('name')->get(),
             'sparks' => Monitor::sparklines($monitors),

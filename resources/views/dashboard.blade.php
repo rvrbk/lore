@@ -21,7 +21,9 @@
 
     @if($jobScout)
         <a href="{{ $jobScout['url'] }}" target="_blank" rel="noopener" class="mt-6 flex items-center justify-between border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-500">
-            <span class="text-sm text-zinc-400">New vacancies in Job Scout</span>
+            <span class="min-w-0 text-sm text-zinc-400">New vacancies in Job Scout
+                @if(count(array_filter($jobScoutTrend)) > 1)<span class="mt-1 block w-40 text-xs text-zinc-500">@include('partials.trend', ['values' => $jobScoutTrend, 'label' => 'New Job Scout matches, last 30 days'])30 days · {{ $jobScoutTrend[0] }} → {{ end($jobScoutTrend) }}</span>@endif
+            </span>
             <span class="text-2xl font-semibold {{ $jobScout['new'] ? 'text-indigo-400' : 'text-zinc-500' }}">{{ $jobScout['new'] }}</span>
         </a>
     @endif
@@ -34,6 +36,7 @@
                     <div class="min-w-0">
                         <div class="truncate text-[11px] font-medium leading-tight text-zinc-100">{{ $clock->city }}</div>
                         <div class="text-[10px] leading-tight text-zinc-500" data-clock-date>{{ now($clock->timezone)->format('D j M') }}</div>
+                        <div class="truncate text-[10px] leading-tight text-zinc-500" data-weather="{{ $clock->timezone }}" data-weather-format="long"></div>
                     </div>
                     @php($local = now($clock->timezone))
                     <svg viewBox="0 0 32 32" class="size-8 shrink-0 text-indigo-400 {{ $clock->is_analog ? '' : 'hidden' }}" data-clock-face aria-hidden="true">

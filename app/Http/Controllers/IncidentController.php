@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Incident;
 use App\Models\Page;
 use App\Models\Space;
+use App\Services\IncidentTimeline;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,6 +18,11 @@ class IncidentController extends Controller
             'open' => Incident::open()->with(['monitor', 'deployment', 'task', 'page'])->orderBy('started_at')->get(),
             'resolved' => Incident::whereNotNull('resolved_at')->with(['monitor', 'deployment', 'task', 'page'])->latest('resolved_at')->limit(30)->get(),
         ]);
+    }
+
+    public function show(Incident $incident, IncidentTimeline $timeline): View
+    {
+        return view('incidents.show', ['incident' => $incident->load(['monitor', 'deployment', 'task', 'page']), 'events' => $timeline->for($incident)]);
     }
 
     public function update(Request $request, Incident $incident): RedirectResponse

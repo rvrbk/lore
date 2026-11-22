@@ -41,7 +41,10 @@
             </div>
             <div class="mt-3 border border-zinc-800 bg-zinc-900 p-3">
                 <div class="mb-1 text-xs text-zinc-400">Response time (ms) · {{ $checks->count() }} checks</div>
-                @include('partials.sparkline', ['checks' => $checks, 'width' => 600, 'height' => 80, 'class' => 'h-20 w-full'])
+                @include('partials.sparkline', ['checks' => $checks, 'width' => 600, 'height' => 80, 'class' => 'h-20 w-full', 'markers' => $responseImpact['markers']])
+                @if($responseImpact['markers'])
+                    <p class="mt-1 text-xs text-zinc-500"><span class="text-red-400">┆</span> deploy{{ count($responseImpact['markers']) > 1 ? 's' : '' }}@if($responseImpact['change']) · average response went from {{ $responseImpact['change']['before'] }} ms to {{ $responseImpact['change']['after'] }} ms after the last one (<span class="{{ $responseImpact['change']['percent'] > 25 ? 'text-red-400' : ($responseImpact['change']['percent'] < -25 ? 'text-emerald-400' : '') }}">{{ $responseImpact['change']['percent'] > 0 ? '+' : '' }}{{ $responseImpact['change']['percent'] }}%</span>)@endif</p>
+                @endif
             </div>
         @endif
     </section>
@@ -60,6 +63,20 @@
         </ul>
     </section>
     @php $heading = 'mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400'; @endphp
+
+    @if($errorLog)
+        <section class="mt-8">
+            <h2 class="{{ $heading }}">Errors <span class="ml-2 normal-case">{{ $errorLog['total'] }} in the last 7 days · {{ $errorLog['last_day'] }} in the last 24 hours</span></h2>
+            <div class="border border-zinc-800 bg-zinc-900 p-3">
+                @include('partials.trend', ['values' => $errorLog['daily'], 'label' => 'Logged errors per day'])
+                <ul class="mt-3 divide-y divide-zinc-800 text-sm">
+                    @foreach($errorLog['recent'] as $error)
+                        <li class="flex items-start justify-between gap-3 py-1.5"><span class="min-w-0 break-words text-zinc-200"><span class="text-xs uppercase text-red-400">{{ $error['level'] }}</span> {{ $error['message'] }}</span><span class="shrink-0 text-xs text-zinc-400">{{ $error['count'] }}× · {{ $error['last_at']->diffForHumans() }}</span></li>
+                    @endforeach
+                </ul>
+            </div>
+        </section>
+    @endif
 
     <section class="mt-8">
         <h2 class="{{ $heading }}">Incidents</h2>

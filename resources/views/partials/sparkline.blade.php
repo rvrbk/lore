@@ -10,6 +10,7 @@
 @if($count > 1)
     <svg viewBox="0 0 {{ $width }} {{ $height }}" preserveAspectRatio="none" class="{{ $class ?? 'h-6 w-full' }} text-indigo-400" role="img" aria-label="Response time over the recent checks; red marks mean the app was down">
         @foreach($checks as $i => $c)@unless($c->is_up)<rect x="{{ round($i * $step - 1, 1) }}" y="0" width="2" height="{{ $height }}" fill="#ff8a9a"/>@endunless @endforeach
+        @foreach($markers ?? [] as $marker)<line x1="{{ round($marker * $step, 1) }}" x2="{{ round($marker * $step, 1) }}" y1="0" y2="{{ $height }}" stroke="var(--color-red-400)" stroke-width="1" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"><title>Deploy</title></line>@endforeach
         @if($points !== '')<polyline fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke" points="{{ $points }}"/>@endif
     </svg>
 @endif

@@ -20,6 +20,7 @@ use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WorldClockController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('weather', WeatherController::class)->name('weather');
     Route::post('world-clocks', [WorldClockController::class, 'store'])->name('world-clocks.store');
     Route::post('world-clocks/reorder', [WorldClockController::class, 'reorder'])->name('world-clocks.reorder');
     Route::patch('world-clocks/{worldClock}/style', [WorldClockController::class, 'toggleStyle'])->name('world-clocks.style');
@@ -94,6 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('monitors/{monitor}', [MonitorController::class, 'destroy'])->name('monitors.destroy');
 
     Route::get('incidents', [IncidentController::class, 'index'])->name('incidents.index');
+    Route::get('incidents/{incident}', [IncidentController::class, 'show'])->name('incidents.show');
     Route::put('incidents/{incident}', [IncidentController::class, 'update'])->name('incidents.update');
     Route::post('incidents/{incident}/post-mortem', [IncidentController::class, 'postMortem'])->name('incidents.post-mortem');
 
