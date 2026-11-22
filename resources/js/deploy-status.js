@@ -10,9 +10,29 @@ const label = (active) => {
     return `${running.length ? 'Deploying' : 'Deploy queued'}: ${shown}`;
 };
 
+const MAX_BALLS = 3;
+
+const renderBalls = (container, count) => {
+    container.replaceChildren();
+    for (let i = 0; i < Math.min(count, MAX_BALLS); i++) {
+        const ball = document.createElement('span');
+        ball.className = 'size-3 animate-pulse rounded-full bg-amber-400';
+        container.append(ball);
+    }
+    if (count > MAX_BALLS) {
+        const more = document.createElement('span');
+        more.textContent = `+${count - MAX_BALLS}`;
+        container.append(more);
+    }
+};
+
 const show = (active) => {
     indicators.forEach((indicator) => {
         indicator.hidden = active.length === 0;
+        const balls = indicator.querySelector('[data-deploy-balls]');
+        if (balls) {
+            renderBalls(balls, active.length);
+        }
         const text = indicator.querySelector('[data-deploy-text]');
         if (text && active.length) {
             text.textContent = label(active);

@@ -211,4 +211,16 @@ class DeployTest extends TestCase
         $this->get(route('dashboard'))->assertSee('Deploying: my-site');
         $this->getJson(route('deploy.active'))->assertExactJson(['active' => [['site' => 'my-site', 'status' => 'running']]]);
     }
+
+    public function test_the_mobile_header_shows_one_ball_per_deploying_site_up_to_three(): void
+    {
+        $this->actingAs(User::factory()->create());
+        Deployment::factory()->count(5)->create(['status' => Deployment::RUNNING]);
+
+        $html = $this->get(route('dashboard'))->getContent();
+
+        // The indicator is rendered twice (mobile header and desktop row), three balls each.
+        $this->assertSame(6, substr_count($html, 'size-3 animate-pulse rounded-full bg-amber-400'));
+        $this->assertStringContainsString('+2', $html);
+    }
 }
