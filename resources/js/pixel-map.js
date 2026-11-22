@@ -24,8 +24,6 @@ const FLY = 2;
 const PLANE = ['....L......', '....WW.....', 'WW...WW....', 'LWWWWWWWWWC', 'WW...WW....', '....WW.....', '....M......'];
 const UFO = ['..SLS..', '.DDDDD.', 'SDDSDDS', 'LDSWSDL', 'SDDSDDS', '.DDDDD.', '..SLS..'];
 
-const UNICORN = ['.......Y.', '..L...YW.', '.LMLWWWWW', 'LMBWWWWW.', '.BBWWWWW.', '.W.W.W.W.', '.W.W.W.W.'];
-
 const JET = ['..L....', '..WW...', 'WWWWWWC', '..WW...', '..M....'];
 
 const COW = ['.WW.', 'WWWW', 'W..W'];
@@ -51,14 +49,12 @@ const THEMES = {
         land: 'rgb(0, 180, 205)',
         visited: (heat) => mix([255, 150, 20], [255, 235, 90], heat),
     },
-    fluffy: {
-        label: 'Fluffy',
-        sea: ['#2a1457', '#6a2fa8'],
-        land: 'rgb(255, 255, 255)',
-        landAt: (x) => `hsl(${(x * 2.5) % 360}, 85%, 72%)`,
-        visited: (heat) => mix([255, 70, 170], [255, 240, 120], heat),
-        visitedAt: (x, heat) => `hsl(${(x * 2.5) % 360}, 100%, ${55 + heat * 15}%)`,
-        unicorns: true,
+    nightlights: {
+        label: 'Nightlights',
+        sea: ['#010208', '#050a1c'],
+        land: 'rgb(44, 58, 98)',
+        visited: (heat) => mix([255, 170, 60], [255, 240, 170], heat),
+        night: true,
         sky: true,
     },
     terminal: {
@@ -337,11 +333,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
             const elevation = sinLatitude[position] * sinDeclination + cosLatitude[position] * cosDeclination * Math.cos(longitude[position] - sun.longitude);
             const light = Math.min(1, Math.max(0, (elevation + 0.08) / 0.2));
-            ctx.globalAlpha = (Math.round((0.2 + 0.8 * light) * 16) / 16) * (theme.fade ?? 1);
-            const column = position % cols;
-            ctx.fillStyle = country.visited
-                ? (theme.visitedAt ? theme.visitedAt(column, country.opacity) : theme.visited(country.opacity))
-                : (theme.landAt ? theme.landAt(column) : theme.land);
+            const brightness = theme.night ? (country.visited ? 0.25 + 0.75 * (1 - light) : 0.35 + 0.4 * light) : 0.2 + 0.8 * light;
+            ctx.globalAlpha = (Math.round(brightness * 16) / 16) * (theme.fade ?? 1);
+            ctx.fillStyle = country.visited ? theme.visited(country.opacity) : theme.land;
             disc(position % cols, Math.floor(position / cols), country.visited ? visitedDiameter : landDiameter);
         }
         ctx.globalAlpha = 1;
@@ -390,11 +384,6 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     const play = (name, x = W / 2) => sound.play(name, x / W);
 
     const drawBitmap = (bitmap, x, y, angle, colors = {}) => {
-        if (bitmap === UFO && THEMES[styleName].unicorns) {
-            const pink = colors.L === '#ff2d55';
-            bitmap = UNICORN;
-            colors = { L: pink ? '#ff7ac8' : '#7ad7ff', M: pink ? '#7ad7ff' : '#ff7ac8', B: '#ffb3e6', W: colors.S ? '#ffc2e6' : '#ffffff', Y: '#ffe600' };
-        }
         const bitmapHeight = bitmap.length;
         const bitmapWidth = Math.max(...bitmap.map((row) => row.length));
         view.save();
@@ -917,24 +906,15 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
 
     const skyOn = () => Boolean(THEMES[styleName].sky);
 
-    const RAINBOW_HUES = [0, 30, 55, 120, 200, 250, 290];
-
-    const AURORA = Array.from({ length: 8 }, (_, index) => ({
-        hue: [140, 165, 280, 320, 190, 150, 300, 175][index],
-        speed: 6000 + index * 1700,
-        phase: index * 1.7,
-        latitude: -66 + index * 19,
-        drift: 6 + (index % 3) * 3,
+    const STARS = Array.from({ length: 140 }, (_, index) => ({
+        x: (index * 0.6180339) % 1,
+        y: (index * 0.7548777 + Math.sin(index) * 0.1 + 1) % 1,
+        size: 0.4 + ((index * 37) % 10) / 10,
+        seconds: 2200 + ((index * 131) % 3800),
+        phase: index * 1.9,
     }));
 
-    const SCATTERED_BOWS = Array.from({ length: 7 }, (_, index) => ({
-        x: (index * 0.618 + 0.1) % 1,
-        y: 0.12 + ((index * 0.41) % 0.76),
-        radius: 22 + ((index * 17) % 40),
-        seconds: 16000 + index * 4300,
-        phase: index * 2.3,
-        sway: 6 + index * 1.5,
-    }));
+    const SHOOTING_PERIOD = 14000;
 
     const skyLayer = document.createElement('canvas');
     skyLayer.setAttribute('aria-hidden', 'true');
@@ -962,57 +942,33 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         skyLayer.style.display = 'block';
         sky.setTransform(ratio, 0, 0, ratio, 0, 0);
         sky.clearRect(0, 0, width, height);
-        sky.save();
-        sky.globalCompositeOperation = 'lighter';
-
-        const unit = canvas.offsetWidth / (cols * CELL);
-        const originX = canvas.offsetLeft;
-        const originY = canvas.offsetTop;
         const moment = animateSun ? time : 0;
-        const mapWidth = cols * CELL * unit;
-        const pointAt = (longitudeDegrees, latitudeDegrees) => ({
-            x: originX + (((longitudeDegrees + 180) % 360) + 360) % 360 * unit,
-            y: originY + (EQUATOR_Y - latitudeDegrees) * unit,
+        STARS.forEach((star) => {
+            const twinkle = 0.35 + 0.65 * (Math.sin(moment / star.seconds * Math.PI * 2 + star.phase) * 0.5 + 0.5);
+            sky.globalAlpha = twinkle * 0.8;
+            sky.fillStyle = star.size > 1.1 ? '#cfe0ff' : '#ffffff';
+            sky.fillRect(Math.round(star.x * width), Math.round(star.y * height), star.size, star.size);
         });
 
-        AURORA.forEach((ribbon) => {
-            const steps = 90;
-            const baseLatitude = ribbon.latitude + Math.sin(moment / (ribbon.speed * 3) + ribbon.phase) * ribbon.drift;
-            for (let step = 0; step < steps; step++) {
-                const fraction = step / steps;
-                const longitudeDegrees = fraction * 360 - 180;
-                const swirl = Math.sin(fraction * Math.PI * 6 + moment / ribbon.speed + ribbon.phase) * 5 + Math.sin(fraction * Math.PI * 14 - moment / (ribbon.speed * 0.7)) * 1.8;
-                const glow = 0.3 + 0.7 * Math.pow(Math.sin(fraction * Math.PI * 5 + moment / (ribbon.speed * 0.5) + ribbon.phase) * 0.5 + 0.5, 2);
-                const centre = pointAt(longitudeDegrees, baseLatitude + swirl);
-                const thickness = (6 + 5 * glow) * unit;
-                const ribbonGlow = sky.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, thickness * 2);
-                ribbonGlow.addColorStop(0, `hsla(${ribbon.hue}, 100%, 65%, ${0.17 * glow})`);
-                ribbonGlow.addColorStop(1, `hsla(${ribbon.hue}, 100%, 55%, 0)`);
-                sky.fillStyle = ribbonGlow;
-                sky.fillRect(centre.x - thickness * 2, centre.y - thickness * 2, thickness * 4, thickness * 4);
-            }
-        });
-
-        sky.filter = `blur(${Math.max(1, 2.5 * unit)}px)`;
-        SCATTERED_BOWS.forEach((bow) => {
-            const fade = Math.pow(Math.sin(moment / bow.seconds * Math.PI * 2 + bow.phase) * 0.5 + 0.5, 1.5);
-            const centreX = originX + (bow.x + moment / (bow.seconds * 60)) % 1 * mapWidth;
-            const centreY = originY + (bow.y + Math.sin(moment / bow.seconds + bow.phase) * 0.04) * canvas.offsetHeight;
-            const band = bow.radius * unit * 0.09;
-            RAINBOW_HUES.forEach((hue, index) => {
-                const radius = bow.radius * unit + (RAINBOW_HUES.length - index) * band;
-                sky.strokeStyle = `hsla(${hue}, 100%, 65%, ${0.03 + 0.1 * fade})`;
-                sky.lineWidth = band + 1;
-                [-mapWidth, 0, mapWidth].forEach((wrap) => {
-                    sky.beginPath();
-                    sky.arc(centreX + wrap, centreY, radius, 0, Math.PI * 2);
-                    sky.stroke();
-                });
-            });
-        });
-        sky.filter = 'none';
-
-        sky.restore();
+        const cycle = Math.floor(moment / SHOOTING_PERIOD);
+        const progress = (moment % SHOOTING_PERIOD) / 1600;
+        if (animateSun && progress < 1) {
+            const startX = (((cycle * 0.37) % 0.6) + 0.1) * width;
+            const startY = (((cycle * 0.53) % 0.4) + 0.05) * height;
+            const headX = startX + progress * width * 0.22;
+            const headY = startY + progress * height * 0.16;
+            const trail = sky.createLinearGradient(headX, headY, headX - width * 0.07, headY - height * 0.05);
+            trail.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+            trail.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            sky.globalAlpha = Math.sin(progress * Math.PI);
+            sky.strokeStyle = trail;
+            sky.lineWidth = 1.2;
+            sky.beginPath();
+            sky.moveTo(headX, headY);
+            sky.lineTo(headX - width * 0.07, headY - height * 0.05);
+            sky.stroke();
+        }
+        sky.globalAlpha = 1;
     };
 
     const MIST = Array.from({ length: 13 }, (_, index) => ({
