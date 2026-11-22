@@ -58,6 +58,40 @@
 
 html { color-scheme: dark; font-size: 15px; }
 
+/* Night theme: warm, dim ambers with no white and no blue light (auto from 22:00 to 06:00, or via the switch) */
+html[data-theme='night'] {
+    --color-zinc-100: #dcc6a2;
+    --color-zinc-200: #cfb68f;
+    --color-zinc-300: #bfa47d;
+    --color-zinc-400: #ac916b;
+    --color-zinc-500: #977c5c;
+    --color-zinc-600: #6e5a42;
+    --color-zinc-700: #4c3f2e;
+    --color-zinc-800: #31281c;
+    --color-zinc-900: #231b13;
+    --color-zinc-950: #17110b;
+
+    --color-indigo-300: #dcb07a;
+    --color-indigo-400: #e3a766;
+    --color-indigo-500: #bd7a40;
+    --color-indigo-600: #8f4f22;
+    --color-indigo-700: #763f1a;
+    --color-emerald-600: #4d6b3a;
+    --color-emerald-700: #3f5a30;
+    --color-red-300: #e0a090;
+    --color-red-400: #e0907f;
+    --color-red-500: #a8412f;
+}
+html[data-theme='night'] body { background-image: linear-gradient(to bottom, transparent 60%, rgb(189 122 64 / 0.07)); }
+html[data-theme='night'] .text-white { color: var(--color-zinc-100); }
+html[data-theme='night'] body::after { background: transparent; }
+html[data-theme='night'] canvas { filter: sepia(0.85) saturate(1.2) hue-rotate(-12deg) brightness(0.75); }
+html[data-theme='night'] .css-editor { border-color: #4c3f2e; background: #17110b; }
+html[data-theme='night'] .css-editor-gutter { border-right-color: #31281c; background: #231b13; color: #6e5a42; }
+html[data-theme='night'] .css-editor-body pre { color: #cfb68f; }
+html[data-theme='night'] .css-editor-input { caret-color: #cfb68f; }
+html[data-theme='night'] .css-editor-body pre span { filter: sepia(0.8) brightness(0.85); }
+
 @layer base {
     *, ::before, ::after { border-color: var(--color-zinc-700); }
 

@@ -74,3 +74,47 @@ document.addEventListener('keydown', (event) => {
         startArcade();
     }
 });
+
+const NIGHT_START = 22;
+const NIGHT_END = 6;
+const isNightHour = () => {
+    const hour = new Date().getHours();
+
+    return hour >= NIGHT_START || hour < NIGHT_END;
+};
+
+const applyTheme = () => {
+    let override = null;
+    try {
+        override = localStorage.getItem('lore-theme');
+    } catch (error) {
+        override = null;
+    }
+    const night = override === 'night' || override === 'normal' ? override === 'night' : isNightHour();
+    root.dataset.theme = night ? 'night' : 'normal';
+    document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(night));
+        button.textContent = night ? '☾' : '☀';
+        button.title = night ? 'Night mode on · tap for normal colors' : 'Normal colors · tap for night mode';
+    });
+};
+
+document.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-theme-toggle]')) {
+        return;
+    }
+    const goingNight = root.dataset.theme !== 'night';
+    try {
+        if (goingNight === isNightHour()) {
+            localStorage.removeItem('lore-theme');
+        } else {
+            localStorage.setItem('lore-theme', goingNight ? 'night' : 'normal');
+        }
+    } catch (error) {
+        root.dataset.theme = goingNight ? 'night' : 'normal';
+    }
+    applyTheme();
+});
+
+applyTheme();
+setInterval(applyTheme, 60000);
