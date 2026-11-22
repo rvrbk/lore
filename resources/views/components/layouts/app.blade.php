@@ -7,7 +7,7 @@
 <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-zinc-700 bg-zinc-900 px-4 py-2.5 lg:hidden">
     <button type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open menu" class="-ml-1 border border-zinc-700 px-2.5 py-1 text-lg leading-none text-zinc-200">&#9776;</button>
     <a href="{{ route('dashboard') }}" class="flex items-center gap-2 font-pixel text-sm text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-6" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
-    <div class="ml-auto flex items-center gap-2">@include('partials.deploy-indicator')@include('partials.header-clock', ['class' => ''])</div>
+    <div class="ml-auto flex items-center gap-2.5">@include('partials.deploy-indicator')@include('partials.header-clock', ['class' => ''])</div>
     @if($dueCount || $downCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount + $downCount }}</span>@endif
 </header>
 <div data-nav-backdrop hidden class="fixed inset-0 z-40 bg-black/70 lg:hidden"></div>
