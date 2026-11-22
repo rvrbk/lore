@@ -81,7 +81,7 @@ class PageScreenshot
             return false;
         }
 
-        $directory = sys_get_temp_dir().'/lore-chromium';
+        $directory = rtrim((string) (config('services.heatmap.work_dir') ?: sys_get_temp_dir().'/lore-chromium'), '/');
         @mkdir($directory, 0775, true);
         $temporary = $directory.'/'.bin2hex(random_bytes(6)).'.png';
 
