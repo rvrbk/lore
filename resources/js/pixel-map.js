@@ -378,9 +378,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         if (!available) {
             return false;
         }
-        const ratio = pixelRatio();
+        const ratio = Math.min(window.devicePixelRatio || 1, 3);
         const exactCell = (available * ratio) / cols;
-        const cellPixels = lite || exactCell < 3 ? exactCell : Math.floor(exactCell);
+        const cellPixels = exactCell < 2 ? exactCell : Math.floor(exactCell);
         const width = Math.floor(cols * cellPixels);
         const height = Math.round(rows * cellPixels);
         if (width === canvas.width && height === canvas.height) {
