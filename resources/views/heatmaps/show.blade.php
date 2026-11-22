@@ -1,5 +1,5 @@
-<x-layouts.app :title="'Heatmap · '.$monitor->name">
-    <a href="{{ route('analytics.index') }}#heatmaps" class="text-sm text-zinc-400 hover:underline">← Analytics</a>
+<x-layouts.app :title="'Clicks · '.$monitor->name">
+    <a href="{{ route('analytics.index') }}#clicks" class="text-sm text-zinc-400 hover:underline">← Analytics</a>
     <h1 class="mt-1 text-2xl font-semibold">{{ $monitor->name }}</h1>
 
     <form method="GET" class="mt-4 flex flex-wrap items-center gap-2 text-sm">
@@ -65,38 +65,23 @@
         <div class="mt-2 flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="View">
             <button type="button" data-heat-mode="heat" class="rounded-md border border-zinc-700 px-3 py-1 data-[active]:bg-indigo-600 data-[active]:text-white">Heat</button>
             <button type="button" data-heat-mode="dots" class="rounded-md border border-zinc-700 px-3 py-1 data-[active]:bg-indigo-600 data-[active]:text-white">Dots</button>
-            <label class="ml-2 flex items-center gap-1.5 text-zinc-400"><input type="checkbox" id="heat-hide-page"> Hide page</label>
-            @if($canCapture)
-                <form method="POST" action="{{ route('analytics.heatmaps.refresh', $monitor) }}" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Capturing…'">@csrf
-                    <input type="hidden" name="path" value="{{ $path }}"><input type="hidden" name="device" value="{{ $device }}"><input type="hidden" name="days" value="{{ $days }}">
-                    <button class="rounded-md border border-zinc-700 px-3 py-1 hover:bg-zinc-800">{{ $screenshotHeight ? 'Retake screenshot' : 'Take screenshot' }}</button>
-                </form>
-            @endif
-            <span class="text-xs text-zinc-500">Heat blurs busy areas red; Dots marks every single click.{{ $screenshotHeight ? '' : ' No screenshot yet, so the live page is shown (a site that forbids framing shows blank).' }}</span>
+            <span class="text-xs text-zinc-500">Heat blurs busy areas red; Dots marks every single click. Left to right is the page width, top to bottom is how far down the page (px).</span>
         </div>
         <div class="mt-3 overflow-x-auto border border-zinc-800">
-            <div id="heat-stage" class="relative bg-white" style="width: {{ $width }}px">
-                @if($screenshotHeight)
-                    <img id="heat-frame" src="{{ route('analytics.heatmaps.screenshot', ['monitor' => $monitor, 'path' => $path, 'device' => $device]) }}" alt="Screenshot of {{ $monitor->name }} {{ $path }}" class="block max-w-none" style="width: {{ $width }}px; height: {{ $screenshotHeight }}px">
-                @else
-                    <iframe id="heat-frame" src="{{ $pageUrl }}" title="{{ $monitor->name }} {{ $path }}" tabindex="-1" class="block border-0" style="width: {{ $width }}px; height: 1200px"></iframe>
-                @endif
-                <canvas id="heat-canvas" class="pointer-events-none absolute left-0 top-0"></canvas>
+            <div id="heat-stage" class="relative bg-zinc-900" style="width: {{ $width }}px">
+                <canvas id="heat-canvas" class="block"></canvas>
             </div>
         </div>
         <script>
             (function () {
                 var points = @json($points);
                 var width = {{ $width }};
-                var stage = document.getElementById('heat-stage');
-                var frame = document.getElementById('heat-frame');
                 var canvas = document.getElementById('heat-canvas');
                 var ctx = canvas.getContext('2d');
                 var maxY = points.reduce(function (max, p) { return Math.max(max, p[1]); }, 0);
-                var height = {{ $screenshotHeight ?? 'null' }} || Math.min(15000, Math.max(1200, maxY + 900));
+                var height = Math.min(15000, Math.max(800, maxY + 300));
                 canvas.width = width;
                 canvas.height = height;
-                frame.style.height = height + 'px';
 
                 var radius = width > 600 ? 28 : 18;
                 var palette = (function () {
@@ -110,6 +95,23 @@
                     rctx.fillRect(0, 0, 1, 256);
                     return rctx.getImageData(0, 0, 1, 256).data;
                 })();
+
+                function drawGrid() {
+                    ctx.font = '11px monospace';
+                    ctx.textBaseline = 'top';
+                    for (var y = 0; y < height; y += 250) {
+                        ctx.fillStyle = y % 500 === 0 ? 'rgba(161,161,170,0.35)' : 'rgba(161,161,170,0.15)';
+                        ctx.fillRect(0, y, width, 1);
+                        if (y % 500 === 0) {
+                            ctx.fillStyle = 'rgba(161,161,170,0.8)';
+                            ctx.fillText(y + ' px', 6, y + 4);
+                        }
+                    }
+                    for (var i = 1; i < 4; i++) {
+                        ctx.fillStyle = 'rgba(161,161,170,0.15)';
+                        ctx.fillRect(Math.round(width * i / 4), 0, 1, height);
+                    }
+                }
 
                 function drawHeat() {
                     var shadow = document.createElement('canvas');
@@ -136,7 +138,8 @@
                             data[i] = Math.min(220, palette[j + 3] + 40);
                         }
                     }
-                    ctx.putImageData(image, 0, 0);
+                    sctx.putImageData(image, 0, 0);
+                    ctx.drawImage(shadow, 0, 0);
                 }
 
                 function drawDots() {
@@ -155,14 +158,11 @@
                 var buttons = document.querySelectorAll('[data-heat-mode]');
                 function setMode(mode) {
                     ctx.clearRect(0, 0, width, height);
+                    drawGrid();
                     (mode === 'dots' ? drawDots : drawHeat)();
                     buttons.forEach(function (b) { b.toggleAttribute('data-active', b.dataset.heatMode === mode); });
                 }
                 buttons.forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.heatMode); }); });
-                document.getElementById('heat-hide-page').addEventListener('change', function (e) {
-                    frame.style.visibility = e.target.checked ? 'hidden' : 'visible';
-                    stage.style.background = e.target.checked ? '#18181b' : '#fff';
-                });
                 setMode(points.length < 200 ? 'dots' : 'heat');
             })();
         </script>

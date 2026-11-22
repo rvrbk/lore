@@ -85,13 +85,6 @@ return [
         'token' => env('GITHUB_DEPLOY_TOKEN'),
     ],
 
-    'heatmap' => [
-        // Chromium used to screenshot pages for heatmaps; found on PATH when empty.
-        'chromium' => env('HEATMAP_CHROMIUM'),
-        // Folder Chromium writes to before the image is moved into storage. A snap Chromium cannot see /tmp, use a non-hidden folder in the home directory.
-        'work_dir' => env('HEATMAP_WORK_DIR'),
-    ],
-
     'telegram' => [
         // Bot token from @BotFather and the id of the chat that should receive reminders.
         'token' => env('TELEGRAM_BOT_TOKEN'),

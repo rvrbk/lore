@@ -1,6 +1,6 @@
 <section class="mt-10">
-<h2 id="heatmaps" class="text-lg font-semibold">Heatmaps</h2>
-<p class="mt-1 text-sm text-zinc-400">Where visitors click on each site. Every site sends its clicks to Lore through a small script in its layout; sites added above get it automatically. Open a site for its heatmap.</p>
+<h2 id="clicks" class="text-lg font-semibold">Clicks</h2>
+<p class="mt-1 text-sm text-zinc-400">Where and how often visitors click on each site. Every site sends its clicks to Lore through a small script in its layout; sites added above get it automatically. Open a site for its click map.</p>
 
     @php
         $allDays = collect(range(0, 29))->map(fn (int $i) => $daily->sum(fn (array $series) => $series[$i] ?? 0));

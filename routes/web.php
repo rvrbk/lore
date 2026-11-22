@@ -107,8 +107,6 @@ Route::middleware('auth')->group(function () {
 
     Route::redirect('heatmaps', '/analytics');
     Route::get('analytics/heatmaps/{monitor}', [HeatmapController::class, 'show'])->name('analytics.heatmaps.show');
-    Route::get('analytics/heatmaps/{monitor}/screenshot', [HeatmapController::class, 'screenshot'])->name('analytics.heatmaps.screenshot');
-    Route::post('analytics/heatmaps/{monitor}/screenshot', [HeatmapController::class, 'refresh'])->name('analytics.heatmaps.refresh');
 
     Route::get('reminders', [ReminderController::class, 'index'])->name('reminders.index');
     Route::post('reminders', [ReminderController::class, 'store'])->name('reminders.store');
