@@ -1,5 +1,6 @@
 import './board.js';
 import './editor.js';
+import './css-editor.js';
 import './palette.js';
 import './pixel-map.js';
 import './live-users.js';
