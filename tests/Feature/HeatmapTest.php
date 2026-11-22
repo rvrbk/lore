@@ -6,9 +6,11 @@ use App\Models\HeatClick;
 use App\Models\Monitor;
 use App\Models\User;
 use App\Services\GitHubHeatmapSnippet;
+use App\Services\PageScreenshot;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -112,5 +114,59 @@ class HeatmapTest extends TestCase
         Http::assertSent(fn ($request) => $request->method() === 'PUT'
             && str_contains(base64_decode($request['content']), 'data-key="abc"')
             && $request['sha'] === 's1');
+    }
+
+    private function fakeChromium(): void
+    {
+        config(['services.heatmap.chromium' => '/bin/sh']);
+        Storage::fake('local');
+        Process::fake(function ($process) {
+            $argument = collect($process->command)->first(fn ($part) => str_starts_with($part, '--screenshot='));
+            file_put_contents(substr($argument, strlen('--screenshot=')), base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg=='));
+
+            return Process::result();
+        });
+    }
+
+    public function test_the_screenshot_command_captures_clicked_pages_once_until_they_go_stale(): void
+    {
+        $this->fakeChromium();
+        $monitor = Monitor::factory()->create(['url' => 'https://example.com']);
+        HeatClick::factory()->for($monitor)->create(['path' => '/pricing', 'y' => 2000]);
+
+        $this->artisan('heatmaps:screenshots')->assertSuccessful();
+        $this->artisan('heatmaps:screenshots')->assertSuccessful();
+
+        Process::assertRanTimes(fn ($process) => in_array('https://example.com/pricing', $process->command, true)
+            && in_array('--window-size=1280,2600', $process->command, true), 1);
+        Storage::disk('local')->assertExists("screenshots/{$monitor->id}/desktop-".sha1('/pricing').'.png');
+
+        $this->travel(PageScreenshot::STALE_AFTER_DAYS + 1)->days();
+        $this->artisan('heatmaps:screenshots')->assertSuccessful();
+        Process::assertRanTimes(fn ($process) => in_array('https://example.com/pricing', $process->command, true), 2);
+    }
+
+    public function test_the_heatmap_page_draws_on_the_screenshot_when_there_is_one(): void
+    {
+        $this->fakeChromium();
+        $monitor = Monitor::factory()->create(['url' => 'https://example.com']);
+        HeatClick::factory()->for($monitor)->create(['path' => '/pricing', 'y' => 100]);
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('heatmaps.show', $monitor))->assertOk()->assertSee('<iframe', false)->assertDontSee('<img id="heat-frame"', false);
+
+        $this->post(route('heatmaps.refresh', $monitor), ['path' => '/pricing', 'device' => 'desktop'])->assertRedirect();
+        $this->get(route('heatmaps.show', $monitor))->assertOk()->assertSee('<img id="heat-frame"', false);
+        $this->get(route('heatmaps.screenshot', ['monitor' => $monitor, 'path' => '/pricing', 'device' => 'desktop']))->assertOk();
+        $this->get(route('heatmaps.screenshot', ['monitor' => $monitor, 'path' => '/other']))->assertNotFound();
+    }
+
+    public function test_paths_that_are_not_plain_url_paths_are_never_captured(): void
+    {
+        $this->fakeChromium();
+        $monitor = Monitor::factory()->create();
+
+        $this->assertFalse(app(PageScreenshot::class)->capture($monitor, '/a b;rm', 'desktop', 1200));
+        Process::assertNothingRan();
     }
 }

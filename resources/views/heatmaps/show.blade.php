@@ -18,6 +18,8 @@
         </select>
         @if($path !== '')<span class="text-xs text-zinc-500">{{ number_format($points->count()) }} clicks shown</span>@endif
     </form>
+    @if(session('status'))<p class="mt-2 text-sm text-emerald-400">{{ session('status') }}</p>@endif
+    @if(session('error'))<p class="mt-2 text-sm text-amber-300">{{ session('error') }}</p>@endif
 
     @if($path === '')
         <p class="mt-6 text-sm text-zinc-400">No {{ $device }} clicks in the last {{ $days }} days. Once the tracker is live on {{ $monitor->host() }}, clicks appear here.</p>
@@ -26,11 +28,21 @@
             <button type="button" data-heat-mode="heat" class="rounded-md border border-zinc-700 px-3 py-1 data-[active]:bg-indigo-600 data-[active]:text-white">Heat</button>
             <button type="button" data-heat-mode="dots" class="rounded-md border border-zinc-700 px-3 py-1 data-[active]:bg-indigo-600 data-[active]:text-white">Dots</button>
             <label class="ml-2 flex items-center gap-1.5 text-zinc-400"><input type="checkbox" id="heat-hide-page"> Hide page</label>
-            <span class="text-xs text-zinc-500">Heat blurs busy areas red; Dots marks every single click. A site that forbids framing shows blank behind them.</span>
+            @if($canCapture)
+                <form method="POST" action="{{ route('heatmaps.refresh', $monitor) }}" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Capturing…'">@csrf
+                    <input type="hidden" name="path" value="{{ $path }}"><input type="hidden" name="device" value="{{ $device }}"><input type="hidden" name="days" value="{{ $days }}">
+                    <button class="rounded-md border border-zinc-700 px-3 py-1 hover:bg-zinc-800">{{ $screenshotHeight ? 'Retake screenshot' : 'Take screenshot' }}</button>
+                </form>
+            @endif
+            <span class="text-xs text-zinc-500">Heat blurs busy areas red; Dots marks every single click.{{ $screenshotHeight ? '' : ' No screenshot yet, so the live page is shown (a site that forbids framing shows blank).' }}</span>
         </div>
         <div class="mt-3 overflow-x-auto border border-zinc-800">
             <div id="heat-stage" class="relative bg-white" style="width: {{ $width }}px">
-                <iframe id="heat-frame" src="{{ $pageUrl }}" title="{{ $monitor->name }} {{ $path }}" tabindex="-1" class="block border-0" style="width: {{ $width }}px; height: 1200px"></iframe>
+                @if($screenshotHeight)
+                    <img id="heat-frame" src="{{ route('heatmaps.screenshot', ['monitor' => $monitor, 'path' => $path, 'device' => $device]) }}" alt="Screenshot of {{ $monitor->name }} {{ $path }}" class="block max-w-none" style="width: {{ $width }}px; height: {{ $screenshotHeight }}px">
+                @else
+                    <iframe id="heat-frame" src="{{ $pageUrl }}" title="{{ $monitor->name }} {{ $path }}" tabindex="-1" class="block border-0" style="width: {{ $width }}px; height: 1200px"></iframe>
+                @endif
                 <canvas id="heat-canvas" class="pointer-events-none absolute left-0 top-0"></canvas>
             </div>
         </div>
@@ -43,7 +55,7 @@
                 var canvas = document.getElementById('heat-canvas');
                 var ctx = canvas.getContext('2d');
                 var maxY = points.reduce(function (max, p) { return Math.max(max, p[1]); }, 0);
-                var height = Math.min(15000, Math.max(1200, maxY + 900));
+                var height = {{ $screenshotHeight ?? 'null' }} || Math.min(15000, Math.max(1200, maxY + 900));
                 canvas.width = width;
                 canvas.height = height;
                 frame.style.height = height + 'px';

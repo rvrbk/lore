@@ -85,6 +85,11 @@ return [
         'token' => env('GITHUB_DEPLOY_TOKEN'),
     ],
 
+    'heatmap' => [
+        // Chromium used to screenshot pages for heatmaps; found on PATH when empty.
+        'chromium' => env('HEATMAP_CHROMIUM'),
+    ],
+
     'telegram' => [
         // Bot token from @BotFather and the id of the chat that should receive reminders.
         'token' => env('TELEGRAM_BOT_TOKEN'),

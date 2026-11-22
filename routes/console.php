@@ -18,3 +18,4 @@ Schedule::command('server:measure')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('lore:digest')->dailyAt('07:30');
 Schedule::command('sites:count-users')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::call(fn () => HeatClick::where('created_at', '<', now()->subDays(HeatClick::KEEP_DAYS))->delete())->name('heat:prune')->daily();
+Schedule::command('heatmaps:screenshots')->everyThirtyMinutes()->withoutOverlapping(60);
