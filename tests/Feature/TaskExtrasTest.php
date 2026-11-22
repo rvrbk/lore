@@ -111,7 +111,7 @@ class TaskExtrasTest extends TestCase
         $this->assertSame(0, Reminder::count());
     }
 
-    public function test_a_new_reminder_without_a_task_gets_a_board_entry(): void
+    public function test_a_new_reminder_without_a_task_does_not_get_a_board_entry(): void
     {
         $page = Space::create(['name' => 'Ops'])->pages()->create(['title' => 'Runbook']);
 
@@ -119,12 +119,8 @@ class TaskExtrasTest extends TestCase
             'title' => 'Review runbook', 'due_at' => '2030-01-02T09:00', 'recurrence' => 'none', 'page_id' => $page->id,
         ])->assertRedirect();
 
-        $task = Task::sole();
-        $this->assertSame('Review runbook', $task->title);
-        $this->assertSame('todo', $task->status);
-        $this->assertSame($page->id, $task->page_id);
-        $this->assertSame('2030-01-02', $task->due_on->toDateString());
-        $this->assertSame($task->id, Reminder::sole()->task_id);
+        $this->assertSame(0, Task::count());
+        $this->assertNull(Reminder::sole()->task_id);
     }
 
     public function test_a_reminder_for_an_existing_task_does_not_add_another_card(): void

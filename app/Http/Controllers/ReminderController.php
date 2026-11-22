@@ -6,7 +6,6 @@ use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Task;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class ReminderController extends Controller
@@ -24,15 +23,6 @@ class ReminderController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
-
-        if ($data['task_id'] === null) {
-            $data['task_id'] = Task::createAtBottom([
-                'title' => $data['title'],
-                'description' => $data['notes'],
-                'due_on' => Carbon::parse($data['due_at'])->toDateString(),
-                'page_id' => $data['page_id'],
-            ])->id;
-        }
 
         Reminder::create($data);
 
