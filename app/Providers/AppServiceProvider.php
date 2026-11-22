@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Deployment;
 use App\Models\Incident;
 use App\Models\Monitor;
 use App\Models\Page;
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
             'navItems' => NavMenu::sorted(),
             'navSpaces' => Space::orderBy('name')->get(),
             'headerClock' => WorldClock::where('is_header', true)->first(),
+            'activeDeployments' => Deployment::active()->orderBy('id')->get(['site', 'status']),
             'dueCount' => Reminder::due()->count(),
             'openIncidents' => Incident::open()->orderBy('started_at')->get(),
             'downCount' => Monitor::where('is_up', false)->count(),

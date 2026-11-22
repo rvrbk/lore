@@ -34,6 +34,12 @@ class DeployController extends Controller
         return response()->json(['version' => Deployment::count().'-'.Deployment::max('id').'-'.Deployment::max('updated_at')]);
     }
 
+    /** What is deploying right now, for the indicator in the header. */
+    public function active(): JsonResponse
+    {
+        return response()->json(['active' => Deployment::active()->orderBy('id')->get(['site', 'status'])]);
+    }
+
     /**
      * Queue deployments (one site, or every registered site); the scheduler, which runs as the checkouts' owner,
      * picks them up within a minute. Lore itself is queued last so the other sites deploy with stable code.

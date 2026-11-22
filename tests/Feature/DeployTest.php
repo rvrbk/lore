@@ -199,4 +199,16 @@ class DeployTest extends TestCase
         Process::assertDidntRun(fn ($process) => str_contains($this->commandLine($process), "'down'"));
         Process::assertRan(fn ($process) => str_contains($this->commandLine($process), "'migrate'"));
     }
+
+    public function test_the_header_shows_which_sites_are_deploying_and_the_endpoint_lists_them(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $this->get(route('dashboard'))->assertOk()->assertDontSee('Deploying:');
+
+        Deployment::factory()->create(['site' => 'my-site', 'status' => Deployment::RUNNING]);
+        Deployment::factory()->create(['site' => 'old-site', 'status' => Deployment::SUCCEEDED]);
+
+        $this->get(route('dashboard'))->assertSee('Deploying: my-site');
+        $this->getJson(route('deploy.active'))->assertExactJson(['active' => [['site' => 'my-site', 'status' => 'running']]]);
+    }
 }

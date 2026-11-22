@@ -27,7 +27,7 @@ class NavMenu
      *
      * @var list<string>
      */
-    public const POLLING_ROUTES = ['deploy.state', 'analytics.live'];
+    public const POLLING_ROUTES = ['deploy.state', 'deploy.active', 'analytics.live'];
 
     /**
      * The key of the menu item the given route name belongs to, if any.

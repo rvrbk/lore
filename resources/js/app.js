@@ -3,6 +3,7 @@ import './editor.js';
 import './palette.js';
 import './pixel-map.js';
 import './live-users.js';
+import './deploy-status.js';
 import './local-time.js';
 import './world-clocks.js';
 
