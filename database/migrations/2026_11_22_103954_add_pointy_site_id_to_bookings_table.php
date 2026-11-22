@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('booking_types', function (Blueprint $table) {
-            $table->text('custom_css')->nullable();
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->foreignId('pointy_site_id')->nullable()->constrained()->nullOnDelete();
         });
     }
 
     public function down(): void
     {
-        Schema::table('booking_types', function (Blueprint $table) {
-            $table->dropColumn('custom_css');
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('pointy_site_id');
         });
     }
 };

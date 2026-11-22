@@ -3,7 +3,7 @@
 <head>
     @include('partials.head', ['title' => $type->name.' · Pointy'])
     <meta name="robots" content="noindex">
-    @if($css = $type->publicCss())<style>{!! $css !!}</style>@endif
+    @if($css = $site?->publicCss())<style>{!! $css !!}</style>@endif
 </head>
 <body class="pointy min-h-screen bg-zinc-950 text-zinc-200 antialiased">
 @php($field = 'pointy-input w-full rounded-md border border-zinc-700 px-3 py-1.5 text-sm')
@@ -15,6 +15,7 @@
     <form method="GET" class="pointy-zone mt-6 flex flex-wrap items-center gap-2 text-sm" data-pointy-zone>
         <label for="tz" class="text-zinc-400">Times shown in</label>
         <select name="tz" id="tz" onchange="this.form.submit()" class="rounded-md border border-zinc-700 px-2 py-1 text-sm">@foreach($timezones as $zone)<option value="{{ $zone }}" @selected($zone === $timezone)>{{ str_replace('_', ' ', $zone) }}</option>@endforeach</select>
+        @if($site)<input type="hidden" name="site" value="{{ $site->key }}">@endif
         <noscript><button class="rounded border px-2 py-1">Update</button></noscript>
     </form>
 
@@ -24,13 +25,14 @@
         <div class="pointy-days mt-5 flex flex-wrap gap-2">
             @foreach($days as $day => $slots)
                 @php($label = $slots->first()->format('D j M'))
-                <a href="{{ route('pointy.show', ['slug' => $type->slug, 'tz' => $timezone, 'date' => $day]) }}" class="pointy-day {{ $day === $date ? 'pointy-day-active' : '' }} rounded border px-3 py-1.5 text-sm {{ $day === $date ? 'border-indigo-500 bg-indigo-600 text-white' : 'border-zinc-700 hover:bg-zinc-800' }}">{{ $label }}</a>
+                <a href="{{ route('pointy.show', array_filter(['slug' => $type->slug, 'tz' => $timezone, 'date' => $day, 'site' => $site?->key])) }}" class="pointy-day {{ $day === $date ? 'pointy-day-active' : '' }} rounded border px-3 py-1.5 text-sm {{ $day === $date ? 'border-indigo-500 bg-indigo-600 text-white' : 'border-zinc-700 hover:bg-zinc-800' }}">{{ $label }}</a>
             @endforeach
         </div>
 
         <form method="POST" action="{{ route('pointy.book', $type->slug) }}" class="pointy-form mt-6">
             @csrf
             <input type="hidden" name="guest_timezone" value="{{ $timezone }}">
+            @if($site)<input type="hidden" name="site" value="{{ $site->key }}">@endif
             <input type="hidden" name="guest_hour12" value="0" data-hour12-field>
             <div class="pointy-slots grid grid-cols-3 gap-2 sm:grid-cols-4">
                 @foreach($days[$date] as $slot)

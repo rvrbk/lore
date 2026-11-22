@@ -7,6 +7,7 @@ use App\Mail\BookingRequestMail;
 use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
+use App\Models\PointySite;
 use App\Models\Reminder;
 use App\Models\User;
 use App\Services\SlotFinder;
@@ -65,17 +66,35 @@ class PointyTest extends TestCase
         $this->get(route('pointy.booking', $booking->token))->assertOk()->assertSee('18:00');
     }
 
-    public function test_a_meeting_types_own_css_is_applied_to_its_public_pages_and_cannot_close_the_style_tag(): void
+    public function test_a_sites_own_css_styles_any_meeting_type_and_cannot_close_the_style_tag(): void
     {
-        $type = BookingType::factory()->create(['custom_css' => '.pointy-submit { background: hotpink; }</style><script>alert(1)</script>']);
-        $booking = Booking::factory()->create(['booking_type_id' => $type->id]);
+        Mail::fake();
+        $site = PointySite::factory()->create(['key' => 'verbeek-ug', 'css' => '.pointy-submit { background: hotpink; }</style><script>alert(1)</script>']);
+        $other = PointySite::factory()->create(['key' => 'other', 'css' => '.pointy-title { color: lime; }']);
+        $type = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
 
-        foreach ([route('pointy.show', $type->slug), route('pointy.booking', $booking->token)] as $url) {
-            $this->get($url)->assertOk()->assertSee('background: hotpink', false)->assertDontSee('<script>alert(1)', false);
-        }
+        $this->get(route('pointy.show', ['slug' => $type->slug, 'site' => 'verbeek-ug']))->assertOk()->assertSee('background: hotpink', false)->assertDontSee('<script>alert(1)', false)->assertDontSee('lime');
+        $this->get(route('pointy.show', ['slug' => $type->slug, 'site' => 'other']))->assertOk()->assertSee('color: lime', false)->assertDontSee('hotpink');
+        $this->get(route('pointy.show', ['slug' => $type->slug, 'site' => 'unknown']))->assertOk()->assertDontSee('hotpink')->assertDontSee('lime');
 
-        $other = BookingType::factory()->create();
-        $this->get(route('pointy.show', $other->slug))->assertOk()->assertDontSee('hotpink', false);
+        $this->post(route('pointy.book', $type->slug), ['starts_at' => '2026-11-23T09:00:00Z', 'guest_name' => 'Ann', 'guest_email' => 'ann@example.test', 'guest_timezone' => 'UTC', 'site' => 'verbeek-ug'])->assertRedirect();
+        $booking = Booking::firstOrFail();
+        $this->assertTrue($booking->site->is($site));
+        $this->get(route('pointy.booking', $booking->token))->assertOk()->assertSee('background: hotpink', false);
+    }
+
+    public function test_the_owner_manages_sites(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->post(route('pointy.sites.store'), ['name' => 'Verbeek', 'key' => 'verbeek-ug', 'css' => 'body { color: red; }'])->assertRedirect(route('pointy.index'));
+        $site = PointySite::firstOrFail();
+        $this->post(route('pointy.sites.store'), ['name' => 'Dup', 'key' => 'verbeek-ug'])->assertSessionHasErrors('key');
+        $this->put(route('pointy.sites.update', $site), ['name' => 'Verbeek', 'key' => 'verbeek-ug', 'css' => 'body { color: blue; }'])->assertRedirect();
+        $this->assertSame('body { color: blue; }', $site->fresh()->css);
+        $this->get(route('pointy.index'))->assertOk()->assertSee('?site=verbeek-ug');
+        $this->delete(route('pointy.sites.destroy', $site))->assertRedirect();
+        $this->assertDatabaseCount('pointy_sites', 0);
     }
 
     public function test_a_taken_or_invalid_slot_cannot_be_booked(): void

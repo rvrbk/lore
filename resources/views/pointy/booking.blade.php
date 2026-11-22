@@ -3,7 +3,7 @@
 <head>
     @include('partials.head', ['title' => 'Your booking · Pointy'])
     <meta name="robots" content="noindex">
-    @if($css = $booking->type->publicCss())<style>{!! $css !!}</style>@endif
+    @if($css = $booking->site?->publicCss())<style>{!! $css !!}</style>@endif
 </head>
 <body class="pointy min-h-screen bg-zinc-950 text-zinc-200 antialiased">
 @php($start = $booking->starts_at->copy()->setTimezone($booking->guest_timezone))
@@ -25,7 +25,7 @@
             <form method="POST" action="{{ route('pointy.cancel', $booking->token) }}" class="mt-5" onsubmit="return confirm('Cancel this booking?')">@csrf<button class="pointy-cancel rounded border border-red-500/50 px-3 py-1.5 text-sm text-red-400 hover:bg-zinc-800">Cancel booking</button></form>
         @endif
     @endunless
-    <a href="{{ route('pointy.show', $booking->type->slug) }}" class="pointy-link mt-5 inline-block text-sm text-indigo-400 hover:underline">Book another time</a>
+    <a href="{{ route('pointy.show', array_filter(['slug' => $booking->type->slug, 'site' => $booking->site?->key])) }}" class="pointy-link mt-5 inline-block text-sm text-indigo-400 hover:underline">Book another time</a>
 </main>
 </body>
 </html>

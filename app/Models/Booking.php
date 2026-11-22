@@ -22,11 +22,17 @@ class Booking extends Model
     /** How long before the meeting its reminder comes due. */
     public const REMINDER_MINUTES_BEFORE = 15;
 
-    protected $fillable = ['booking_type_id', 'guest_name', 'guest_email', 'guest_timezone', 'guest_hour12', 'meeting_url', 'notes', 'starts_at', 'ends_at', 'token', 'cancelled_at'];
+    protected $fillable = ['booking_type_id', 'guest_name', 'guest_email', 'guest_timezone', 'guest_hour12', 'meeting_url', 'notes', 'starts_at', 'ends_at', 'token', 'cancelled_at', 'pointy_site_id'];
 
     protected function casts(): array
     {
         return ['guest_hour12' => 'boolean', 'starts_at' => 'datetime', 'ends_at' => 'datetime', 'cancelled_at' => 'datetime'];
+    }
+
+    /** @return BelongsTo<PointySite, $this> */
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(PointySite::class, 'pointy_site_id');
     }
 
     /**

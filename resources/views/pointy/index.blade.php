@@ -16,6 +16,24 @@
     </details>
 
     <section class="mt-8">
+        <h2 class="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-400">Sites</h2>
+        <p class="mb-3 text-xs text-zinc-500">Each website that embeds Pointy gets its own CSS. Add <code>?site=key</code> to the booking link (or iframe URL) and the pages use that site's CSS on top of the default look, whichever meeting type is shown. Hooks: body.pointy, .pointy-main, .pointy-brand, .pointy-title, .pointy-meta, .pointy-zone, .pointy-days, .pointy-day, .pointy-day-active, .pointy-slots, .pointy-slot, .pointy-form, .pointy-input, .pointy-submit, .pointy-error, .pointy-card, .pointy-join, .pointy-cancel, .pointy-link.</p>
+        @foreach($sites as $site)
+            <div class="mb-3 border border-zinc-800 bg-zinc-900 p-3">
+                <details>
+                    <summary class="cursor-pointer text-sm"><span class="font-medium text-zinc-100">{{ $site->name }}</span> <span class="ml-2 text-xs text-zinc-500">?site={{ $site->key }}</span></summary>
+                    <div class="mt-3">@include('partials.pointy-site-form', ['site' => $site])</div>
+                    <form method="POST" action="{{ route('pointy.sites.destroy', $site) }}" class="mt-3" onsubmit="return confirm('Delete {{ e($site->name) }}?')">@csrf @method('DELETE')<button class="text-xs text-red-400 hover:underline">Delete this site</button></form>
+                </details>
+            </div>
+        @endforeach
+        <details class="border border-zinc-800 bg-zinc-900 p-3">
+            <summary class="cursor-pointer text-sm font-medium">Add a site</summary>
+            <div class="mt-3">@include('partials.pointy-site-form', ['site' => null])</div>
+        </details>
+    </section>
+
+    <section class="mt-8">
         <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">Meeting types</h2>
         @forelse($types as $type)
             <div class="mb-3 border border-zinc-800 bg-zinc-900 p-3">

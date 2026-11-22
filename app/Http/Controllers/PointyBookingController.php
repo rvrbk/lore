@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\BookingType;
+use App\Models\PointySite;
 use App\Services\BookingNotifier;
 use App\Services\SlotFinder;
 use Carbon\CarbonImmutable;
@@ -33,6 +34,7 @@ class PointyBookingController extends Controller
             'days' => $days,
             'date' => $date,
             'timezones' => DateTimeZone::listIdentifiers(),
+            'site' => $this->site($request->query('site')),
         ]);
     }
 
@@ -46,11 +48,13 @@ class PointyBookingController extends Controller
             'guest_timezone' => ['required', Rule::in(DateTimeZone::listIdentifiers())],
             'guest_hour12' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'site' => ['nullable', 'string', 'max:60'],
         ]);
+        $site = $this->site($data['site'] ?? null);
 
         $start = CarbonImmutable::parse($data['starts_at'])->setTimezone('UTC');
 
-        $booking = DB::transaction(function () use ($type, $finder, $start, $data) {
+        $booking = DB::transaction(function () use ($type, $finder, $start, $data, $site) {
             if (! $finder->free($type)->contains(fn (CarbonImmutable $slot) => $slot->equalTo($start))) {
                 throw ValidationException::withMessages(['starts_at' => 'That time was just taken. Pick another one.']);
             }
@@ -66,6 +70,7 @@ class PointyBookingController extends Controller
                 'starts_at' => $start,
                 'ends_at' => $start->addMinutes($type->duration_minutes),
                 'token' => Str::random(40),
+                'pointy_site_id' => $site?->id,
             ]);
         });
 
@@ -77,7 +82,7 @@ class PointyBookingController extends Controller
 
     public function booking(string $token)
     {
-        $booking = Booking::where('token', $token)->with('type')->firstOrFail();
+        $booking = Booking::where('token', $token)->with(['type', 'site'])->firstOrFail();
 
         return view('pointy.booking', ['booking' => $booking]);
     }
@@ -91,6 +96,11 @@ class PointyBookingController extends Controller
         }
 
         return redirect()->route('pointy.booking', $token);
+    }
+
+    private function site(mixed $key): ?PointySite
+    {
+        return is_string($key) && $key !== '' ? PointySite::where('key', $key)->first() : null;
     }
 
     private function timezone(mixed $requested, string $fallback): string

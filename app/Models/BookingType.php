@@ -15,19 +15,11 @@ class BookingType extends Model
     /** @use HasFactory<BookingTypeFactory> */
     use HasFactory;
 
-    protected $fillable = ['slug', 'name', 'description', 'duration_minutes', 'timezone', 'days', 'start_time', 'end_time', 'weekday_hours', 'buffer_minutes', 'min_notice_hours', 'max_days_ahead', 'is_active', 'include_meet', 'meet_url', 'custom_css'];
+    protected $fillable = ['slug', 'name', 'description', 'duration_minutes', 'timezone', 'days', 'start_time', 'end_time', 'weekday_hours', 'buffer_minutes', 'min_notice_hours', 'max_days_ahead', 'is_active', 'include_meet', 'meet_url'];
 
     protected function casts(): array
     {
         return ['days' => 'array', 'weekday_hours' => 'array', 'is_active' => 'boolean', 'include_meet' => 'boolean'];
-    }
-
-    /**
-     * The owner's own CSS for the public pages, safe to print inside a style tag.
-     */
-    public function publicCss(): string
-    {
-        return trim(str_ireplace('<', '\\3c ', (string) $this->custom_css));
     }
 
     /** @return HasMany<Booking, $this> */

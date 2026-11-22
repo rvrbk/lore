@@ -6,6 +6,7 @@ use App\Mail\BookingRequestMail;
 use App\Models\AvailabilityException;
 use App\Models\Booking;
 use App\Models\BookingType;
+use App\Models\PointySite;
 use App\Services\BookingNotifier;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,7 @@ class PointyController extends Controller
             'types' => BookingType::with(['exceptions' => fn ($query) => $query->where('date', '>=', now()->toDateString())->orderBy('date')])->withCount(['bookings' => fn ($query) => $query->active()->where('starts_at', '>=', now())])->orderBy('name')->get(),
             'bookings' => Booking::active()->where('ends_at', '>=', now())->with('type')->orderBy('starts_at')->get(),
             'timezones' => DateTimeZone::listIdentifiers(),
+            'sites' => PointySite::orderBy('name')->get(),
         ]);
     }
 
@@ -47,6 +49,27 @@ class PointyController extends Controller
     public function destroy(BookingType $bookingType): RedirectResponse
     {
         $bookingType->delete();
+
+        return redirect()->route('pointy.index');
+    }
+
+    public function storeSite(Request $request): RedirectResponse
+    {
+        PointySite::create($this->validatedSite($request));
+
+        return redirect()->route('pointy.index');
+    }
+
+    public function updateSite(Request $request, PointySite $site): RedirectResponse
+    {
+        $site->update($this->validatedSite($request, $site));
+
+        return redirect()->route('pointy.index');
+    }
+
+    public function destroySite(PointySite $site): RedirectResponse
+    {
+        $site->delete();
 
         return redirect()->route('pointy.index');
     }
@@ -122,7 +145,6 @@ class PointyController extends Controller
             'buffer_minutes' => ['required', 'integer', 'min:0', 'max:240'],
             'min_notice_hours' => ['required', 'integer', 'min:0', 'max:720'],
             'max_days_ahead' => ['required', 'integer', 'min:1', 'max:365'],
-            'custom_css' => ['nullable', 'string', 'max:20000'],
             'meet_url' => ['nullable', 'url:https', 'max:255', 'regex:#^https://meet\.google\.com/[a-z0-9-]+(\?.*)?$#i'],
         ], ['slug.regex' => 'Use lowercase letters, numbers and dashes for the link.', 'meet_url.regex' => 'Use a Google Meet link, like https://meet.google.com/abc-defg-hij.']);
 
@@ -138,6 +160,18 @@ class PointyController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validatedSite(Request $request, ?PointySite $ignore = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'key' => ['required', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'max:60', Rule::unique('pointy_sites', 'key')->ignore($ignore)],
+            'css' => ['nullable', 'string', 'max:20000'],
+        ], ['key.regex' => 'Use lowercase letters, numbers and dashes for the site key.']);
     }
 
     private function uniqueSlug(string $source): string
