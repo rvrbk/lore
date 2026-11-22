@@ -3,11 +3,9 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ArcadeController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BingoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ExportController;
-use App\Http\Controllers\GraveyardController;
 use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MarkdownController;
@@ -17,12 +15,10 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PointyBookingController;
 use App\Http\Controllers\PointyController;
-use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\StatusPageController;
-use App\Http\Controllers\SurpriseController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UploadController;
@@ -48,13 +44,6 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
-    Route::get('surprise', SurpriseController::class)->name('surprise');
-    Route::get('graveyard', [GraveyardController::class, 'index'])->name('graveyard');
-    Route::post('graveyard/{page}/revive', [GraveyardController::class, 'revive'])->name('graveyard.revive');
-    Route::delete('graveyard/{page}', [GraveyardController::class, 'bury'])->name('graveyard.bury');
-    Route::get('quiz', [QuizController::class, 'show'])->name('quiz');
-    Route::post('quiz', [QuizController::class, 'answer'])->name('quiz.answer');
-    Route::get('bingo', BingoController::class)->name('bingo');
     Route::get('arcade', ArcadeController::class)->name('arcade');
     Route::post('mood', [MoodController::class, 'store'])->name('mood.store');
     Route::get('weather', WeatherController::class)->name('weather');

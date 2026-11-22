@@ -31,20 +31,11 @@
     @php($skyClock = $clocks->firstWhere('is_header', true) ?? $clocks->first())
     <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Corner</h2>
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <div class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
                 <div class="text-xs uppercase text-zinc-400">Commit streak</div>
                 <div class="mt-1 text-2xl font-semibold {{ $streak['days'] ? 'text-amber-300' : 'text-zinc-500' }}">{{ $streak['days'] ? '🔥 '.$streak['days'] : '—' }}<span class="ml-1 text-sm font-normal text-zinc-400">{{ \Illuminate\Support\Str::plural('day', $streak['days']) }}</span></div>
                 <p class="mt-1 text-xs {{ $streak['at_risk'] ? 'text-red-400' : 'text-zinc-500' }}">{{ $streak['at_risk'] ? 'No commit yet today. Keep it alive!' : ($streak['committed_today'] ? 'Committed today.' : 'Best in 90 days: '.$streak['best']) }}</p>
-            </div>
-            <div class="border border-zinc-800 bg-zinc-900 p-3 text-sm">
-                <div class="text-xs uppercase text-zinc-400">From your notes</div>
-                @if($fortune)
-                    <p class="mt-1 text-zinc-200">“{{ $fortune['line'] }}”</p>
-                    <a href="{{ route('pages.show', $fortune['page_id']) }}" class="mt-1 block truncate text-xs text-zinc-400 hover:underline">{{ $fortune['title'] }}</a>
-                @else
-                    <p class="mt-1 text-xs text-zinc-500">Write a page and a line of it shows up here each day.</p>
-                @endif
             </div>
             <div class="border border-zinc-800 bg-zinc-900 p-3 text-sm" data-sky @if($skyClock) data-sky-zone="{{ $skyClock->timezone }}" @endif>
                 <div class="text-xs uppercase text-zinc-400">Sky{{ $skyClock ? ' · '.\Illuminate\Support\Str::before($skyClock->city, ' (') : '' }}</div>
@@ -65,9 +56,7 @@
             </div>
         </div>
         <div class="mt-3 flex flex-wrap gap-2 text-sm">
-            @foreach(['surprise' => '🎲 Surprise me', 'graveyard' => '🪦 Page graveyard', 'quiz' => '🧠 Quiz yourself', 'bingo' => '🎯 Visitor bingo', 'arcade' => '🛸 Arcade corner'] as $name => $label)
-                <a href="{{ route($name) }}" class="border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">{{ $label }}</a>
-            @endforeach
+            <a href="{{ route('arcade') }}" class="border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">🛸 Arcade corner</a>
         </div>
     </section>
 

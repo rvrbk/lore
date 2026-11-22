@@ -67,7 +67,6 @@
         <form method="POST" action="{{ route('logout') }}" class="sticky bottom-0 -mb-4 flex shrink-0 items-center gap-2 border-t border-zinc-800 bg-zinc-900 pb-4 pt-3 text-sm">
             @csrf
             <span class="min-w-0 flex-1 truncate text-zinc-400" title="Signed in as {{ auth()->user()->username }}">{{ auth()->user()->username }}</span>
-            <a href="{{ route('surprise') }}" class="border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-100" title="Open something random" aria-label="Surprise me">🎲</a>
             <button type="button" data-palette-open class="border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-100" title="Quick switcher">Ctrl+K</button>
             <button class="text-zinc-400 hover:text-zinc-100">Log out</button>
         </form>
@@ -98,10 +97,6 @@
     $paletteActions = array_values(array_filter([
         ['title' => 'New task', 'hint' => 'Kanban', 'url' => route('tasks.index', ['new' => 1])],
         ['title' => 'New space', 'hint' => 'Action', 'url' => route('spaces.create')],
-        ['title' => 'Surprise me', 'hint' => 'Open something random', 'url' => route('surprise')],
-        ['title' => 'Page graveyard', 'hint' => 'Go to', 'url' => route('graveyard')],
-        ['title' => 'Quiz yourself', 'hint' => 'Go to', 'url' => route('quiz')],
-        ['title' => 'Visitor bingo', 'hint' => 'Go to', 'url' => route('bingo')],
         ['title' => 'Arcade corner', 'hint' => 'Go to', 'url' => route('arcade')],
         ['title' => 'Home', 'hint' => 'Go to', 'url' => route('dashboard')],
         ['title' => 'Kanban', 'hint' => 'Go to', 'url' => route('tasks.index')],

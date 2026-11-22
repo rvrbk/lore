@@ -11,7 +11,6 @@ use App\Models\Reminder;
 use App\Models\WorldClock;
 use App\Services\CommitLog;
 use App\Services\CommitStreak;
-use App\Services\Fortune;
 use App\Services\GoogleAnalytics;
 use App\Services\JobScout;
 use App\Services\MoodInsights;
@@ -26,7 +25,6 @@ class DashboardController extends Controller
             'commits' => app(CommitLog::class)->latest(),
             'jobScout' => app(JobScout::class)->newMatches(),
             'streak' => app(CommitStreak::class)->current(),
-            'fortune' => app(Fortune::class)->today(),
             'moodDays' => $moodDays = app(MoodInsights::class)->days(),
             'moodInsight' => app(MoodInsights::class)->insight($moodDays),
             'todayMood' => Mood::where('day', today()->toDateString())->value('level'),
