@@ -10,8 +10,23 @@ const part = (text, className) => {
     return span;
 };
 
+let known = null;
+
+const announceArrivals = (sites) => {
+    const current = Object.fromEntries(sites.map((site) => [site.name, site.users]));
+    if (known !== null) {
+        sites.forEach((site) => {
+            if (site.users > (known[site.name] ?? 0)) {
+                window.dispatchEvent(new CustomEvent('lore:visitor', { detail: { name: site.name, users: site.users } }));
+            }
+        });
+    }
+    known = current;
+};
+
 const show = (data) => {
     root.replaceChildren();
+    announceArrivals(data.sites ?? []);
 
     if (data.total === null) {
         return;

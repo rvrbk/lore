@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AnalyticsSite;
 use App\Models\Deployment;
+use App\Models\Incident;
 use App\Models\Monitor;
 use App\Models\MonitorCheck;
 use App\Models\Page;
@@ -15,6 +16,7 @@ use App\Services\GoogleAnalytics;
 use App\Services\SearchConsole;
 use App\Services\ServerHealth;
 use App\Services\Sql;
+use App\Services\UptimeWall;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -30,6 +32,7 @@ class MonitorController extends Controller
             'sparks' => Monitor::sparklines($monitors),
             'metrics' => $health->recent(),
             'diskDaysLeft' => $health->daysUntilDiskFull(),
+            'openMonitorIds' => Incident::open()->whereNotNull('monitor_id')->pluck('monitor_id')->all(),
             'errorCounts' => $monitors->mapWithKeys(fn (Monitor $monitor) => [$monitor->id => $errors->forMonitor($monitor)['last_day'] ?? null]),
         ]);
     }
@@ -70,6 +73,7 @@ class MonitorController extends Controller
         return view('monitors.show', [
             'monitor' => $monitor,
             'responseImpact' => $impact->forResponse($recent, $deploys),
+            'wall' => app(UptimeWall::class)->for($monitor),
             'search' => ($report = $searchConsole->report($monitor)) === null ? null : $report + ['impact' => $impact->forTraffic($monitor->name, $report['daily_impressions'])],
             'errorLog' => $errors->forMonitor($monitor),
             'tag' => $tag,

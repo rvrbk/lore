@@ -37,7 +37,12 @@ class DeployController extends Controller
     /** What is deploying right now, for the indicator in the header. */
     public function active(): JsonResponse
     {
-        return response()->json(['active' => Deployment::active()->orderBy('id')->get(['site', 'status'])]);
+        $latest = Deployment::whereNotIn('status', [Deployment::REQUESTED, Deployment::RUNNING])->latest('id')->first(['id', 'status', 'smoke_status']);
+
+        return response()->json([
+            'active' => Deployment::active()->orderBy('id')->get(['site', 'status']),
+            'latest' => $latest ? ['id' => $latest->id, 'ok' => $latest->status === Deployment::SUCCEEDED && $latest->smoke_status !== Deployment::SMOKE_FAILED] : null,
+        ]);
     }
 
     /**

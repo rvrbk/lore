@@ -50,6 +50,14 @@
     </section>
 
     <section class="mt-8">
+        <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Uptime wall <span class="ml-2 normal-case">last year, one square a day</span></h2>
+        <div class="border border-zinc-800 bg-zinc-900 p-3">
+            @include('partials.uptime-wall', ['wall' => $wall])
+            <p class="mt-2 flex items-center gap-1 text-xs text-zinc-500">No data <span class="size-2.5 bg-zinc-800"></span> <span class="size-2.5 bg-emerald-600"></span> clean <span class="size-2.5 bg-amber-500"></span> some downtime <span class="size-2.5 bg-red-500"></span> bad day</p>
+        </div>
+    </section>
+
+    <section class="mt-8">
         <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-400">Incidents · last 7 days</h2>
         <ul class="divide-y divide-zinc-800 border border-zinc-800 bg-zinc-900 text-sm">
             @forelse($incidents as $incident)

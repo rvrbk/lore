@@ -227,6 +227,21 @@ const sound = {
     },
 };
 
+const PING_NOTES = [262, 294, 330, 392, 440, 523, 587, 659];
+
+window.addEventListener('lore:visitor', (event) => {
+    if (!sound.ready()) {
+        return;
+    }
+    const name = String(event.detail?.name ?? '');
+    let hash = 0;
+    for (const character of name) {
+        hash = (hash * 31 + character.charCodeAt(0)) % 997;
+    }
+    const frequency = PING_NOTES[hash % PING_NOTES.length];
+    sound.tone('triangle', frequency, frequency * 1.5, 0.28, 0.35, 0.5);
+});
+
 const readStyle = () => {
     try {
         const saved = localStorage.getItem(STYLE_KEY);

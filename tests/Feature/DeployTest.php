@@ -209,7 +209,7 @@ class DeployTest extends TestCase
         Deployment::factory()->create(['site' => 'old-site', 'status' => Deployment::SUCCEEDED]);
 
         $this->get(route('dashboard'))->assertSee('Deploying: my-site');
-        $this->getJson(route('deploy.active'))->assertExactJson(['active' => [['site' => 'my-site', 'status' => 'running']]]);
+        $this->getJson(route('deploy.active'))->assertJsonPath('active', [['site' => 'my-site', 'status' => 'running']])->assertJsonPath('latest.ok', true);
     }
 
     public function test_the_mobile_header_shows_one_ball_per_deploying_site_up_to_three(): void

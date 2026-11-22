@@ -1,4 +1,8 @@
+import { confetti, trombone } from './fx.js';
+
 const POLL_MS = 5000;
+
+let lastFinished;
 
 const indicators = document.querySelectorAll('[data-deploy-indicator]');
 
@@ -45,7 +49,13 @@ const poll = async () => {
         try {
             const response = await fetch(indicators[0].dataset.url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
             if (response.ok) {
-                show((await response.json()).active);
+                const data = await response.json();
+                show(data.active);
+                const latest = data.latest?.id ?? null;
+                if (lastFinished !== undefined && latest !== null && latest !== lastFinished) {
+                    (data.latest.ok ? confetti : trombone)();
+                }
+                lastFinished = latest;
             }
         } catch {
             // the site restarts while Lore deploys itself; keep the last state until it answers again
