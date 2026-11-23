@@ -25,7 +25,7 @@ class NewsItem extends Model
     public const TICKER_ALERT_HOURS = 8;
 
     /** The ticker only shows items scored at least this high (alerts always show). */
-    public const TICKER_MIN_RELEVANCE = 8;
+    public const TICKER_MIN_RELEVANCE = 5;
 
     protected $fillable = ['external_id', 'title', 'source_name', 'region', 'category', 'url', 'relevance', 'is_alert', 'published_at'];
 

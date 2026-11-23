@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 class NewsController extends Controller
 {
     /**
-     * Ticker lines: the news nwsfd has harvested (alerts first) with the public feeds' headlines (two world sources), tech news and UFO sighting news mixed in between.
+     * Ticker lines: the news nwsfd has harvested (alerts first) with the public feeds' headlines (several world, tech and science sources) and recent UFO sighting news mixed in between, one lane per source and without repeats.
      */
     public function __invoke(NewsHeadlines $fallback): JsonResponse
     {
@@ -23,11 +23,17 @@ class NewsController extends Controller
         $world = collect($fallback->world())->map(fn (string $text) => ['kind' => 'headline', 'tag' => null, 'text' => $text]);
         $tech = collect($fallback->tech())->map(fn (string $text) => ['kind' => 'news', 'tag' => 'Tech', 'text' => $text]);
         $ufo = collect($fallback->ufo())->map(fn (string $text) => ['kind' => 'news', 'tag' => 'UFO', 'text' => $text]);
+        $extras = collect($fallback->extras())->map(fn (array $feed) => collect($feed['headlines'])->map(fn (string $text) => ['kind' => $feed['tag'] === null ? 'headline' : 'news', 'tag' => $feed['tag'], 'text' => $text]));
+
+        $lanes = collect([$items, $headlines, $tech, $world, $ufo])->concat($extras);
 
         $mixed = [];
-        foreach (range(0, max($items->count(), $headlines->count(), $world->count(), $tech->count(), $ufo->count()) - 1) as $index) {
-            foreach ([$items->get($index), $headlines->get($index), $tech->get($index), $world->get($index), $ufo->get($index)] as $line) {
-                if ($line !== null) {
+        $seen = [];
+        foreach (range(0, max(0, $lanes->max(fn ($lane) => $lane->count()) - 1)) as $index) {
+            foreach ($lanes as $lane) {
+                $line = $lane->get($index);
+                if ($line !== null && ! isset($seen[mb_strtolower($line['text'])])) {
+                    $seen[mb_strtolower($line['text'])] = true;
                     $mixed[] = $line;
                 }
             }

@@ -21,7 +21,7 @@ class NewsHeadlinesTest extends TestCase
     public function test_the_headlines_endpoint_returns_the_feed_titles_and_caches_them(): void
     {
         Cache::flush();
-        config(['services.news.feed' => 'https://news.example/rss.xml', 'services.news.ufo_feed' => '', 'services.news.world_feed' => '', 'services.news.tech_feed' => '']);
+        config(['services.news.feed' => 'https://news.example/rss.xml', 'services.news.ufo_feed' => '', 'services.news.world_feed' => '', 'services.news.tech_feed' => '', 'services.news.extra_feeds' => []]);
         Http::fake(['news.example/*' => Http::response($this->feed('First &amp; foremost', 'Second story'))]);
         $this->actingAs(User::factory()->create());
 
@@ -34,7 +34,7 @@ class NewsHeadlinesTest extends TestCase
     public function test_a_broken_feed_gives_no_headlines_and_is_not_cached(): void
     {
         Cache::flush();
-        config(['services.news.feed' => 'https://news.example/rss.xml', 'services.news.ufo_feed' => '', 'services.news.world_feed' => '', 'services.news.tech_feed' => '']);
+        config(['services.news.feed' => 'https://news.example/rss.xml', 'services.news.ufo_feed' => '', 'services.news.world_feed' => '', 'services.news.tech_feed' => '', 'services.news.extra_feeds' => []]);
         Http::fake(['news.example/*' => Http::sequence()->push('nope', 500)->push($this->feed('Back online'))]);
         $this->actingAs(User::factory()->create());
 
@@ -42,13 +42,13 @@ class NewsHeadlinesTest extends TestCase
         $this->getJson(route('news.headlines'))->assertOk()->assertExactJson(['items' => [['kind' => 'headline', 'tag' => null, 'text' => 'Back online']]]);
     }
 
-    public function test_pushed_nwsfd_news_is_mixed_with_the_public_feed_and_needs_relevance_eight_and_alerts_expire_after_eight_hours(): void
+    public function test_pushed_nwsfd_news_is_mixed_with_the_public_feed_and_needs_relevance_five_and_alerts_expire_after_eight_hours(): void
     {
         Cache::flush();
-        config(['services.news.feed' => 'https://news.example/rss.xml', 'services.news.ufo_feed' => 'https://ufo.example/rss.xml', 'services.news.world_feed' => 'https://world.example/rss.xml', 'services.news.tech_feed' => 'https://tech.example/rss.xml']);
-        Http::fake(['news.example/*' => Http::response($this->feed('BBC one', 'BBC two', 'BBC three')), 'ufo.example/*' => Http::response($this->feed('Lights over Phoenix')), 'world.example/*' => Http::response($this->feed('Guardian one')), 'tech.example/*' => Http::response($this->feed('New chip announced'))]);
-        NewsItem::factory()->create(['title' => 'Strike at Schiphol', 'category' => 'Travel', 'source_name' => 'NOS', 'relevance' => 8]);
-        NewsItem::factory()->create(['title' => 'Too low', 'relevance' => 7]);
+        config(['services.news.feed' => 'https://news.example/rss.xml', 'services.news.ufo_feed' => 'https://ufo.example/rss.xml', 'services.news.world_feed' => 'https://world.example/rss.xml', 'services.news.tech_feed' => 'https://tech.example/rss.xml', 'services.news.extra_feeds' => [['url' => 'https://more.example/rss.xml', 'tag' => 'Science']]]);
+        Http::fake(['news.example/*' => Http::response($this->feed('BBC one', 'BBC two', 'BBC three')), 'ufo.example/*' => Http::response($this->feed('Lights over Phoenix')), 'world.example/*' => Http::response($this->feed('Guardian one')), 'tech.example/*' => Http::response($this->feed('New chip announced')), 'more.example/*' => Http::response($this->feed('Guardian one', 'Comet spotted'))]);
+        NewsItem::factory()->create(['title' => 'Strike at Schiphol', 'category' => 'Travel', 'source_name' => 'NOS', 'relevance' => 5]);
+        NewsItem::factory()->create(['title' => 'Too low', 'relevance' => 4]);
         NewsItem::factory()->alert()->create(['title' => 'Ebola outbreak in Kampala', 'source_name' => 'Reuters', 'published_at' => now()->subHours(2)]);
         NewsItem::factory()->alert()->create(['title' => 'Stale alert', 'published_at' => now()->subHours(9)]);
         NewsItem::factory()->create(['title' => 'Too old', 'published_at' => now()->subDays(3)]);
@@ -62,6 +62,7 @@ class NewsHeadlinesTest extends TestCase
             ['kind' => 'news', 'tag' => 'UFO', 'text' => 'Lights over Phoenix'],
             ['kind' => 'news', 'tag' => 'Travel', 'text' => 'Strike at Schiphol (NOS)'],
             ['kind' => 'headline', 'tag' => null, 'text' => 'BBC two'],
+            ['kind' => 'news', 'tag' => 'Science', 'text' => 'Comet spotted'],
             ['kind' => 'headline', 'tag' => null, 'text' => 'BBC three'],
         ]]);
     }

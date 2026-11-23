@@ -16,7 +16,7 @@ class NewsHeadlines
      */
     public function latest(): array
     {
-        return $this->cached('news.headlines', 'services.news.feed', 20);
+        return $this->cached('news.headlines', config('services.news.feed'), 20);
     }
 
     /**
@@ -26,7 +26,7 @@ class NewsHeadlines
      */
     public function world(): array
     {
-        return $this->cached('news.world', 'services.news.world_feed', 15);
+        return $this->cached('news.world', config('services.news.world_feed'), 15);
     }
 
     /**
@@ -36,7 +36,7 @@ class NewsHeadlines
      */
     public function tech(): array
     {
-        return $this->cached('news.tech', 'services.news.tech_feed', 15);
+        return $this->cached('news.tech', config('services.news.tech_feed'), 15);
     }
 
     /**
@@ -46,20 +46,34 @@ class NewsHeadlines
      */
     public function ufo(): array
     {
-        return $this->cached('news.ufo', 'services.news.ufo_feed', 10);
+        return $this->cached('news.ufo', config('services.news.ufo_feed'), 6);
+    }
+
+    /**
+     * Headlines from each extra source, one list per feed, so the ticker can give every source its turn.
+     *
+     * @return array<int, array{tag: string|null, headlines: array<int, string>}>
+     */
+    public function extras(): array
+    {
+        return collect((array) config('services.news.extra_feeds'))
+            ->map(fn (array $feed) => ['tag' => $feed['tag'] ?? null, 'headlines' => $this->cached('news.extra.'.md5($feed['url']), $feed['url'], 8)])
+            ->filter(fn (array $feed) => $feed['headlines'] !== [])
+            ->values()
+            ->all();
     }
 
     /**
      * @return array<int, string>
      */
-    private function cached(string $cacheKey, string $configKey, int $limit): array
+    private function cached(string $cacheKey, mixed $url, int $limit): array
     {
         $cached = Cache::get($cacheKey);
         if (is_array($cached)) {
             return $cached;
         }
 
-        $headlines = $this->fetch(config($configKey), $limit);
+        $headlines = $this->fetch($url, $limit);
         if ($headlines !== []) {
             Cache::put($cacheKey, $headlines, now()->addMinutes(10));
         }

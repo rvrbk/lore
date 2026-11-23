@@ -59,8 +59,15 @@ return [
         // A second world news source and a tech news feed, mixed into the same ticker.
         'world_feed' => env('NEWS_WORLD_FEED_URL', 'https://www.theguardian.com/world/rss'),
         'tech_feed' => env('NEWS_TECH_FEED_URL', 'https://feeds.arstechnica.com/arstechnica/index'),
-        // RSS feed with UFO sighting news, mixed into the same ticker.
-        'ufo_feed' => env('NEWS_UFO_FEED_URL', 'https://news.google.com/rss/search?q=UFO+sighting+OR+UAP&hl=en-US&gl=US&ceid=US:en'),
+        // RSS feed with UFO sighting news, mixed into the same ticker. "when:2d" keeps it to the last two days, so the same old stories do not linger.
+        'ufo_feed' => env('NEWS_UFO_FEED_URL', 'https://news.google.com/rss/search?q=UFO+OR+UAP+OR+%22unidentified+aerial%22+when:2d&hl=en-US&gl=US&ceid=US:en'),
+        // More sources for variety, each a lane of its own in the ticker. A null tag shows as a plain headline.
+        'extra_feeds' => [
+            ['url' => 'https://www.aljazeera.com/xml/rss/all.xml', 'tag' => null],
+            ['url' => 'https://feeds.npr.org/1001/rss.xml', 'tag' => null],
+            ['url' => 'https://www.sciencedaily.com/rss/top.xml', 'tag' => 'Science'],
+            ['url' => 'https://feeds.bbci.co.uk/news/technology/rss.xml', 'tag' => 'Tech'],
+        ],
     ],
 
     'pointy' => [
