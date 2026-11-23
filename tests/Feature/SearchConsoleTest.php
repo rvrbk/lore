@@ -102,16 +102,16 @@ class SearchConsoleTest extends TestCase
         $this->assertNull(Cache::get('search-console.v1.report.'.$monitor->id));
     }
 
-    public function test_the_site_page_shows_search_numbers_with_deploy_markers_and_the_analytics_page_lists_the_site(): void
+    public function test_the_analytics_page_shows_search_numbers_with_deploy_markers_and_the_site_page_does_not(): void
     {
         $this->fakeGoogle(['sc-domain:verbeek.ug']);
         $this->actingAs(User::factory()->create());
         $monitor = Monitor::factory()->create(['name' => 'verbeek.ug', 'url' => 'https://verbeek.ug/', 'deploy_path' => '/var/www/verbeek-ug']);
         Deployment::factory()->create(['path' => '/var/www/verbeek-ug', 'finished_at' => now()->subDays(5)]);
 
-        $this->get(route('monitors.show', $monitor))->assertOk()
+        $this->get(route('analytics.index'))->assertOk()
             ->assertSee('Google Search')->assertSee('pointy booking')->assertSee('Submitted and indexed')->assertSee('Sitemap errors')->assertSee('Dashed lines mark deploys');
-        $this->get(route('analytics.index'))->assertOk()->assertSee('Search impressions per day for verbeek.ug');
+        $this->get(route('monitors.show', $monitor))->assertOk()->assertDontSee('Google Search');
     }
 
     public function test_the_refresh_command_rebuilds_the_cache(): void

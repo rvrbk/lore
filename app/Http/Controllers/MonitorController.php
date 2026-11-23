@@ -12,7 +12,6 @@ use App\Models\Task;
 use App\Services\DeployImpact;
 use App\Services\ErrorLog;
 use App\Services\GoogleAnalytics;
-use App\Services\SearchConsole;
 use App\Services\ServerHealth;
 use App\Services\Sql;
 use App\Services\UptimeWall;
@@ -35,7 +34,7 @@ class MonitorController extends Controller
         ]);
     }
 
-    public function show(Monitor $monitor, GoogleAnalytics $analytics, DeployImpact $impact, ErrorLog $errors, SearchConsole $searchConsole): View
+    public function show(Monitor $monitor, GoogleAnalytics $analytics, DeployImpact $impact, ErrorLog $errors): View
     {
         $recent = $monitor->checks()->where('checked_at', '>=', now()->subDay())->orderBy('checked_at')->get();
 
@@ -72,7 +71,6 @@ class MonitorController extends Controller
             'monitor' => $monitor,
             'responseImpact' => $impact->forResponse($recent, $deploys),
             'wall' => app(UptimeWall::class)->for($monitor),
-            'search' => ($report = $searchConsole->report($monitor)) === null ? null : $report + ['impact' => $impact->forTraffic($monitor->name, $report['daily_impressions'])],
             'errorLog' => $errors->forMonitor($monitor),
             'tag' => $tag,
             'tasks' => $tasks,

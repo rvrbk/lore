@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AnalyticsSite;
 use App\Models\Monitor;
+use App\Services\DeployImpact;
 use App\Services\GitHubDeployHook;
 use App\Services\GitHubHeatmapSnippet;
 use App\Services\GoogleAnalytics;
@@ -17,13 +18,13 @@ use Throwable;
 
 class AnalyticsController extends Controller
 {
-    public function index(GoogleAnalytics $analytics, HeatmapOverview $heatmaps, GitHubHeatmapSnippet $snippet, SearchConsole $searchConsole): View
+    public function index(GoogleAnalytics $analytics, HeatmapOverview $heatmaps, GitHubHeatmapSnippet $snippet, SearchConsole $searchConsole, DeployImpact $impact): View
     {
         $monitors = Monitor::orderBy('name')->get();
 
         return view('analytics.index', [
             'monitors' => $monitors,
-            'searchSites' => $monitors->map(fn (Monitor $monitor) => ['monitor' => $monitor, 'report' => $searchConsole->report($monitor)])->when(! $searchConsole->isConfigured() || $searchConsole->properties() === null, fn ($rows) => collect()),
+            'searchSites' => $monitors->map(fn (Monitor $monitor) => ['monitor' => $monitor, 'report' => ($report = $searchConsole->report($monitor)) === null ? null : $report + ['impact' => $impact->forTraffic($monitor->name, $report['daily_impressions'])]])->when(! $searchConsole->isConfigured() || $searchConsole->properties() === null, fn ($rows) => collect()),
             'snippet' => $snippet,
             ...$heatmaps->for($monitors),
             'sites' => AnalyticsSite::orderBy('name')->get(),
