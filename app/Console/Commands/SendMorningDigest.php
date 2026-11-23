@@ -7,6 +7,7 @@ use App\Models\Monitor;
 use App\Models\Reminder;
 use App\Models\ServerMetric;
 use App\Models\Task;
+use App\Services\ExpiryWatcher;
 use App\Services\GoogleAnalytics;
 use App\Services\Telegram;
 use Illuminate\Console\Attributes\Description;
@@ -116,14 +117,14 @@ class SendMorningDigest extends Command
     private function expiries(): ?string
     {
         $soon = Monitor::all()->flatMap(fn (Monitor $monitor) => array_filter([
-            $monitor->ssl_expires_at ? ['label' => "{$monitor->name} SSL", 'at' => $monitor->ssl_expires_at] : null,
-            $monitor->domain_expires_at ? ['label' => "{$monitor->name} domain", 'at' => $monitor->domain_expires_at] : null,
-        ]))->filter(fn (array $item) => $item['at']->lte(now()->addDays(30)))->sortBy('at');
+            $monitor->ssl_expires_at ? ['label' => "{$monitor->name} SSL (not renewing)", 'at' => $monitor->ssl_expires_at, 'days' => ExpiryWatcher::SSL_INCIDENT_DAYS] : null,
+            $monitor->domain_expires_at ? ['label' => "{$monitor->name} domain", 'at' => $monitor->domain_expires_at, 'days' => 30] : null,
+        ]))->filter(fn (array $item) => $item['at']->lte(now()->addDays($item['days'])))->sortBy('at');
 
         if ($soon->isEmpty()) {
             return null;
         }
 
-        return "🔐 <b>Expiring within 30 days</b>\n".$soon->map(fn (array $item) => '• '.e($item['label']).' on '.$item['at']->format('j M'))->implode("\n");
+        return "🔐 <b>Expiring soon</b>\n".$soon->map(fn (array $item) => '• '.e($item['label']).' on '.$item['at']->format('j M'))->implode("\n");
     }
 }

@@ -11,15 +11,17 @@ use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
- * Looks up when each site's SSL certificate and domain registration expire, keeps countdown reminders for them
- * and raises an incident when one is about to lapse.
+ * Looks up when each site's SSL certificate and domain registration expire. Domains get countdown reminders and an
+ * incident when one is about to lapse. Certificates renew themselves (certbot starts at 30 days left), so they get no
+ * reminders: an incident only opens when one is still unrenewed well inside that window, which means renewal is failing.
  */
 class ExpiryWatcher
 {
-    /** Reminders are created this many days before expiry. */
+    /** Domain reminders are created this many days before expiry. */
     public const REMINDER_DAYS = [30, 14, 7];
 
-    public const SSL_INCIDENT_DAYS = 7;
+    /** Certbot renews at 30 days left, so a certificate still unrenewed at 14 days has had two weeks of failed attempts. */
+    public const SSL_INCIDENT_DAYS = 14;
 
     public const DOMAIN_INCIDENT_DAYS = 14;
 
@@ -66,8 +68,8 @@ class ExpiryWatcher
             'expiry_checked_at' => now(),
         ])->save();
 
-        $this->track($monitor, 'SSL certificate', $monitor->ssl_expires_at, Incident::SSL_EXPIRING, self::SSL_INCIDENT_DAYS);
-        $this->track($monitor, 'domain', $monitor->domain_expires_at, Incident::DOMAIN_EXPIRING, self::DOMAIN_INCIDENT_DAYS);
+        $this->track($monitor, 'SSL certificate', $monitor->ssl_expires_at, Incident::SSL_EXPIRING, self::SSL_INCIDENT_DAYS, countdown: false);
+        $this->track($monitor, 'domain', $monitor->domain_expires_at, Incident::DOMAIN_EXPIRING, self::DOMAIN_INCIDENT_DAYS, countdown: true);
     }
 
     /** The certificate's expiry for a host, read without trusting it so expired certificates are still reported. */
@@ -113,13 +115,17 @@ class ExpiryWatcher
         return implode('.', array_slice($labels, $secondLevel ? -3 : -2));
     }
 
-    private function track(Monitor $monitor, string $what, ?CarbonInterface $expiresAt, string $kind, int $incidentDays): void
+    private function track(Monitor $monitor, string $what, ?CarbonInterface $expiresAt, string $kind, int $incidentDays, bool $countdown): void
     {
         if ($expiresAt === null) {
             return;
         }
 
-        $this->syncReminders($monitor, $what, $expiresAt);
+        if ($countdown) {
+            $this->syncReminders($monitor, $what, $expiresAt);
+        } else {
+            $this->clearReminders($monitor, $what);
+        }
 
         $daysLeft = (int) floor(now()->diffInDays($expiresAt, false));
         if ($daysLeft <= $incidentDays) {
@@ -128,6 +134,14 @@ class ExpiryWatcher
         } else {
             $this->incidents->resolve($kind, $monitor);
         }
+    }
+
+    /** Removes the countdown reminders an earlier version created for something that renews itself. */
+    private function clearReminders(Monitor $monitor, string $what): void
+    {
+        $prefix = "{$monitor->name}: {$what} expires ";
+
+        Reminder::where('title', Sql::like(), $prefix.'%')->get()->filter(fn (Reminder $r) => str_starts_with($r->title, $prefix))->each->delete();
     }
 
     private function syncReminders(Monitor $monitor, string $what, CarbonInterface $expiresAt): void

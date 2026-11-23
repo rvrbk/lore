@@ -68,40 +68,61 @@ class OperationsTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_expiry_creates_countdown_reminders_without_flooding_and_clears_them_on_renewal(): void
+    public function test_domain_expiry_creates_countdown_reminders_without_flooding_and_clears_them_on_renewal(): void
     {
         Http::fake();
         $watcher = app(ExpiryWatcher::class);
         $monitor = Monitor::factory()->create(['name' => 'Shop']);
 
-        $watcher->apply($monitor, CarbonImmutable::now()->addDays(60), null);
+        $watcher->apply($monitor, null, CarbonImmutable::now()->addDays(60));
         $this->assertSame(3, Reminder::count());
         $this->assertSame(0, Incident::count());
         $this->assertSame(0, Reminder::due()->count());
 
-        $watcher->apply($monitor, CarbonImmutable::now()->addDays(60), null);
+        $watcher->apply($monitor, null, CarbonImmutable::now()->addDays(60));
         $this->assertSame(3, Reminder::count(), 'Re-checking does not duplicate reminders.');
 
-        $watcher->apply($monitor, CarbonImmutable::now()->addDays(200), null);
-        $this->assertSame(3, Reminder::count(), 'A renewed certificate replaces the old countdown.');
+        $watcher->apply($monitor, null, CarbonImmutable::now()->addDays(200));
+        $this->assertSame(3, Reminder::count(), 'A renewed domain replaces the old countdown.');
         $this->assertTrue(Reminder::all()->every(fn (Reminder $r) => str_contains($r->title, CarbonImmutable::now()->addDays(200)->format('j M Y'))));
     }
 
-    public function test_a_certificate_found_close_to_expiry_gets_one_due_reminder_and_an_incident_that_clears_after_renewal(): void
+    public function test_a_domain_found_close_to_expiry_gets_one_due_reminder_and_an_incident_that_clears_after_renewal(): void
     {
         Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true])]);
         $watcher = app(ExpiryWatcher::class);
         $monitor = Monitor::factory()->create(['name' => 'Shop']);
 
-        $watcher->apply($monitor, CarbonImmutable::now()->addDays(5), null);
+        $watcher->apply($monitor, null, CarbonImmutable::now()->addDays(5));
 
         $this->assertSame(1, Reminder::count());
         $this->assertSame(1, Reminder::due()->count());
         $this->assertStringContainsString('(7 days left)', Reminder::sole()->title);
         $incident = Incident::sole();
-        $this->assertSame(Incident::SSL_EXPIRING, $incident->kind);
+        $this->assertSame(Incident::DOMAIN_EXPIRING, $incident->kind);
 
-        $watcher->apply($monitor, CarbonImmutable::now()->addDays(90), null);
+        $watcher->apply($monitor, null, CarbonImmutable::now()->addDays(90));
+        $this->assertFalse($incident->fresh()->isOpen());
+    }
+
+    public function test_certificates_get_no_reminders_and_only_an_incident_once_auto_renewal_has_clearly_failed(): void
+    {
+        Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true])]);
+        $watcher = app(ExpiryWatcher::class);
+        $monitor = Monitor::factory()->create(['name' => 'Shop']);
+        Reminder::create(['title' => 'Shop: SSL certificate expires 1 Feb 2027 (30 days left)', 'due_at' => now()]);
+        Reminder::create(['title' => 'Shop: domain expires 1 Feb 2027 (30 days left)', 'due_at' => now()]);
+
+        $watcher->apply($monitor, CarbonImmutable::now()->addDays(25), null);
+        $this->assertSame(0, Incident::count(), 'Certbot renews from 30 days left, so 25 is normal.');
+        $this->assertSame(['Shop: domain expires 1 Feb 2027 (30 days left)'], Reminder::pluck('title')->all(), 'Old certificate countdowns are removed.');
+
+        $watcher->apply($monitor, CarbonImmutable::now()->addDays(10), null);
+        $incident = Incident::sole();
+        $this->assertSame(Incident::SSL_EXPIRING, $incident->kind);
+        $this->assertSame(1, Reminder::count());
+
+        $watcher->apply($monitor, CarbonImmutable::now()->addDays(89), null);
         $this->assertFalse($incident->fresh()->isOpen());
     }
 

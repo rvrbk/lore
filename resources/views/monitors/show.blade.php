@@ -9,9 +9,9 @@
     </div>
 
     <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-400">
-        @foreach(['SSL certificate' => $monitor->ssl_expires_at, 'Domain' => $monitor->domain_expires_at] as $label => $expires)
+        @foreach(['SSL certificate' => [$monitor->ssl_expires_at, \App\Services\ExpiryWatcher::SSL_INCIDENT_DAYS], 'Domain' => [$monitor->domain_expires_at, 30]] as $label => [$expires, $warnDays])
             @php $days = $expires ? (int) floor(now()->diffInDays($expires, false)) : null; @endphp
-            <div><dt class="inline">{{ $label }} expires:</dt> <dd class="inline {{ $days === null ? '' : ($days <= 7 ? 'text-red-400' : ($days <= 30 ? 'text-amber-300' : 'text-zinc-200')) }}">{{ $expires ? $expires->format('j M Y').' ('.($days < 0 ? 'expired' : $days.' days').')' : 'not checked yet' }}</dd></div>
+            <div><dt class="inline">{{ $label }} expires:</dt> <dd class="inline {{ $days === null ? '' : ($days <= 7 ? 'text-red-400' : ($days <= $warnDays ? 'text-amber-300' : 'text-zinc-200')) }}">{{ $expires ? $expires->format('j M Y').' ('.($days < 0 ? 'expired' : $days.' days').')' : 'not checked yet' }}</dd></div>
         @endforeach
         @if($monitor->isPublic())<div><dt class="inline">Public status page:</dt> <dd class="inline"><a href="{{ route('status.show', $monitor->public_token) }}" target="_blank" rel="noopener" class="text-indigo-300 hover:underline">{{ route('status.show', $monitor->public_token) }}</a></dd></div>@endif
     </dl>
