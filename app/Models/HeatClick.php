@@ -21,7 +21,7 @@ class HeatClick extends Model
     /** @use HasFactory<HeatClickFactory> */
     use HasFactory;
 
-    protected $fillable = ['monitor_id', 'path', 'x', 'y', 'device'];
+    protected $fillable = ['monitor_id', 'path', 'x', 'y', 'device', 'element', 'label', 'href'];
 
     /**
      * @return BelongsTo<Monitor, $this>

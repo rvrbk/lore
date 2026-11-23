@@ -45,6 +45,24 @@ class HeatmapTest extends TestCase
         $this->assertSame([$monitor->id, '/pricing', 500, 320, 'desktop'], [$click->monitor_id, $click->path, $click->x, $click->y, $click->device]);
     }
 
+    public function test_the_clicked_element_is_stored_and_summed_up_per_page_on_the_tiles(): void
+    {
+        $monitor = Monitor::factory()->create(['name' => 'my-site', 'url' => 'https://example.com']);
+
+        $this->click($monitor, ['e' => 'link', 'l' => 'Sign up', 'h' => '/register?ref=nav'])->assertNoContent();
+        $this->click($monitor, ['e' => 'link', 'l' => 'Sign up', 'h' => '/register'])->assertNoContent();
+        $this->click($monitor, ['e' => 'button', 'l' => str_repeat('x', 300)])->assertNoContent();
+        $this->click($monitor)->assertNoContent();
+
+        $stored = HeatClick::where('element', 'link')->first();
+        $this->assertSame(['Sign up', '/register'], [$stored->label, $stored->href]);
+        $this->assertSame(100, mb_strlen(HeatClick::where('element', 'button')->value('label')));
+        $this->assertNull(HeatClick::whereNull('element')->sole()->label);
+
+        $this->actingAs(User::factory()->create());
+        $this->get(route('analytics.index'))->assertOk()->assertSee('/pricing')->assertSee('link “Sign up” → /register', false);
+    }
+
     public function test_a_narrow_viewport_counts_as_mobile(): void
     {
         $monitor = Monitor::factory()->create();

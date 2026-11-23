@@ -26,6 +26,9 @@ class HeatClickController extends Controller
             'x' => ['required', 'integer', 'between:0,'.HeatClick::X_SCALE],
             'y' => ['required', 'integer', 'between:0,60000'],
             'w' => ['required', 'integer', 'between:1,10000'],
+            'e' => ['nullable', 'string'],
+            'l' => ['nullable', 'string'],
+            'h' => ['nullable', 'string'],
         ]);
         if ($validator->fails()) {
             return response()->noContent(204, $headers);
@@ -43,6 +46,9 @@ class HeatClickController extends Controller
             'x' => $data['x'],
             'y' => $data['y'],
             'device' => $data['w'] < HeatClick::MOBILE_BELOW_PX ? 'mobile' : 'desktop',
+            'element' => ($element = Str::limit(preg_replace('/[^a-z]/', '', strtolower((string) ($data['e'] ?? ''))), 12, '')) === '' ? null : $element,
+            'label' => ($label = Str::limit(trim((string) ($data['l'] ?? '')), 100, '')) === '' ? null : $label,
+            'href' => ($href = Str::limit(Str::before(trim((string) ($data['h'] ?? '')), '?'), 200, '')) === '' ? null : $href,
         ]);
 
         return response()->noContent(204, $headers);

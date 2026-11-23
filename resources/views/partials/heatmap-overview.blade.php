@@ -30,6 +30,18 @@
                             <div class="flex-1 {{ $clicks ? 'bg-indigo-500' : 'bg-zinc-800' }}" style="height: {{ $clicks ? max(8, round($clicks / $peak * 100)) : 4 }}%"></div>
                         @endforeach
                     </div>
+                    @php($siteTops = $tops->get($monitor->id, []))
+                    @foreach($siteTops as $top)
+                        <div class="mt-3 text-xs">
+                            <div class="flex justify-between gap-2 text-zinc-300"><span class="truncate" title="{{ $top['path'] }}">{{ $top['path'] }}</span><span class="shrink-0 text-zinc-400">{{ number_format($top['clicks']) }}</span></div>
+                            @foreach($top['targets'] as $target)
+                                <div class="mt-0.5 flex justify-between gap-2 pl-3 text-zinc-500">
+                                    <span class="truncate" title="{{ $target['href'] }}">{{ $target['element'] }}@if($target['label']) “{{ $target['label'] }}”@endif @if($target['href'])→ {{ $target['href'] }}@endif</span>
+                                    <span class="shrink-0">{{ number_format($target['clicks']) }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endforeach
                     @unless($counts->get($monitor->id))
                         <details class="mt-2 text-xs text-zinc-400">
                             <summary class="cursor-pointer">No clicks yet · tracker snippet</summary>
