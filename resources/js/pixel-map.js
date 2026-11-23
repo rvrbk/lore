@@ -1579,7 +1579,10 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
     if (soundButton) {
         const running = () => sound.wanted && sound.context?.state === 'running';
         const label = () => {
-            soundButton.textContent = !sound.wanted ? 'Sound off' : (running() ? 'Sound on' : 'Sound: click to resume');
+            const text = !sound.wanted ? 'Sound off' : (running() ? 'Sound on' : 'Sound: click to resume');
+            soundButton.querySelector('[data-sound-text]').textContent = text;
+            soundButton.querySelector('[data-sound-icon]').textContent = !sound.wanted ? '🔇' : (running() ? '🔊' : '🔈');
+            soundButton.title = text;
             soundButton.setAttribute('aria-pressed', String(sound.wanted));
         };
         sound.onchange = label;
