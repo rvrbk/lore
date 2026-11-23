@@ -17,7 +17,7 @@
     @if($report['queries'])
         <table class="mt-3 w-full text-xs">
             <thead class="text-left text-zinc-500"><tr><th class="py-1 font-normal">Top searches</th><th class="font-normal">Clicks</th><th class="font-normal">Shown</th><th class="font-normal">Position</th></tr></thead>
-            <tbody class="divide-y divide-zinc-800">@foreach($report['queries'] as $query)<tr><td class="max-w-0 truncate py-1 text-zinc-200">{{ $query['query'] }}</td><td>{{ $query['clicks'] }}</td><td>{{ $query['impressions'] }}</td><td>{{ $query['position'] }}</td></tr>@endforeach</tbody>
+            <tbody class="divide-y divide-zinc-800">@foreach($report['queries'] as $query)<tr class="align-top"><td class="break-words py-1 pr-3 text-zinc-200">{{ $query['query'] }}</td><td class="py-1">{{ $query['clicks'] }}</td><td class="py-1">{{ $query['impressions'] }}</td><td class="py-1">{{ $query['position'] }}</td></tr>@endforeach</tbody>
         </table>
     @endif
 </div>
