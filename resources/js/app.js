@@ -1,5 +1,6 @@
 import './board.js';
 import './tag-suggest.js';
+import './quick-search.js';
 import './editor.js';
 import './css-editor.js';
 import './gimmicks.js';

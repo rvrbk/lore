@@ -3,27 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
-use App\Services\Sql;
+use App\Services\SiteSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class SearchController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, SiteSearch $search): View
     {
         $q = trim((string) $request->query('q'));
-        $like = '%'.addcslashes($q, '%_\\').'%';
 
-        $operator = Sql::like();
+        return view('search', ['q' => $q, 'results' => $search->search($q, 25)->groupBy('type')]);
+    }
 
-        $results = $q === '' ? collect() : Page::with('space')
-            ->where(fn ($w) => $w->where('title', $operator, $like)->orWhere('body', $operator, $like))
-            ->orderByRaw("case when title {$operator} ? then 0 else 1 end", [$like])
-            ->latest('updated_at')
-            ->limit(50)
-            ->get();
-
-        return view('search', ['q' => $q, 'results' => $results]);
+    /**
+     * A few matches per kind of content, for the dropdown under the sidebar search field.
+     */
+    public function quick(Request $request, SiteSearch $search): JsonResponse
+    {
+        return response()->json($search->search((string) $request->query('q'), 3)->all());
     }
 
     /**

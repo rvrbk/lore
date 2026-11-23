@@ -16,8 +16,9 @@
 <div class="flex min-h-screen">
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] -translate-x-full flex-col gap-5 overflow-y-auto border-r border-zinc-800 bg-zinc-900 p-4 pb-8 transition-transform duration-200 data-[open]:translate-x-0 lg:sticky lg:top-0 lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-pixel text-base text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-7" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
-        <form action="{{ route('search') }}">
-            <input name="q" value="{{ request('q') }}" placeholder="Search pages…  ( / )" data-search-input class="w-full rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
+        <form action="{{ route('search') }}" data-quick-search="{{ route('search.quick') }}" class="relative">
+            <input name="q" value="{{ request('q') }}" placeholder="Search everything…  ( / )" data-search-input autocomplete="off" role="combobox" aria-expanded="false" aria-controls="quick-search-list" class="w-full rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
+            <ul id="quick-search-list" role="listbox" hidden class="absolute inset-x-0 top-full z-50 mt-1 max-h-96 overflow-auto rounded-md border border-zinc-700 bg-zinc-900 py-1 text-sm shadow-lg"></ul>
         </form>
         <nav class="space-y-1 text-sm">
             <a href="{{ route('dashboard') }}" class="flex items-center rounded px-2 py-1.5 hover:bg-zinc-800 {{ request()->routeIs('dashboard') ? 'bg-zinc-800 font-medium text-zinc-100' : '' }}">Home</a>

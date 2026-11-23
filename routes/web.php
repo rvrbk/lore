@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::post('scheduling/requests', [PointyController::class, 'sendRequest'])->name('pointy.requests.send');
     Route::post('scheduling/bookings/{booking}/cancel', [PointyController::class, 'cancel'])->name('pointy.bookings.cancel');
     Route::get('/search', SearchController::class)->name('search');
+    Route::get('/search/quick', [SearchController::class, 'quick'])->name('search.quick');
     Route::get('palette', [SearchController::class, 'palette'])->name('palette');
     Route::post('markdown/preview', MarkdownController::class)->name('markdown.preview');
     Route::post('uploads', [UploadController::class, 'store'])->name('uploads.store');
