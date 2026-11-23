@@ -1581,7 +1581,9 @@ document.querySelectorAll('svg[data-pixel-map]').forEach((svg) => {
         const label = () => {
             const text = !sound.wanted ? 'Sound off' : (running() ? 'Sound on' : 'Sound: click to resume');
             soundButton.querySelector('[data-sound-text]').textContent = text;
-            soundButton.querySelector('[data-sound-icon]').textContent = !sound.wanted ? '🔇' : (running() ? '🔊' : '🔈');
+            const icon = soundButton.querySelector('[data-sound-icon]');
+            icon.querySelector('[data-sound-off]').style.display = sound.wanted ? 'none' : '';
+            icon.querySelector('[data-sound-waves]').style.display = running() ? '' : 'none';
             soundButton.title = text;
             soundButton.setAttribute('aria-pressed', String(sound.wanted));
         };
