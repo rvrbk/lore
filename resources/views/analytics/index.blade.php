@@ -44,7 +44,7 @@
                 @foreach($searchSites->whereNotNull('report') as $row)
                     @php($report = $row['report'])
                     <li>
-                        <a href="{{ route('monitors.show', $row['monitor']) }}" class="mb-1 block truncate text-sm font-medium text-zinc-100 hover:underline">{{ $row['monitor']->name }} <span class="text-xs font-normal text-zinc-500">{{ $report['property'] }}</span></a>
+                        <div class="mb-1 truncate text-sm font-medium text-zinc-100">{{ $row['monitor']->name }} <span class="text-xs font-normal text-zinc-500">{{ $report['property'] }}</span></div>
                         @include('partials.search-console-detail')
                     </li>
                 @endforeach
