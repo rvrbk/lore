@@ -123,4 +123,25 @@ class SearchConsoleTest extends TestCase
 
         $this->assertIsArray(Cache::get('search-console.v1.report.'.$monitor->id));
     }
+
+    public function test_a_site_can_be_kept_out_of_the_google_search_section(): void
+    {
+        $this->fakeGoogle(['sc-domain:verbeek.ug']);
+        $this->actingAs(User::factory()->create());
+
+        $this->post(route('analytics.store'), ['name' => 'verbeek.ug', 'url' => 'https://verbeek.ug/'])->assertRedirect();
+        $this->post(route('analytics.store'), ['name' => 'lore', 'url' => 'https://lore.verbeek.ug/', 'show_in_search' => '0'])->assertRedirect();
+
+        $this->assertTrue(Monitor::where('name', 'verbeek.ug')->value('show_in_search'), 'The box is on by default.');
+        $this->assertFalse(Monitor::where('name', 'lore')->value('show_in_search'));
+
+        $this->get(route('analytics.index'))->assertOk()->assertSee('pointy booking');
+        $this->get(route('analytics.index'))->assertDontSee('Not found in Search Console, or no answer yet: lore');
+        $this->artisan('search-console:refresh')->assertSuccessful();
+        $this->assertNull(Cache::get('search-console.v1.report.'.Monitor::where('name', 'lore')->value('id')));
+
+        $lore = Monitor::where('name', 'lore')->first();
+        $this->put(route('monitors.update', $lore), ['name' => 'lore', 'url' => 'https://lore.verbeek.ug/', 'show_in_search' => '1'])->assertRedirect();
+        $this->assertTrue($lore->fresh()->show_in_search);
+    }
 }

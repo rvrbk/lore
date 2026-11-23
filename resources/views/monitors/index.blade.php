@@ -27,6 +27,7 @@
                         <input name="url" value="{{ $monitor->url }}" required aria-label="URL" class="min-w-48 flex-1 rounded-md border border-zinc-700 px-2 py-1 text-sm">
                         <input name="deploy_path" value="{{ $monitor->deploy_path }}" placeholder="/var/www/…" aria-label="Server folder" class="w-44 rounded-md border border-zinc-700 px-2 py-1 text-sm">
                         <label class="flex items-center gap-1.5 text-xs text-zinc-400" title="Anyone with the link can see whether this site is up"><input type="checkbox" name="is_public" value="1" @checked($monitor->isPublic())> Public status page</label>
+                        <label class="flex items-center gap-1.5 text-xs text-zinc-400" title="List this site in the Google Search section of Analytics"><input type="checkbox" name="show_in_search" value="1" @checked($monitor->show_in_search)> Google Search</label>
                         <button class="rounded border px-2 py-1 text-xs hover:bg-zinc-800">Save</button>
                         @if($monitor->isPublic())<a href="{{ route('status.show', $monitor->public_token) }}" target="_blank" rel="noopener" class="text-xs text-indigo-300 hover:underline">Open status page</a>@endif
                     </form>

@@ -89,7 +89,7 @@ class MonitorController extends Controller
 
     public function update(Request $request, Monitor $monitor): RedirectResponse
     {
-        $monitor->update($this->validated($request));
+        $monitor->update($this->validated($request) + ['show_in_search' => $request->boolean('show_in_search')]);
         $monitor->setPublic($request->boolean('is_public'));
         Monitor::check($monitor->newCollection([$monitor]));
 

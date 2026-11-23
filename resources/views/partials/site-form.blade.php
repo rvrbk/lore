@@ -4,6 +4,7 @@
     <input name="url" value="{{ old('url') }}" placeholder="https://example.com" required aria-label="URL" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
     <input name="deploy_path" value="{{ old('deploy_path') }}" placeholder="Server folder for deploys (optional), e.g. /var/www/my-site" aria-label="Server folder" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm sm:col-span-2">
     <input name="property_id" value="{{ old('property_id') }}" placeholder="GA4 property ID (optional), e.g. 547074352" inputmode="numeric" aria-label="GA4 property ID" class="rounded-md border border-zinc-700 px-3 py-1.5 text-sm sm:col-span-2">
+    <label class="flex items-center gap-2 text-sm text-zinc-300 sm:col-span-2"><input type="hidden" name="show_in_search" value="0"><input type="checkbox" name="show_in_search" value="1" @checked(old('show_in_search', '1') === '1')> Show in Google Search</label>
     @if(session('hook'))<p class="text-sm text-emerald-400 sm:col-span-2">{{ session('hook') }}</p>@endif
     @if(session('hook_error'))<p class="text-sm text-amber-300 sm:col-span-2">{{ session('hook_error') }}</p>@endif
     @if(session('heatmap'))<p class="text-sm text-emerald-400 sm:col-span-2">{{ session('heatmap') }}</p>@endif

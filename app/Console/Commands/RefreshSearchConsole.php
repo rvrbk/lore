@@ -22,7 +22,7 @@ class RefreshSearchConsole extends Command
         }
 
         Cache::forget('search-console.v1.properties');
-        foreach (Monitor::orderBy('name')->get() as $monitor) {
+        foreach (Monitor::where('show_in_search', true)->orderBy('name')->get() as $monitor) {
             Cache::forget('search-console.v1.report.'.$monitor->id);
             $this->line($monitor->name.': '.($searchConsole->report($monitor) ? 'ok' : 'not in Search Console or no answer'));
         }

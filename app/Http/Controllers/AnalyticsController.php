@@ -24,7 +24,7 @@ class AnalyticsController extends Controller
 
         return view('analytics.index', [
             'monitors' => $monitors,
-            'searchSites' => $monitors->map(fn (Monitor $monitor) => ['monitor' => $monitor, 'report' => ($report = $searchConsole->report($monitor)) === null ? null : $report + ['impact' => $impact->forTraffic($monitor->name, $report['daily_impressions'])]])->when(! $searchConsole->isConfigured() || $searchConsole->properties() === null, fn ($rows) => collect()),
+            'searchSites' => $monitors->where('show_in_search')->map(fn (Monitor $monitor) => ['monitor' => $monitor, 'report' => ($report = $searchConsole->report($monitor)) === null ? null : $report + ['impact' => $impact->forTraffic($monitor->name, $report['daily_impressions'])]])->when(! $searchConsole->isConfigured() || $searchConsole->properties() === null, fn ($rows) => collect()),
             'snippet' => $snippet,
             ...$heatmaps->for($monitors),
             'sites' => AnalyticsSite::orderBy('name')->get(),
@@ -54,7 +54,7 @@ class AnalyticsController extends Controller
             'property_id' => ['nullable', 'regex:/^\d{6,15}$/', 'unique:analytics_sites,property_id'],
         ], ['deploy_path.regex' => 'Use the site\'s folder on the server, like /var/www/my-site.', 'property_id.regex' => 'Use the numeric GA4 property ID (Admin → Property details), not the G-XXXX measurement ID.']);
 
-        $monitor = Monitor::create(['name' => $data['name'], 'url' => $data['url'], 'deploy_path' => $data['deploy_path'] ?? null]);
+        $monitor = Monitor::create(['name' => $data['name'], 'url' => $data['url'], 'deploy_path' => $data['deploy_path'] ?? null, 'show_in_search' => $request->boolean('show_in_search', true)]);
         Monitor::check($monitor->newCollection([$monitor]));
 
         if (! empty($data['property_id'])) {

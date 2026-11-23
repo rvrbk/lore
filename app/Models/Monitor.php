@@ -34,7 +34,7 @@ class Monitor extends Model
 
     public const KEEP_HISTORY_DAYS = 30;
 
-    protected $fillable = ['name', 'url', 'deploy_path'];
+    protected $fillable = ['name', 'url', 'deploy_path', 'show_in_search'];
 
     protected static function booted(): void
     {
@@ -47,6 +47,7 @@ class Monitor extends Model
     {
         return [
             'is_up' => 'boolean',
+            'show_in_search' => 'boolean',
             'checked_at' => 'datetime',
             'status_changed_at' => 'datetime',
             'alerted_at' => 'datetime',
