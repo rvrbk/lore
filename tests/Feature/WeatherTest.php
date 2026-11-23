@@ -51,4 +51,14 @@ class WeatherTest extends TestCase
         Http::fake(['*' => Http::response('', 500)]);
         $this->getJson(route('weather'))->assertOk()->assertExactJson([]);
     }
+
+    public function test_clear_and_partly_cloudy_skies_get_night_icons_after_dark(): void
+    {
+        $weather = new Weather;
+
+        $this->assertSame('☀️', $weather->describe(0)[0]);
+        $this->assertSame('🌙', $weather->describe(0, false)[0]);
+        $this->assertSame('☁️', $weather->describe(2, false)[0]);
+        $this->assertSame('🌧️', $weather->describe(61, false)[0]);
+    }
 }

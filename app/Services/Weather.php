@@ -33,10 +33,10 @@ class Weather
             return null;
         }
 
-        $result = Cache::remember('weather.'.$clock->timezone, now()->addMinutes(30), function () use ($place): array|false {
+        $result = Cache::remember('weather.v2.'.$clock->timezone, now()->addMinutes(30), function () use ($place): array|false {
             try {
                 $response = Http::timeout(4)->acceptJson()->get('https://api.open-meteo.com/v1/forecast', [
-                    'latitude' => $place['lat'], 'longitude' => $place['lon'], 'current' => 'temperature_2m,weather_code',
+                    'latitude' => $place['lat'], 'longitude' => $place['lon'], 'current' => 'temperature_2m,weather_code,is_day',
                     'daily' => 'sunrise,sunset', 'timezone' => 'auto', 'forecast_days' => 1,
                 ]);
             } catch (Throwable) {
@@ -45,7 +45,7 @@ class Weather
             if (! $response->successful() || $response->json('current.temperature_2m') === null) {
                 return false;
             }
-            [$icon, $label] = $this->describe((int) $response->json('current.weather_code'));
+            [$icon, $label] = $this->describe((int) $response->json('current.weather_code'), (int) $response->json('current.is_day', 1) === 1);
 
             return [
                 'temp' => (int) round($response->json('current.temperature_2m')),
@@ -62,13 +62,17 @@ class Weather
     /**
      * @return array{0: string, 1: string}
      */
-    public function describe(int $code): array
+    public function describe(int $code, bool $isDay = true): array
     {
         $match = [self::CODES[0][1], self::CODES[0][2]];
         foreach (self::CODES as [$from, $icon, $label]) {
             if ($code >= $from) {
                 $match = [$icon, $label];
             }
+        }
+
+        if (! $isDay) {
+            $match[0] = ['☀️' => '🌙', '🌤️' => '🌙', '⛅' => '☁️'][$match[0]] ?? $match[0];
         }
 
         return $match;
