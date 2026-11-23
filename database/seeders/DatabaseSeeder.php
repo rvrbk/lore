@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
         $hetzner = $space->pages()->create(['title' => 'Hetzner server', 'body' => <<<'MD'
 Production host for the Laravel apps (Ubuntu 24.04 LTS, PHP from the Sury PPA).
 
-- Apps: agriflow, canvas, fuganda, job-scout, prompt-a-tool, verbeek-ug (all Laravel 13.x, `php: ^8.3`)
+- Apps: agriflow, fuganda, job-scout, prompt-a-tool, verbeek-ug (all Laravel 13.x, `php: ^8.3`)
 - crowded-airport is Next.js (no PHP)
 - One shared `php8.5-fpm.sock` for all nginx vhosts; cron and queue worker use `/usr/bin/php`
 MD]);
