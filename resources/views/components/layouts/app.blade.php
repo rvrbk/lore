@@ -3,6 +3,7 @@
 <head>
     @include('partials.head')
     <meta name="weather-url" content="{{ route('weather') }}">
+    <meta name="tag-suggestions-url" content="{{ route('tags.suggestions') }}">
 </head>
 <body class="min-h-screen bg-zinc-950 text-zinc-200 antialiased">
 <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-zinc-700 bg-zinc-900 px-4 py-2.5 lg:hidden">

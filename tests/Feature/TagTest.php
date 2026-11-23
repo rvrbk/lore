@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Monitor;
 use App\Models\Page;
 use App\Models\Space;
 use App\Models\Tag;
@@ -48,5 +49,21 @@ class TagTest extends TestCase
         $this->put(route('pages.update', Page::firstOrFail()), ['title' => 'Runbook', 'body' => 'x', 'tags' => '']);
         $this->assertSame('', Page::firstOrFail()->tagList());
         $this->assertSame(['server', 'blog'], Task::with('tags')->get()->flatMap->tags->pluck('name')->all());
+    }
+
+    public function test_tag_suggestions_combine_tags_sites_and_pages_without_duplicates(): void
+    {
+        $space = Space::create(['name' => 'Ops']);
+        $space->pages()->create(['title' => 'Server Runbook'])->syncTagNames('server');
+        $space->pages()->create(['title' => 'Server']);
+        Monitor::create(['name' => 'Fuganda', 'url' => 'https://example.com']);
+
+        $this->getJson(route('tags.suggestions'))
+            ->assertOk()
+            ->assertExactJson([
+                ['name' => 'server', 'kind' => 'tag'],
+                ['name' => 'fuganda', 'kind' => 'site'],
+                ['name' => 'server-runbook', 'kind' => 'page'],
+            ]);
     }
 }

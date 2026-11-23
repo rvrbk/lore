@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::post('uploads', [UploadController::class, 'store'])->name('uploads.store');
     Route::get('uploads/{filename}', [UploadController::class, 'show'])->name('uploads.show');
     Route::get('tags', [TagController::class, 'index'])->name('tags.index');
+    Route::get('tags/suggestions', [TagController::class, 'suggestions'])->name('tags.suggestions');
     Route::get('tags/{tag}', [TagController::class, 'show'])->name('tags.show');
     Route::get('export', [ExportController::class, 'all'])->name('export.all');
     Route::get('spaces/{space}/export', [ExportController::class, 'space'])->name('export.space');
