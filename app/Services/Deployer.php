@@ -156,6 +156,9 @@ class Deployer
                 if (! is_dir($path.'/node_modules') || in_array('package-lock.json', $changed, true)) {
                     $later[] = ['Install JS packages', ['npm', 'ci', '--no-audit', '--no-fund']];
                 }
+                if (is_file($path.'/prisma/schema.prisma')) {
+                    $later[] = ['Run Prisma migrations', ['npx', 'prisma', 'migrate', 'deploy']];
+                }
                 if (isset((json_decode((string) file_get_contents($path.'/package.json'), true)['scripts'] ?? [])['build'])) {
                     $later[] = ['Build assets', ['npm', 'run', 'build']];
                 }
@@ -172,6 +175,10 @@ class Deployer
                 if (! $this->step($log, $path, $title, $command, $deployment)) {
                     return;
                 }
+            }
+
+            if (! $laravel && is_file($path.'/package.json') && ! $this->restartPm2Process($log, $path, $deployment)) {
+                return;
             }
 
             $ok = true;
@@ -192,6 +199,23 @@ class Deployer
         if ($ok) {
             $this->smokeCheck($deployment->fresh());
         }
+    }
+
+    /**
+     * Restarts the pm2 process named after the site's folder so a Node site serves the new build. A site that has no
+     * such process under this user is left alone, with a note in the log.
+     */
+    private function restartPm2Process(string &$log, string $path, Deployment $deployment): bool
+    {
+        $name = basename($path);
+        if ($this->run($path, ['pm2', 'describe', $name])->failed()) {
+            $log .= "## Restart pm2\nNo pm2 process named {$name} for this user, so nothing was restarted.\n\n";
+            $deployment->update(['output' => $log]);
+
+            return true;
+        }
+
+        return $this->step($log, $path, 'Restart pm2', ['pm2', 'restart', $name], $deployment);
     }
 
     /**

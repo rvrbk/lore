@@ -184,6 +184,47 @@ class DeployTest extends TestCase
         rmdir($dir);
     }
 
+    public function test_a_node_site_runs_prisma_migrations_and_restarts_its_pm2_process(): void
+    {
+        $dir = sys_get_temp_dir().'/lore-deploy-'.uniqid();
+        mkdir($dir.'/prisma', 0777, true);
+        file_put_contents($dir.'/package.json', '{"scripts":{"build":"next build"}}');
+        touch($dir.'/prisma/schema.prisma');
+        Process::fake(['*--abbrev-ref*' => Process::result("main\n"), '*' => Process::result('ok')]);
+        Deployment::create(['site' => 'node', 'path' => $dir]);
+
+        $this->artisan('lore:deploy')->assertSuccessful();
+
+        $this->assertSame('succeeded', Deployment::sole()->status);
+        Process::assertRan(fn ($process) => str_contains($this->commandLine($process), "'prisma' 'migrate' 'deploy'"));
+        Process::assertRan(fn ($process) => str_contains($this->commandLine($process), "'pm2' 'restart' '".basename($dir)."'"));
+
+        unlink($dir.'/prisma/schema.prisma');
+        rmdir($dir.'/prisma');
+        unlink($dir.'/package.json');
+        rmdir($dir);
+    }
+
+    public function test_a_node_site_without_a_pm2_process_still_deploys_and_says_so(): void
+    {
+        $dir = sys_get_temp_dir().'/lore-deploy-'.uniqid();
+        mkdir($dir);
+        file_put_contents($dir.'/package.json', '{"scripts":{"build":"next build"}}');
+        Process::fake(['*--abbrev-ref*' => Process::result("main\n"), '*pm2*' => Process::result('', 'not found', 1), '*' => Process::result('ok')]);
+        Deployment::create(['site' => 'node', 'path' => $dir]);
+
+        $this->artisan('lore:deploy')->assertSuccessful();
+
+        $deployment = Deployment::sole();
+        $this->assertSame('succeeded', $deployment->status);
+        $this->assertStringContainsString('nothing was restarted', $deployment->output);
+        Process::assertDidntRun(fn ($process) => str_contains($this->commandLine($process), "'pm2' 'restart'"));
+        Process::assertDidntRun(fn ($process) => str_contains($this->commandLine($process), "'prisma'"));
+
+        unlink($dir.'/package.json');
+        rmdir($dir);
+    }
+
     public function test_a_site_stays_online_during_a_deploy_unless_migrations_are_incoming(): void
     {
         Process::fake([
