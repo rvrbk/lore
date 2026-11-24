@@ -6,7 +6,7 @@
                 <div class="mb-1.5 text-xs font-semibold {{ $loop->first ? 'text-indigo-400' : 'text-zinc-300' }}">{{ $loop->first ? 'Today' : ($loop->index === 1 ? 'Tomorrow' : $day['date']->format('l')) }} <span class="font-normal text-zinc-500">{{ $day['date']->format('j M') }}</span></div>
                 @forelse($day['items'] as $item)
                     <div class="mb-1 flex gap-1.5 border-l-2 pl-1.5 text-xs leading-snug" style="border-color: {{ $item['color'] }}" title="{{ $item['kind'] }}">
-                        <span class="w-9 shrink-0 tabular-nums text-zinc-500">{{ $item['all_day'] ? 'all day' : $item['start']->setTimezone(config('app.timezone'))->format('H:i') }}</span>
+                        <span class="w-9 shrink-0 tabular-nums text-zinc-500" @if($item['all_day']) title="All day" @endif>{{ $item['all_day'] ? '∞' : $item['start']->setTimezone(config('app.timezone'))->format('H:i') }}</span>
                         <span class="min-w-0 break-words text-zinc-200">{{ $item['title'] }}@if($item['location'])<span class="block truncate text-zinc-500">{{ $item['location'] }}</span>@endif</span>
                     </div>
                 @empty
