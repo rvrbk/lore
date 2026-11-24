@@ -22,24 +22,43 @@
             </div>
         </section>
     @else
-        <section class="mt-6 max-w-2xl space-y-4 border border-zinc-800 bg-zinc-900 p-4 text-sm">
+        <section class="mt-6 max-w-2xl space-y-5 border border-zinc-800 bg-zinc-900 p-4 text-sm">
+            <p class="text-zinc-400">Everyone connects their own Telegram account, so you will only get your own messages. Lore never sees your phone number or contacts, only the chat you open with its bot.</p>
+
             <div>
-                <div class="font-medium">1. Send the bot your code</div>
+                <div class="font-medium">1. Get Telegram</div>
+                <p class="mt-1 text-zinc-400">Skip this if you already use it. Otherwise install Telegram on your phone or computer (<a href="https://telegram.org/apps" target="_blank" rel="noopener" class="underline">telegram.org/apps</a>) and sign up with your phone number.</p>
+            </div>
+
+            <div>
+                <div class="font-medium">2. Open the Lore bot and press Start</div>
                 @if($startUrl)
-                    <p class="mt-1 text-zinc-400">Open the bot in Telegram and press <b>Start</b>:</p>
-                    <a href="{{ $startUrl }}" target="_blank" rel="noopener" class="mt-2 inline-block rounded bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Open @{{ $botUsername }}</a>
-                    <p class="mt-2 text-zinc-400">Or search for <b>&#64;{{ $botUsername }}</b> in Telegram yourself and send it this message:</p>
+                    <p class="mt-1 text-zinc-400">On the device where Telegram is installed, open this link. Telegram opens the chat with the bot; press the <b>Start</b> button at the bottom.</p>
+                    <a href="{{ $startUrl }}" target="_blank" rel="noopener" class="mt-2 inline-block rounded bg-indigo-600 px-3 py-1.5 text-white hover:bg-indigo-700">Open @{{ $botUsername }} in Telegram</a>
+                    <p class="mt-3 text-zinc-400">The link does not work, or you are on a different device than Telegram? Open Telegram, tap the search field, search for <b>&#64;{{ $botUsername }}</b>, open the chat and send it exactly this message:</p>
                 @else
-                    <p class="mt-1 text-zinc-400">Find Lore's bot in Telegram and send it this message:</p>
+                    <p class="mt-1 text-zinc-400">Open Telegram, tap the search field, search for Lore's bot, open the chat and send it exactly this message:</p>
                 @endif
                 <code class="mt-2 inline-block select-all border border-zinc-700 px-2 py-1">/start {{ $code }}</code>
+                <p class="mt-2 text-xs text-zinc-500">The bot does not answer at this point. That is normal; the next step makes the connection.</p>
             </div>
+
             <div>
-                <div class="font-medium">2. Check the connection</div>
-                <p class="mt-1 text-zinc-400">Wait a few seconds after sending the message, then:</p>
+                <div class="font-medium">3. Come back here and check the connection</div>
+                <p class="mt-1 text-zinc-400">Wait a few seconds after sending, then press the button. Lore finds your message, connects your chat and sends you a confirmation in Telegram.</p>
                 <form method="POST" action="{{ route('settings.telegram.check') }}" class="mt-2">@csrf<button class="rounded border px-3 py-1.5 hover:bg-zinc-800">Check connection</button></form>
             </div>
-            <p class="text-xs text-zinc-500">The code is private to you: whoever sends it to the bot gets linked to your account.</p>
+
+            <details class="text-zinc-400">
+                <summary class="cursor-pointer text-zinc-300">It does not connect</summary>
+                <ul class="mt-2 list-disc space-y-1 pl-5">
+                    <li>The message must contain your code exactly as shown above, and it must have been sent in the last 24 hours.</li>
+                    <li>Telegram can take a few seconds. Wait a moment and press <b>Check connection</b> again.</li>
+                    <li>Did you reload this page after sending? The code stays the same until you connect, so that is fine.</li>
+                    <li>A Telegram chat can only be linked to one Lore account. If you want to move it, disconnect it on the other account first.</li>
+                </ul>
+            </details>
+            <p class="text-xs text-zinc-500">The code is private to you: whoever sends it to the bot gets linked to your account. You can disconnect at any time on this page, or block the bot in Telegram.</p>
         </section>
     @endif
 </x-layouts.app>
