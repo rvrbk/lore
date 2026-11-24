@@ -92,6 +92,10 @@ const applyTheme = () => {
     }
     const night = override === 'night' || override === 'normal' ? override === 'night' : isNightHour();
     root.dataset.theme = night ? 'night' : 'normal';
+    const favicon = document.querySelector('link[data-favicon]');
+    if (favicon) {
+        favicon.href = night ? favicon.dataset.night : favicon.dataset.normal;
+    }
     document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
         button.setAttribute('aria-pressed', String(night));
         button.textContent = night ? '☾' : '☀';

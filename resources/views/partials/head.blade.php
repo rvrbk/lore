@@ -3,7 +3,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ asset('theme.js') }}"></script>
 <title>{{ isset($title) ? $title.' · ' : '' }}Lore</title>
-<link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+<link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml" data-favicon data-normal="{{ asset('favicon.svg') }}" data-night="{{ asset('favicon-night.svg') }}">
 <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="48x48">
 <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">

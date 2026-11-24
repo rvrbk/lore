@@ -8,14 +8,14 @@
 <body class="min-h-screen bg-zinc-950 text-zinc-200 antialiased">
 <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-zinc-700 bg-zinc-900 px-4 py-2.5 lg:hidden">
     <button type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open menu" class="-ml-1 border border-zinc-700 px-2.5 py-1 text-lg leading-none text-zinc-200">&#9776;</button>
-    <a href="{{ route('dashboard') }}" class="flex items-center gap-2 font-pixel text-sm text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-6" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
+    <a href="{{ route('dashboard') }}" class="flex items-center gap-2 font-pixel text-sm text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-6 logo-normal" style="image-rendering: pixelated"><img src="{{ asset('favicon-night.svg') }}" alt="" class="size-6 logo-night" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
     <div class="ml-auto flex items-center gap-2.5">@include('partials.streak-chip')<button type="button" data-theme-toggle aria-pressed="false" class="border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-xs leading-none text-zinc-200">☾</button>@include('partials.deploy-indicator')@include('partials.header-clock', ['class' => ''])</div>
     @if($dueCount || $downCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount + $downCount }}</span>@endif
 </header>
 <div data-nav-backdrop hidden class="fixed inset-0 z-40 bg-black/70 lg:hidden"></div>
 <div class="flex min-h-screen">
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] -translate-x-full flex-col gap-5 overflow-y-auto border-r border-zinc-800 bg-zinc-900 p-4 pb-8 transition-transform duration-200 data-[open]:translate-x-0 lg:sticky lg:top-0 lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0">
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-pixel text-base text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-7" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 font-pixel text-base text-zinc-100"><img src="{{ asset('favicon.svg') }}" alt="" class="size-7 logo-normal" style="image-rendering: pixelated"><img src="{{ asset('favicon-night.svg') }}" alt="" class="size-7 logo-night" style="image-rendering: pixelated">Lore<span class="text-indigo-400">_</span></a>
         <form action="{{ route('search') }}" data-quick-search="{{ route('search.quick') }}" class="relative">
             <input name="q" value="{{ request('q') }}" placeholder="Search everything…  ( / )" data-search-input autocomplete="off" role="combobox" aria-expanded="false" aria-controls="quick-search-list" class="w-full rounded-md border border-zinc-700 px-3 py-1.5 text-sm">
             <ul id="quick-search-list" role="listbox" hidden class="absolute inset-x-0 top-full z-50 mt-1 max-h-96 overflow-auto rounded-md border border-zinc-700 bg-zinc-900 py-1 text-sm shadow-lg"></ul>
