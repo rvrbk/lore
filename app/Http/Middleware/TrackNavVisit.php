@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 class TrackNavVisit
 {
     /**
-     * Count page views of menu items so the most used ones can be listed first.
+     * Count the signed-in user's page views of menu items so the most used ones can be listed first.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -21,8 +21,8 @@ class TrackNavVisit
             ? NavMenu::itemFor($request->route()?->getName())
             : null;
 
-        if ($item !== null) {
-            NavVisit::firstOrCreate(['item' => $item])->increment('visits');
+        if ($item !== null && $request->user() !== null) {
+            NavVisit::firstOrCreate(['user_id' => $request->user()->id, 'item' => $item])->increment('visits');
         }
 
         return $response;

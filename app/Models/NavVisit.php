@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class NavVisit extends Model
 {
-    protected $fillable = ['item', 'visits'];
+    protected $fillable = ['user_id', 'item', 'visits'];
 }

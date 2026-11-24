@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\NavVisit;
+use Illuminate\Support\Facades\Auth;
 
 class NavMenu
 {
@@ -44,13 +45,13 @@ class NavMenu
     }
 
     /**
-     * Menu items ordered by most visited first; ties keep the default order.
+     * Menu items ordered by the signed-in user's most visited first; ties keep the default order.
      *
      * @return array<string, array{label: string, route: string, pattern: string}>
      */
     public static function sorted(): array
     {
-        $visits = NavVisit::pluck('visits', 'item');
+        $visits = Auth::id() === null ? collect() : NavVisit::where('user_id', Auth::id())->pluck('visits', 'item');
         $keys = array_keys(self::ITEMS);
         usort($keys, fn (string $a, string $b) => ($visits[$b] ?? 0) <=> ($visits[$a] ?? 0));
 
