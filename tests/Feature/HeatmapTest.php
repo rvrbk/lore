@@ -141,11 +141,19 @@ class HeatmapTest extends TestCase
         $this->get(route('analytics.heatmaps.show', $monitor))->assertOk()->assertSee('Clicks per day')->assertDontSee('heat-canvas', false)->assertDontSee('<iframe', false);
     }
 
-    public function test_lore_pages_carry_the_tracker_of_the_site_served_on_their_own_host(): void
+    public function test_lore_itself_carries_no_tracker_sends_no_clicks_and_is_left_out_of_the_clicks_section(): void
     {
-        Monitor::factory()->create(['url' => 'http://localhost/', 'heat_key' => 'lorekey']);
+        config(['app.url' => 'https://lore.test']);
+        $lore = Monitor::factory()->create(['name' => 'Lore itself', 'url' => 'https://lore.test/up', 'heat_key' => 'lorekey']);
+        $shop = Monitor::factory()->create(['name' => 'Shop', 'url' => 'https://shop.test/', 'heat_key' => 'shopkey']);
         $this->actingAs(User::factory()->create());
 
-        $this->get(route('analytics.index'))->assertOk()->assertSee('data-key="lorekey"', false)->assertSee('All sites');
+        $page = $this->get(route('analytics.index'))->assertOk()->assertDontSee('lorekey', false)->getContent();
+        $clicks = substr($page, strpos($page, 'id="clicks"'));
+        $this->assertStringContainsString('Shop', $clicks);
+        $this->assertStringNotContainsString('Lore itself', $clicks);
+
+        $this->click($lore, origin: 'https://lore.test')->assertNoContent();
+        $this->assertSame(0, HeatClick::where('monitor_id', $lore->id)->count());
     }
 }

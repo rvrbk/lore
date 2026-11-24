@@ -36,7 +36,7 @@ class HeatClickController extends Controller
         $data = $validator->validated();
 
         $monitor = Monitor::where('heat_key', $data['k'])->first();
-        if ($monitor === null || ! $this->originMatches($request, $monitor)) {
+        if ($monitor === null || $monitor->isLore() || ! $this->originMatches($request, $monitor)) {
             return response()->noContent(204, $headers);
         }
 

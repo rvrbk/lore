@@ -55,5 +55,5 @@
         </section>
     @endif
 
-    @include('partials.heatmap-overview')
+    @include('partials.heatmap-overview', ['monitors' => $clickMonitors])
 </x-layouts.app>

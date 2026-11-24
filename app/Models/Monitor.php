@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -219,12 +218,10 @@ class Monitor extends Model
         return $counts->total > 0 ? round($counts->up / $counts->total * 100, 2) : null;
     }
 
-    /**
-     * The heatmap key of the monitored site served on the given host, so Lore can track its own pages too.
-     */
-    public static function heatKeyForHost(string $host): ?string
+    /** Whether this monitor is Lore itself, whose own pages are never tracked for clicks. */
+    public function isLore(): bool
     {
-        return Cache::remember('heat-key:'.$host, 600, fn () => static::where('url', Sql::like(), '%://'.$host.'%')->value('heat_key') ?? '');
+        return strcasecmp($this->host(), (string) parse_url(config('app.url'), PHP_URL_HOST)) === 0;
     }
 
     public function host(): string
