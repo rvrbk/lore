@@ -72,6 +72,11 @@ class CalendarAgendaTest extends TestCase
             "BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Course\r\nDTSTART:20261110T180000Z\r\nDTEND:20261110T190000Z\r\nRRULE:FREQ=WEEKLY;COUNT=2\r\nEND:VEVENT",
         );
 
+        $monthsary = $this->ics("BEGIN:VEVENT\r\nUID:c\r\nSUMMARY:Monthsary\r\nDTSTART;VALUE=DATE:20260530\r\nDTEND;VALUE=DATE:20260531\r\nRRULE:FREQ=MONTHLY;BYMONTHDAY=28,29,30;BYSETPOS=-1\r\nEND:VEVENT");
+        // The last of the 28th, 29th and 30th: the 30th, or the last day of a shorter month.
+        $this->assertSame(['Monthsary 1130'], $this->titles($monthsary, '2026-11-24 00:00', '2026-12-01 00:00'));
+        $this->assertSame(['Monthsary 0228'], $this->titles($monthsary, '2027-02-20 00:00', '2027-03-01 00:00'));
+
         $this->assertSame(['Board 1126 10:00'], $this->titles($ics, '2026-11-24 00:00', '2026-12-01 00:00'));
         $this->assertSame(['Course 1117 18:00'], $this->titles($ics, '2026-11-16 00:00', '2026-11-24 00:00'));
     }

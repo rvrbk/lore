@@ -117,6 +117,7 @@ class IcsCalendar
 
         for ($step = $skipped; $step < $skipped + self::MAX_STEPS; $step++) {
             [$base, $candidates] = $this->period($rule['FREQ'] ?? '', $first, $step * $interval, $rule);
+            $candidates = $this->atSetPositions($candidates, $rule['BYSETPOS'] ?? null);
             if ($base === null || $base->greaterThanOrEqualTo($to)) {
                 break;
             }
@@ -213,6 +214,30 @@ class IcsCalendar
         }
 
         return [null, []];
+    }
+
+    /**
+     * Keeps only the starts at the BYSETPOS positions (1 = first, -1 = last) of a period's starts, like "the last of the 28th, 29th and 30th".
+     *
+     * @param  array<int, CarbonImmutable>  $candidates
+     * @return array<int, CarbonImmutable>
+     */
+    private function atSetPositions(array $candidates, ?string $positions): array
+    {
+        if ($positions === null || $positions === '') {
+            return $candidates;
+        }
+
+        $picked = [];
+        foreach (array_map('intval', explode(',', $positions)) as $position) {
+            $index = $position > 0 ? $position - 1 : count($candidates) + $position;
+            if ($position !== 0 && isset($candidates[$index])) {
+                $picked[$index] = $candidates[$index];
+            }
+        }
+        ksort($picked);
+
+        return array_values($picked);
     }
 
     /**
