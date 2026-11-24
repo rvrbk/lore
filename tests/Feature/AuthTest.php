@@ -16,18 +16,26 @@ class AuthTest extends TestCase
         $this->get(route('login'))->assertRedirect(route('register'));
     }
 
-    public function test_anyone_can_register_without_email_and_registration_stays_open(): void
+    public function test_anyone_can_register_with_an_email_and_registration_stays_open(): void
     {
-        $this->post(route('register'), ['username' => 'rik', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
+        $this->post(route('register'), ['username' => 'rik', 'email' => 'rik@example.com', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
             ->assertRedirect(route('dashboard'));
         $this->assertAuthenticated();
         $this->assertSame('rik', User::firstOrFail()->username);
 
         $this->post(route('logout'));
         $this->get(route('register'))->assertOk();
-        $this->post(route('register'), ['username' => 'eve', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
+        $this->post(route('register'), ['username' => 'eve', 'email' => 'eve@example.com', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
             ->assertRedirect(route('dashboard'));
         $this->assertSame(2, User::count());
+    }
+
+    public function test_registering_requires_an_email(): void
+    {
+        $this->post(route('register'), ['username' => 'rik', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
+            ->assertSessionHasErrors('email');
+        $this->assertGuest();
+        $this->assertSame(0, User::count());
     }
 
     public function test_login_with_username_and_password_then_logout(): void

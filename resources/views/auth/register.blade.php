@@ -1,6 +1,6 @@
 <x-layouts.guest title="Create account">
     <h1 class="text-base">Create account</h1>
-    <p class="mt-3 text-sm text-zinc-400">Choose a username and password. An email is optional; without one a forgotten password cannot be reset.</p>
+    <p class="mt-3 text-sm text-zinc-400">Choose a username and password. Your email is used to reset a forgotten password.</p>
     <form method="POST" action="{{ route('register') }}" class="mt-5 space-y-4">
         @csrf
         <label class="block text-sm">
@@ -8,8 +8,8 @@
             <input name="username" value="{{ old('username') }}" required autofocus autocomplete="username" class="mt-1 w-full rounded-md border border-zinc-700 px-3 py-2">
         </label>
         <label class="block text-sm">
-            <span class="text-zinc-400">Email (optional, only to reset a forgotten password)</span>
-            <input type="email" name="email" value="{{ old('email') }}" autocomplete="email" class="mt-1 w-full rounded-md border border-zinc-700 px-3 py-2">
+            <span class="text-zinc-400">Email</span>
+            <input type="email" name="email" value="{{ old('email') }}" required autocomplete="email" class="mt-1 w-full rounded-md border border-zinc-700 px-3 py-2">
         </label>
         <label class="block text-sm">
             <span class="text-zinc-400">Password (min. 8 characters)</span>
