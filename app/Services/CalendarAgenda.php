@@ -17,7 +17,7 @@ use Throwable;
 class CalendarAgenda
 {
     /** Days shown, today included. */
-    public const DAYS = 4;
+    public const DAYS = 6;
 
     public function __construct(private IcsCalendar $calendar) {}
 

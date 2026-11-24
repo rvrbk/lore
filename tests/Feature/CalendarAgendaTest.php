@@ -76,20 +76,20 @@ class CalendarAgendaTest extends TestCase
         $this->assertSame(['Course 1117 18:00'], $this->titles($ics, '2026-11-16 00:00', '2026-11-24 00:00'));
     }
 
-    public function test_the_dashboard_shows_feeds_bookings_reminders_and_due_tasks_for_the_next_four_days(): void
+    public function test_the_dashboard_shows_feeds_bookings_reminders_and_due_tasks_for_the_next_six_days(): void
     {
         $this->travelTo('2026-11-24 08:00:00');
         Cache::flush();
         Http::fake(['calendar.example.com/*' => Http::response($this->ics(
             "BEGIN:VEVENT\r\nUID:a\r\nSUMMARY:Lunch with Sam\r\nDTSTART:20261125T120000Z\r\nDTEND:20261125T130000Z\r\nEND:VEVENT",
-            "BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Too far ahead\r\nDTSTART:20261128T120000Z\r\nDTEND:20261128T130000Z\r\nEND:VEVENT",
+            "BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Too far ahead\r\nDTSTART:20261203T120000Z\r\nDTEND:20261203T130000Z\r\nEND:VEVENT",
         ))]);
         CalendarSource::factory()->create(['name' => 'Personal']);
         $type = BookingType::factory()->create(['name' => 'Intro call']);
         Booking::factory()->for($type, 'type')->create(['guest_name' => 'Lena', 'starts_at' => now()->addDay()->setHour(15), 'ends_at' => now()->addDay()->setHour(15)->addMinutes(30)]);
         Booking::factory()->for($type, 'type')->create(['guest_name' => 'Cancelled Carl', 'starts_at' => now()->addDay()->setHour(16), 'ends_at' => now()->addDay()->setHour(16)->addMinutes(30), 'cancelled_at' => now()]);
         Reminder::create(['title' => 'Renew the domain', 'due_at' => now()->addDays(2)]);
-        Task::factory()->create(['title' => 'Send the invoice', 'status' => 'todo', 'due_on' => now()->addDays(3)->toDateString()]);
+        Task::factory()->create(['title' => 'Send the invoice', 'status' => 'todo', 'due_on' => now()->addDays(5)->toDateString()]);
         Task::factory()->create(['title' => 'Finished already', 'status' => 'done', 'due_on' => now()->toDateString()]);
         $this->actingAs(User::factory()->create());
 

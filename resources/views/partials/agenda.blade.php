@@ -1,6 +1,6 @@
 <section class="mt-12">
     <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Next {{ count($agenda) }} days</h2>
-    <div class="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
         @foreach($agenda as $day)
             <div class="border border-zinc-800 bg-zinc-900 p-2">
                 <div class="mb-1.5 text-xs font-semibold {{ $loop->first ? 'text-indigo-400' : 'text-zinc-300' }}">{{ $loop->first ? 'Today' : ($loop->index === 1 ? 'Tomorrow' : $day['date']->format('l')) }} <span class="font-normal text-zinc-500">{{ $day['date']->format('j M') }}</span></div>
