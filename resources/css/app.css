@@ -83,15 +83,23 @@ html[data-theme='night'] {
     --color-red-500: #a8412f;
 }
 .logo-night { display: none; }
-.logo-normal, .logo-night { animation: logo-glint 17s steps(6, end) infinite; }
-@keyframes logo-glint {
-    0%, 92%, 100% { transform: translateY(0); filter: brightness(1); }
-    93% { transform: translateY(-2px); filter: brightness(1.5); }
-    95% { transform: translateY(0); filter: brightness(1.25); }
-    97% { transform: translateY(-1px); filter: brightness(1.4); }
+.logo-mark { position: relative; display: inline-flex; overflow: hidden; }
+.logo-mark::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 0.55) 50%, transparent 60%);
+    transform: translateX(-120%);
+    animation: logo-glare 14s ease-in-out infinite;
+    pointer-events: none;
+}
+html[data-theme='night'] .logo-mark::after { background: linear-gradient(115deg, transparent 40%, rgb(220 176 122 / 0.45) 50%, transparent 60%); }
+@keyframes logo-glare {
+    0%, 90% { transform: translateX(-120%); }
+    100% { transform: translateX(120%); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .logo-normal, .logo-night { animation: none; }
+    .logo-mark::after { animation: none; }
 }
 html[data-theme='night'] .logo-normal { display: none; }
 html[data-theme='night'] .logo-night { display: inline; }
