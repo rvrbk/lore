@@ -2,34 +2,40 @@
 
 namespace App\Services;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
- * Reads the number of new vacancy matches from Job Scout. Cached briefly; any failure just hides the number.
+ * Reads a user's number of new vacancy matches from Job Scout, using the email of the Job Scout account on their profile.
+ * Cached briefly; any failure, or a user without a Job Scout account, just hides the number.
  */
 class JobScout
 {
-    public function isConfigured(): bool
+    public function isConfigured(?User $user = null): bool
     {
-        return config('services.job_scout.url') && config('services.job_scout.token') && config('services.job_scout.email');
+        $user ??= Auth::user();
+
+        return config('services.job_scout.url') && config('services.job_scout.token') && filled($user?->job_scout_email);
     }
 
     /**
      * @return array{new: int, url: string}|null
      */
-    public function newMatches(): ?array
+    public function newMatches(?User $user = null): ?array
     {
-        if (! $this->isConfigured()) {
+        $user ??= Auth::user();
+        if (! $this->isConfigured($user)) {
             return null;
         }
 
-        $result = Cache::remember('job-scout.new-matches', now()->addMinutes(5), function (): array|false {
+        $result = Cache::remember('job-scout.new-matches.'.$user->id, now()->addMinutes(5), function () use ($user): array|false {
             try {
                 $response = Http::withToken(config('services.job_scout.token'))
                     ->acceptJson()->timeout(3)
-                    ->get(rtrim(config('services.job_scout.url'), '/').'/integrations/lore/new-matches', ['email' => config('services.job_scout.email')]);
+                    ->get(rtrim(config('services.job_scout.url'), '/').'/integrations/lore/new-matches', ['email' => $user->job_scout_email]);
             } catch (Throwable) {
                 return false;
             }

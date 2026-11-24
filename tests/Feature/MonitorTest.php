@@ -86,18 +86,22 @@ class MonitorTest extends TestCase
     public function test_down_and_recovery_alerts_go_to_telegram(): void
     {
         Process::fake();
-        config(['services.telegram' => ['token' => 'bot-token', 'chat_id' => '42']]);
+        config(['services.telegram' => ['token' => 'bot-token']]);
+        $subscriber = User::factory()->create(['telegram_chat_id' => '42']);
+        User::factory()->create(['telegram_chat_id' => '43']);
         Http::fake([
             'api.telegram.org/*' => Http::response(['ok' => true]),
             'broken.test/*' => Http::sequence()->push('boom', 500)->push('boom', 500)->push('ok', 200),
         ]);
         $monitor = Monitor::factory()->create(['name' => 'broken', 'url' => 'https://broken.test/up']);
+        $monitor->subscribers()->attach($subscriber);
 
         Monitor::check($monitor->newCollection([$monitor]));
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'api.telegram.org'));
 
         Monitor::check($monitor->fresh()->newCollection([$monitor->fresh()]));
-        Http::assertSent(fn ($request) => str_contains($request->url(), 'sendMessage') && str_contains($request['text'], 'broken is DOWN'));
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'sendMessage') && $request['chat_id'] === '42' && str_contains($request['text'], 'broken is DOWN'));
+        Http::assertNotSent(fn ($request) => ($request['chat_id'] ?? null) === '43');
 
         Monitor::check($monitor->fresh()->newCollection([$monitor->fresh()]));
         Http::assertSent(fn ($request) => str_contains($request->url(), 'sendMessage') && str_contains($request['text'], 'broken is back UP'));

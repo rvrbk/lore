@@ -10,26 +10,35 @@ use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
+use App\Http\Controllers\MonitorSubscriptionController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PointyBookingController;
 use App\Http\Controllers\PointyController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SpaceController;
 use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TelegramSettingsController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WorldClockController;
+use App\Http\Middleware\ScopeToCurrentUser;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1');
     Route::get('register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('register', [AuthController::class, 'register']);
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+    Route::get('forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetController::class, 'email'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('reset-password/{token}', [PasswordResetController::class, 'form'])->name('password.reset');
+    Route::post('reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
 });
 
 Route::get('pointy/booking/{token}', [PointyBookingController::class, 'booking'])->name('pointy.booking');
@@ -39,11 +48,18 @@ Route::post('pointy/{slug}', [PointyBookingController::class, 'book'])->middlewa
 
 Route::get('status/{token}', StatusPageController::class)->name('status.show');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('weather', WeatherController::class)->name('weather');
+    Route::get('settings', [SettingsController::class, 'show'])->name('settings.index');
+    Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::get('settings/telegram', [TelegramSettingsController::class, 'show'])->name('settings.telegram');
+    Route::post('settings/telegram/check', [TelegramSettingsController::class, 'check'])->name('settings.telegram.check');
+    Route::put('settings/telegram/digest', [TelegramSettingsController::class, 'digest'])->name('settings.telegram.digest');
+    Route::post('settings/telegram/test', [TelegramSettingsController::class, 'test'])->name('settings.telegram.test');
+    Route::delete('settings/telegram', [TelegramSettingsController::class, 'disconnect'])->name('settings.telegram.disconnect');
     Route::post('calendar-sources', [CalendarSourceController::class, 'store'])->name('calendar-sources.store');
     Route::delete('calendar-sources/{calendarSource}', [CalendarSourceController::class, 'destroy'])->name('calendar-sources.destroy');
 
@@ -94,6 +110,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     Route::post('tasks/{task}/move', [TaskController::class, 'move'])->name('tasks.move');
 
+    Route::post('monitors/{monitor}/subscription', [MonitorSubscriptionController::class, 'store'])->name('monitors.subscribe');
+    Route::delete('monitors/{monitor}/subscription', [MonitorSubscriptionController::class, 'destroy'])->name('monitors.unsubscribe');
     Route::get('monitors', [MonitorController::class, 'index'])->name('monitors.index');
     Route::get('monitors/{monitor}', [MonitorController::class, 'show'])->name('monitors.show');
     Route::post('monitors/check', [MonitorController::class, 'check'])->name('monitors.check');

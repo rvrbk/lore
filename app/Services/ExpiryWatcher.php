@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Incident;
 use App\Models\Monitor;
 use App\Models\Reminder;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Http;
@@ -122,7 +123,9 @@ class ExpiryWatcher
         }
 
         if ($countdown) {
-            $this->syncReminders($monitor, $what, $expiresAt);
+            foreach ($monitor->subscribers as $subscriber) {
+                $this->syncReminders($monitor, $what, $expiresAt, $subscriber);
+            }
         } else {
             $this->clearReminders($monitor, $what);
         }
@@ -144,13 +147,13 @@ class ExpiryWatcher
         Reminder::where('title', Sql::like(), $prefix.'%')->get()->filter(fn (Reminder $r) => str_starts_with($r->title, $prefix))->each->delete();
     }
 
-    private function syncReminders(Monitor $monitor, string $what, CarbonInterface $expiresAt): void
+    private function syncReminders(Monitor $monitor, string $what, CarbonInterface $expiresAt, User $subscriber): void
     {
         $expires = CarbonImmutable::instance($expiresAt);
         $prefix = "{$monitor->name}: {$what} expires ";
         $current = $prefix.$expires->format('j M Y');
 
-        $existing = Reminder::where('title', Sql::like(), '%: '.$what.' expires %')->get()->filter(fn (Reminder $r) => str_starts_with($r->title, $prefix));
+        $existing = Reminder::where('user_id', $subscriber->id)->where('title', Sql::like(), '%: '.$what.' expires %')->get()->filter(fn (Reminder $r) => str_starts_with($r->title, $prefix));
         // A renewed certificate or domain has a new date, which makes the old countdown obsolete.
         $existing->filter(fn (Reminder $r) => $r->completed_at === null && ! str_starts_with($r->title, $current))->each->delete();
         $titles = $existing->filter(fn (Reminder $r) => str_starts_with($r->title, $current))->pluck('title');
@@ -168,7 +171,7 @@ class ExpiryWatcher
             if ($titles->contains($title) || ($due->lte(now()) && $label !== $mostUrgentPassed)) {
                 continue;
             }
-            Reminder::create(['title' => $title, 'notes' => 'Renew it before it lapses.', 'due_at' => $due->lte(now()) ? now() : $due]);
+            Reminder::create(['user_id' => $subscriber->id, 'title' => $title, 'notes' => 'Renew it before it lapses.', 'due_at' => $due->lte(now()) ? now() : $due]);
         }
     }
 }

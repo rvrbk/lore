@@ -9,6 +9,7 @@ use Database\Factories\MonitorFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
@@ -85,6 +86,27 @@ class Monitor extends Model
         return $this->hasMany(HeatClick::class);
     }
 
+    /**
+     * The users who receive this monitor's domain expiry reminders.
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function subscribers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
+
+    /** Stops a user's expiry reminders for this monitor: they are unsubscribed and their open countdowns are removed. */
+    public function unsubscribe(User $user): void
+    {
+        $this->subscribers()->detach($user->id);
+
+        $prefix = "{$this->name}: ";
+        Reminder::where('user_id', $user->id)->open()->where('title', Sql::like(), $prefix.'%')->get()
+            ->filter(fn (Reminder $reminder) => str_starts_with($reminder->title, $prefix) && str_contains($reminder->title, ' expires '))
+            ->each->delete();
+    }
+
     public function checks(): HasMany
     {
         return $this->hasMany(MonitorCheck::class);
@@ -157,7 +179,7 @@ class Monitor extends Model
 
     private function sendAlert(string $message, string $icon): void
     {
-        app(Telegram::class)->send($icon.' <b>Server health</b>'."\n".e($message));
+        app(Telegram::class)->sendAbout($this, $icon.' <b>Server health</b>'."\n".e($message));
 
         if ($webhook = config('services.monitor_alerts.webhook')) {
             try {

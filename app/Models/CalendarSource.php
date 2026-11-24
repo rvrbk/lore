@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Database\Factories\CalendarSourceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 class CalendarSource extends Model
 {
     /** @use HasFactory<CalendarSourceFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = ['name', 'url', 'color'];
 

@@ -27,7 +27,7 @@ class SiteSearchTest extends TestCase
         $page = $space->pages()->create(['title' => 'Runbook', 'body' => 'Restart the zebra daemon']);
         $page->syncTagNames('zebra-ops');
         Task::createAtBottom(['title' => 'Feed the zebra', 'status' => 'todo', 'priority' => 'normal']);
-        Reminder::create(['title' => 'Zebra check-up', 'due_at' => now()->addDay()]);
+        Reminder::factory()->create(['title' => 'Zebra check-up', 'due_at' => now()->addDay()]);
         Monitor::factory()->create(['name' => 'Zebra Shop', 'url' => 'https://zebra.test/']);
         Incident::create(['kind' => Incident::DOWN, 'title' => 'Zebra outage', 'started_at' => now()]);
     }

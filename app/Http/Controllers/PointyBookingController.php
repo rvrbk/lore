@@ -60,6 +60,7 @@ class PointyBookingController extends Controller
             }
 
             return Booking::create([
+                'user_id' => $type->user_id,
                 'booking_type_id' => $type->id,
                 'guest_name' => $data['guest_name'],
                 'guest_email' => $data['guest_email'],

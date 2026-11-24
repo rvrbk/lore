@@ -57,7 +57,8 @@ class CornerTest extends TestCase
 
     public function test_the_streak_nudge_only_goes_out_when_a_streak_is_at_stake(): void
     {
-        config(['services.telegram.token' => 't', 'services.telegram.chat_id' => '1']);
+        config(['services.telegram.token' => 't']);
+        User::factory()->create(['telegram_chat_id' => '1']);
         Http::fake();
         Process::fake(['*' => Process::result(now()->subDay()->timestamp."\n")]);
         Cache::flush();

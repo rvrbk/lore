@@ -58,7 +58,7 @@ class IncidentReporter
                 $lines[] = 'Follows deploy #'.$deployment->id.' ('.e($deployment->site ?? 'lore').').';
             }
             $lines[] = '<a href="'.e(route('incidents.index')).'">Open incidents</a>';
-            $this->telegram->send(implode("\n", $lines));
+            $this->telegram->sendAbout($monitor, implode("\n", $lines));
         }
 
         return $incident;
@@ -76,7 +76,7 @@ class IncidentReporter
                 $incident->task->update(['description' => trim(($incident->task->description ?? '')."\nResolved after ".$incident->duration().'.')]);
             }
             if ($notify) {
-                $this->telegram->send('✅ <b>Resolved:</b> '.e($incident->title)."\nAfter ".e($incident->duration()).'.');
+                $this->telegram->sendAbout($monitor, '✅ <b>Resolved:</b> '.e($incident->title)."\nAfter ".e($incident->duration()).'.');
             }
         }
     }

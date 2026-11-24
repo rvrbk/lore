@@ -55,6 +55,7 @@ class AnalyticsController extends Controller
         ], ['deploy_path.regex' => 'Use the site\'s folder on the server, like /var/www/my-site.', 'property_id.regex' => 'Use the numeric GA4 property ID (Admin → Property details), not the G-XXXX measurement ID.']);
 
         $monitor = Monitor::create(['name' => $data['name'], 'url' => $data['url'], 'deploy_path' => $data['deploy_path'] ?? null, 'show_in_search' => $request->boolean('show_in_search', true)]);
+        $monitor->subscribers()->attach($request->user()->id);
         Monitor::check($monitor->newCollection([$monitor]));
 
         if (! empty($data['property_id'])) {

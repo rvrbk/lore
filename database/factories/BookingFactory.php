@@ -21,6 +21,7 @@ class BookingFactory extends Factory
 
         return [
             'booking_type_id' => BookingType::factory(),
+            'user_id' => fn (array $attributes) => BookingType::withoutGlobalScopes()->find($attributes['booking_type_id'])?->user_id,
             'guest_name' => fake()->name(),
             'guest_email' => fake()->safeEmail(),
             'guest_timezone' => 'America/New_York',

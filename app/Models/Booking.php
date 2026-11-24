@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Carbon\Carbon;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,12 +18,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Booking extends Model
 {
     /** @use HasFactory<BookingFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     /** How long before the meeting its reminder comes due. */
     public const REMINDER_MINUTES_BEFORE = 15;
 
-    protected $fillable = ['booking_type_id', 'guest_name', 'guest_email', 'guest_timezone', 'guest_hour12', 'meeting_url', 'notes', 'starts_at', 'ends_at', 'token', 'cancelled_at', 'pointy_site_id'];
+    protected $fillable = ['user_id', 'booking_type_id', 'guest_name', 'guest_email', 'guest_timezone', 'guest_hour12', 'meeting_url', 'notes', 'starts_at', 'ends_at', 'token', 'cancelled_at', 'pointy_site_id'];
 
     protected function casts(): array
     {
@@ -70,6 +71,7 @@ class Booking extends Model
         $timezone = $this->type->timezone;
 
         $this->reminders()->create([
+            'user_id' => $this->user_id,
             'title' => "Meeting: {$this->type->name} with {$this->guest_name}",
             'notes' => $this->starts_at->copy()->setTimezone($timezone)->format('D j M, H:i').' ('.str_replace('_', ' ', $timezone).') · '.$this->guest_email.($this->meeting_url ? ' · '.$this->meeting_url : ''),
             'due_at' => $this->starts_at->copy()->subMinutes(self::REMINDER_MINUTES_BEFORE)->max(now()),

@@ -69,9 +69,10 @@ class PointyTest extends TestCase
     public function test_a_sites_own_css_styles_any_meeting_type_and_cannot_close_the_style_tag(): void
     {
         Mail::fake();
+        $owner = User::factory()->create();
         $site = PointySite::factory()->create(['key' => 'verbeek-ug', 'css' => '.pointy-submit { background: hotpink; }</style><script>alert(1)</script>']);
         $other = PointySite::factory()->create(['key' => 'other', 'css' => '.pointy-title { color: lime; }']);
-        $type = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
+        $type = BookingType::factory()->create(['user_id' => $owner->id, 'timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
 
         $this->get(route('pointy.show', ['slug' => $type->slug, 'site' => 'verbeek-ug']))->assertOk()->assertSee('background: hotpink', false)->assertDontSee('<script>alert(1)', false)->assertDontSee('lime');
         $this->get(route('pointy.show', ['slug' => $type->slug, 'site' => 'other']))->assertOk()->assertSee('color: lime', false)->assertDontSee('hotpink');
@@ -216,10 +217,11 @@ class PointyTest extends TestCase
 
     public function test_the_owner_adds_updates_and_removes_a_day_exception(): void
     {
-        $type = BookingType::factory()->create();
+        $owner = User::factory()->create();
+        $type = BookingType::factory()->create(['user_id' => $owner->id]);
         $this->post(route('pointy.exceptions.store', $type), ['date' => '2026-12-24'])->assertRedirect(route('login'));
 
-        $this->actingAs(User::factory()->create());
+        $this->actingAs($owner);
         $this->post(route('pointy.exceptions.store', $type), ['date' => '2026-12-24', 'note' => 'Christmas Eve'])->assertRedirect(route('pointy.index'));
         $this->assertDatabaseHas('availability_exceptions', ['booking_type_id' => $type->id, 'date' => '2026-12-24', 'start_time' => null]);
 
@@ -296,8 +298,10 @@ class PointyTest extends TestCase
     {
         Mail::fake();
         Http::fake();
-        config(['services.telegram.token' => 'token', 'services.telegram.chat_id' => '42']);
-        $type = BookingType::factory()->create(['timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
+        config(['services.telegram.token' => 'token']);
+        $owner = User::factory()->create(['telegram_chat_id' => '42']);
+        User::factory()->create(['telegram_chat_id' => '99']);
+        $type = BookingType::factory()->create(['user_id' => $owner->id, 'timezone' => 'UTC', 'days' => [1], 'min_notice_hours' => 0]);
 
         $this->post(route('pointy.book', $type->slug), ['starts_at' => '2026-11-23T09:00:00+00:00', 'guest_name' => 'Ann', 'guest_email' => 'ann@example.test', 'guest_timezone' => 'UTC'])->assertRedirect();
 

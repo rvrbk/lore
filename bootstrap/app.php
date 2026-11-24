@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Middleware\ScopeToCurrentUser;
 use App\Http\Middleware\TrackNavVisit;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [TrackNavVisit::class]);
+        // Route-model binding must already see only the signed-in user's rows, so it has to come after sign-in but before binding.
+        $middleware->prependToPriorityList(before: SubstituteBindings::class, prepend: ScopeToCurrentUser::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

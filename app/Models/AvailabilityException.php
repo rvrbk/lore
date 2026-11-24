@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Database\Factories\AvailabilityExceptionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AvailabilityException extends Model
 {
     /** @use HasFactory<AvailabilityExceptionFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = ['booking_type_id', 'date', 'start_time', 'end_time', 'note'];
 

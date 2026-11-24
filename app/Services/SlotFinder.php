@@ -24,12 +24,12 @@ class SlotFinder
         $latest = $now->addDays($type->max_days_ahead);
         $buffer = $type->buffer_minutes;
 
-        $booked = Booking::active()
+        $booked = Booking::withoutGlobalScopes()->active()
             ->where('booking_type_id', $type->id)
             ->where('ends_at', '>', now()->subDay())
             ->get(['starts_at', 'ends_at']);
 
-        $exceptions = $type->exceptions()->get()->keyBy(fn (AvailabilityException $exception) => $exception->date->format('Y-m-d'));
+        $exceptions = $type->exceptions()->withoutGlobalScopes()->get()->keyBy(fn (AvailabilityException $exception) => $exception->date->format('Y-m-d'));
 
         $slots = collect();
         $day = $now->setTimezone($type->timezone)->startOfDay()->subDay();

@@ -13,7 +13,10 @@
         <label class="flex items-center gap-2 text-sm text-zinc-400">
             <input type="checkbox" name="remember" value="1" class="accent-indigo-500"> Keep me signed in
         </label>
+        @if(session('status'))<p class="text-sm text-emerald-400">{{ session('status') }}</p>@endif
         @if($errors->any())<p class="text-sm text-red-400">{{ $errors->first() }}</p>@endif
         <button class="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Log in</button>
     </form>
+    <p class="mt-4 text-sm text-zinc-400"><a href="{{ route('password.request') }}" class="underline">Forgot your password?</a></p>
+    <p class="mt-2 text-sm text-zinc-400">No account yet? <a href="{{ route('register') }}" class="underline">Create one</a>.</p>
 </x-layouts.guest>

@@ -71,12 +71,12 @@ class LoreTest extends TestCase
 
     public function test_recurring_reminder_rolls_forward_and_one_off_completes(): void
     {
-        $weekly = Reminder::create(['title' => 'W', 'due_at' => now()->subDays(10), 'recurrence' => 'weekly']);
+        $weekly = Reminder::factory()->create(['title' => 'W', 'due_at' => now()->subDays(10), 'recurrence' => 'weekly']);
         $weekly->complete();
         $this->assertTrue($weekly->fresh()->due_at->isFuture());
         $this->assertNull($weekly->fresh()->completed_at);
 
-        $once = Reminder::create(['title' => 'O', 'due_at' => now()->subHour()]);
+        $once = Reminder::factory()->create(['title' => 'O', 'due_at' => now()->subHour()]);
         $once->complete();
         $this->assertNotNull($once->fresh()->completed_at);
     }
@@ -84,8 +84,8 @@ class LoreTest extends TestCase
     public function test_due_reminders_are_notified_once(): void
     {
         Process::fake();
-        Reminder::create(['title' => 'Due', 'due_at' => now()->subMinute()]);
-        Reminder::create(['title' => 'Later', 'due_at' => now()->addDay()]);
+        Reminder::factory()->create(['title' => 'Due', 'due_at' => now()->subMinute()]);
+        Reminder::factory()->create(['title' => 'Later', 'due_at' => now()->addDay()]);
 
         $this->artisan('reminders:notify')->assertSuccessful();
         $this->artisan('reminders:notify')->assertSuccessful();
@@ -98,9 +98,10 @@ class LoreTest extends TestCase
     public function test_due_reminders_are_sent_to_telegram_and_retried_when_it_fails(): void
     {
         Process::fake();
-        config(['services.telegram' => ['token' => 'bot-token', 'chat_id' => '42']]);
+        config(['services.telegram' => ['token' => 'bot-token']]);
         Http::fake(['api.telegram.org/*' => Http::sequence()->push(['ok' => false, 'description' => 'down'], 500)->push(['ok' => true])]);
-        $reminder = Reminder::create(['title' => 'Pay <rent>', 'notes' => 'Before Friday', 'due_at' => now()->subMinute(), 'recurrence' => 'monthly']);
+        $owner = User::factory()->create(['telegram_chat_id' => '42']);
+        $reminder = Reminder::factory()->create(['user_id' => $owner->id, 'title' => 'Pay <rent>', 'notes' => 'Before Friday', 'due_at' => now()->subMinute(), 'recurrence' => 'monthly']);
 
         $this->artisan('reminders:notify')->assertSuccessful();
         $this->assertNull($reminder->fresh()->notified_at, 'A failed Telegram send is retried.');
@@ -115,21 +116,22 @@ class LoreTest extends TestCase
             && str_contains($request['text'], 'Repeats monthly'));
     }
 
-    public function test_telegram_test_command_lists_chats_until_a_chat_id_is_set(): void
+    public function test_telegram_test_command_lists_chats_until_somebody_connected(): void
     {
-        config(['services.telegram' => ['token' => 'bot-token', 'chat_id' => null]]);
+        config(['services.telegram' => ['token' => 'bot-token']]);
         Http::fake(['api.telegram.org/*' => Http::response(['result' => [['message' => ['chat' => ['id' => 555, 'first_name' => 'Rik']]]]])]);
+        $user = User::factory()->create(['username' => 'rik']);
 
-        $this->artisan('telegram:test')->expectsOutputToContain('TELEGRAM_CHAT_ID')->assertFailed();
+        $this->artisan('telegram:test')->expectsOutputToContain('Nobody has connected Telegram')->assertFailed();
 
-        config(['services.telegram.chat_id' => '555']);
+        $user->forceFill(['telegram_chat_id' => '555'])->save();
         Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
-        $this->artisan('telegram:test')->expectsOutputToContain('Test message sent')->assertSuccessful();
+        $this->artisan('telegram:test')->expectsOutputToContain('Test message sent to rik')->assertSuccessful();
     }
 
     public function test_snooze_resets_notification(): void
     {
-        $r = Reminder::create(['title' => 'S', 'due_at' => now()->subHour(), 'notified_at' => now()]);
+        $r = Reminder::factory()->create(['title' => 'S', 'due_at' => now()->subHour(), 'notified_at' => now()]);
         $this->post(route('reminders.snooze', $r), ['for' => 'tomorrow'])->assertRedirect();
         $this->assertNull($r->fresh()->notified_at);
         $this->assertTrue($r->fresh()->due_at->isFuture());

@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * The number of new Job Scout matches as last seen on a day, so the dashboard can show a trend.
+ * The number of new Job Scout matches a user had on a day, so the dashboard can show a trend.
  */
 class JobScoutSnapshot extends Model
 {
-    protected $fillable = ['day', 'new_matches'];
+    use BelongsToUser;
+
+    protected $fillable = ['user_id', 'day', 'new_matches'];
 
     protected function casts(): array
     {

@@ -28,7 +28,6 @@ class DashboardController extends Controller
             'monitors' => $monitors = Monitor::orderBy('name')->get(),
             'sparks' => Monitor::sparklines($monitors),
             'due' => Reminder::due()->with('page')->orderBy('due_at')->get(),
-            'upcoming' => Reminder::open()->where('due_at', '>', now())->where('due_at', '<=', now()->addDays(14))->with('page')->orderBy('due_at')->get(),
             'bookingTypes' => BookingType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'agenda' => app(CalendarAgenda::class)->days(),
             'calendarSources' => CalendarSource::orderBy('name')->get(),

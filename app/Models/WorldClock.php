@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Database\Factories\WorldClockFactory;
 use DateTimeZone;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 class WorldClock extends Model
 {
     /** @use HasFactory<WorldClockFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = ['city', 'timezone', 'position', 'is_analog', 'is_header'];
 

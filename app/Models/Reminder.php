@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
+use Database\Factories\ReminderFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Reminder extends Model
 {
+    /** @use HasFactory<ReminderFactory> */
+    use BelongsToUser, HasFactory;
+
     public const RECURRENCES = [
         'none' => 'Does not repeat',
         'daily' => 'Daily',
@@ -18,7 +24,7 @@ class Reminder extends Model
 
     protected $attributes = ['recurrence' => 'none'];
 
-    protected $fillable = ['page_id', 'task_id', 'booking_id', 'title', 'notes', 'due_at', 'recurrence', 'notified_at', 'completed_at'];
+    protected $fillable = ['user_id', 'page_id', 'task_id', 'booking_id', 'title', 'notes', 'due_at', 'recurrence', 'notified_at', 'completed_at'];
 
     protected function casts(): array
     {

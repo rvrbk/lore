@@ -84,14 +84,14 @@ class CalendarAgendaTest extends TestCase
             "BEGIN:VEVENT\r\nUID:a\r\nSUMMARY:Lunch with Sam\r\nDTSTART:20261125T120000Z\r\nDTEND:20261125T130000Z\r\nEND:VEVENT",
             "BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:Too far ahead\r\nDTSTART:20261203T120000Z\r\nDTEND:20261203T130000Z\r\nEND:VEVENT",
         ))]);
+        $this->actingAs(User::factory()->create());
         CalendarSource::factory()->create(['name' => 'Personal']);
         $type = BookingType::factory()->create(['name' => 'Intro call']);
         Booking::factory()->for($type, 'type')->create(['guest_name' => 'Lena', 'starts_at' => now()->addDay()->setHour(15), 'ends_at' => now()->addDay()->setHour(15)->addMinutes(30)]);
         Booking::factory()->for($type, 'type')->create(['guest_name' => 'Cancelled Carl', 'starts_at' => now()->addDay()->setHour(16), 'ends_at' => now()->addDay()->setHour(16)->addMinutes(30), 'cancelled_at' => now()]);
-        Reminder::create(['title' => 'Renew the domain', 'due_at' => now()->addDays(2)]);
+        Reminder::factory()->create(['title' => 'Renew the domain', 'due_at' => now()->addDays(2)]);
         Task::factory()->create(['title' => 'Send the invoice', 'status' => 'todo', 'due_on' => now()->addDays(5)->toDateString()]);
         Task::factory()->create(['title' => 'Finished already', 'status' => 'done', 'due_on' => now()->toDateString()]);
-        $this->actingAs(User::factory()->create());
 
         $this->get(route('dashboard'))->assertOk()
             ->assertSeeInOrder(['Today', 'Tomorrow', 'Lunch with Sam', 'Intro call with Lena', 'Renew the domain', 'Send the invoice'])
@@ -104,8 +104,8 @@ class CalendarAgendaTest extends TestCase
     {
         Cache::flush();
         Http::fake(['calendar.example.com/*' => Http::response('nope', 500)]);
-        CalendarSource::factory()->create();
         $this->actingAs(User::factory()->create());
+        CalendarSource::factory()->create();
 
         $this->get(route('dashboard'))->assertOk()->assertSee('Nothing planned.');
     }

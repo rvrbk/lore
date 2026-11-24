@@ -16,7 +16,7 @@ class AuthTest extends TestCase
         $this->get(route('login'))->assertRedirect(route('register'));
     }
 
-    public function test_first_account_can_register_without_email_then_registration_closes(): void
+    public function test_anyone_can_register_without_email_and_registration_stays_open(): void
     {
         $this->post(route('register'), ['username' => 'rik', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
             ->assertRedirect(route('dashboard'));
@@ -24,10 +24,10 @@ class AuthTest extends TestCase
         $this->assertSame('rik', User::firstOrFail()->username);
 
         $this->post(route('logout'));
-        $this->get(route('register'))->assertRedirect(route('login'));
+        $this->get(route('register'))->assertOk();
         $this->post(route('register'), ['username' => 'eve', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
-            ->assertForbidden();
-        $this->assertSame(1, User::count());
+            ->assertRedirect(route('dashboard'));
+        $this->assertSame(2, User::count());
     }
 
     public function test_login_with_username_and_password_then_logout(): void

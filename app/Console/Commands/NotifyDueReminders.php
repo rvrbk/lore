@@ -16,7 +16,7 @@ class NotifyDueReminders extends Command
 {
     public function handle(Telegram $telegram): int
     {
-        $reminders = Reminder::due()->whereNull('notified_at')->orderBy('due_at')->get();
+        $reminders = Reminder::due()->whereNull('notified_at')->with('user')->orderBy('due_at')->get();
 
         foreach ($reminders as $reminder) {
             $result = Process::run([
@@ -30,7 +30,7 @@ class NotifyDueReminders extends Command
             }
             // A Telegram failure is retried on the next run; a missing notify-send is not, or it would retry every minute.
             // Either way the reminder still shows as due in the app.
-            if ($telegram->isConfigured() && ! $telegram->send($this->message($reminder))) {
+            if ($telegram->canMessage($reminder->user) && ! $telegram->sendTo($reminder->user, $this->message($reminder))) {
                 continue;
             }
             $reminder->update(['notified_at' => now()]);

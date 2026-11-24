@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Database\Factories\BookingTypeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class BookingType extends Model
 {
     /** @use HasFactory<BookingTypeFactory> */
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $fillable = ['slug', 'name', 'description', 'duration_minutes', 'timezone', 'days', 'start_time', 'end_time', 'weekday_hours', 'buffer_minutes', 'min_notice_hours', 'max_days_ahead', 'is_active', 'include_meet', 'meet_url'];
 

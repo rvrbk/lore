@@ -39,6 +39,7 @@ return [
         // Base URL of Job Scout, the shared bearer token (LORE_API_TOKEN there) and the account email to count matches for.
         'url' => env('JOB_SCOUT_URL'),
         'token' => env('JOB_SCOUT_TOKEN'),
+        // Only used once, by the migration that gave the first user a Job Scout account. Accounts now live on the users.
         'email' => env('JOB_SCOUT_EMAIL'),
     ],
 
@@ -95,6 +96,7 @@ return [
     'telegram' => [
         // Bot token from @BotFather and the id of the chat that should receive reminders.
         'token' => env('TELEGRAM_BOT_TOKEN'),
+        // Only used once, by the migration that connected the first user. Chats now live on the users.
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 

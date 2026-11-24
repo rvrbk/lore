@@ -17,7 +17,7 @@ class BookingNotifier
 
     public function send(Booking $booking, string $event): void
     {
-        $booking->loadMissing('type');
+        $booking->loadMissing(['type', 'user']);
         if ($event === 'confirmed') {
             $this->alertOwner($booking);
         }
@@ -38,8 +38,9 @@ class BookingNotifier
     private function alertOwner(Booking $booking): void
     {
         $timezone = $booking->type->timezone;
+
         $when = $booking->starts_at->copy()->setTimezone($timezone)->format('D j M, H:i').' ('.str_replace('_', ' ', $timezone).')';
 
-        $this->telegram->send("📅 <b>New booking</b>\n".e($booking->type->name).' with '.e($booking->guest_name).' ('.e($booking->guest_email).")\n".e($when).($booking->notes ? "\n".e($booking->notes) : ''));
+        $this->telegram->sendTo($booking->user, "📅 <b>New booking</b>\n".e($booking->type->name).' with '.e($booking->guest_name).' ('.e($booking->guest_email).")\n".e($when).($booking->notes ? "\n".e($booking->notes) : ''));
     }
 }

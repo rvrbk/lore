@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A website that embeds or links to Pointy with `?site={key}` and gives its booking pages its own CSS.
+ * A website (global, shared by every user) that embeds or links to Pointy with `?site={key}` and gives its booking pages its own CSS.
  */
 class PointySite extends Model
 {

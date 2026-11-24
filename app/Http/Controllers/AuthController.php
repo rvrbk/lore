@@ -37,24 +37,16 @@ class AuthController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
-    /**
-     * Registration only exists to create the first account; after that it is closed.
-     */
-    public function showRegister(): View|RedirectResponse
+    public function showRegister(): View
     {
-        if (User::exists()) {
-            return redirect()->route('login');
-        }
-
         return view('auth.register');
     }
 
     public function register(Request $request): RedirectResponse
     {
-        abort_if(User::exists(), 403, 'Registration is closed.');
-
         $data = $request->validate([
             'username' => ['required', 'string', 'alpha_dash', 'min:3', 'max:40', 'unique:users,username'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 

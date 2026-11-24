@@ -25,16 +25,20 @@ class OperationsTest extends TestCase
 {
     use RefreshDatabase;
 
+    private User $telegramUser;
+
     protected function setUp(): void
     {
         parent::setUp();
         Process::fake();
-        config(['services.deploy.smoke_retry_seconds' => 0, 'services.telegram.token' => 'token', 'services.telegram.chat_id' => '1']);
+        config(['services.deploy.smoke_retry_seconds' => 0, 'services.telegram.token' => 'token']);
+        $this->telegramUser = User::factory()->create(['telegram_chat_id' => '1', 'digest_subscribed' => true]);
     }
 
     public function test_a_deploy_whose_site_does_not_answer_opens_an_incident_and_a_later_good_deploy_closes_it(): void
     {
         $monitor = Monitor::factory()->create(['name' => 'Shop', 'url' => 'https://shop.test/up', 'deploy_path' => '/var/www/shop']);
+        $monitor->subscribers()->attach($this->telegramUser);
         $bad = Deployment::factory()->create(['path' => '/var/www/shop', 'site' => 'Shop']);
         Http::fake(['https://shop.test/*' => Http::response('boom', 500), 'https://api.telegram.org/*' => Http::response(['ok' => true])]);
 
@@ -73,6 +77,7 @@ class OperationsTest extends TestCase
         Http::fake();
         $watcher = app(ExpiryWatcher::class);
         $monitor = Monitor::factory()->create(['name' => 'Shop']);
+        $monitor->subscribers()->attach($this->telegramUser);
 
         $watcher->apply($monitor, null, CarbonImmutable::now()->addDays(60));
         $this->assertSame(3, Reminder::count());
@@ -92,6 +97,7 @@ class OperationsTest extends TestCase
         Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true])]);
         $watcher = app(ExpiryWatcher::class);
         $monitor = Monitor::factory()->create(['name' => 'Shop']);
+        $monitor->subscribers()->attach($this->telegramUser);
 
         $watcher->apply($monitor, null, CarbonImmutable::now()->addDays(5));
 
@@ -110,8 +116,8 @@ class OperationsTest extends TestCase
         Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true])]);
         $watcher = app(ExpiryWatcher::class);
         $monitor = Monitor::factory()->create(['name' => 'Shop']);
-        Reminder::create(['title' => 'Shop: SSL certificate expires 1 Feb 2027 (30 days left)', 'due_at' => now()]);
-        Reminder::create(['title' => 'Shop: domain expires 1 Feb 2027 (30 days left)', 'due_at' => now()]);
+        Reminder::factory()->create(['title' => 'Shop: SSL certificate expires 1 Feb 2027 (30 days left)', 'due_at' => now()]);
+        Reminder::factory()->create(['title' => 'Shop: domain expires 1 Feb 2027 (30 days left)', 'due_at' => now()]);
 
         $watcher->apply($monitor, CarbonImmutable::now()->addDays(25), null);
         $this->assertSame(0, Incident::count(), 'Certbot renews from 30 days left, so 25 is normal.');
@@ -200,7 +206,7 @@ class OperationsTest extends TestCase
     public function test_the_digest_summarises_the_day_and_is_sent_to_telegram(): void
     {
         Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true])]);
-        Reminder::create(['title' => 'Renew hosting', 'due_at' => now()->subHour()]);
+        Reminder::factory()->create(['user_id' => $this->telegramUser->id, 'title' => 'Renew hosting', 'due_at' => now()->subHour()]);
         Task::createAtBottom(['title' => 'Fix checkout', 'due_on' => today()->subDay()]);
         Incident::factory()->create(['title' => 'Shop is down']);
 

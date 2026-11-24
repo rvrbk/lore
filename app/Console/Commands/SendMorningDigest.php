@@ -7,6 +7,7 @@ use App\Models\Monitor;
 use App\Models\Reminder;
 use App\Models\ServerMetric;
 use App\Models\Task;
+use App\Models\User;
 use App\Services\ExpiryWatcher;
 use App\Services\GoogleAnalytics;
 use App\Services\Telegram;
@@ -20,29 +21,34 @@ class SendMorningDigest extends Command
 {
     public function handle(Telegram $telegram, GoogleAnalytics $analytics): int
     {
-        $message = $this->message($analytics);
-
         if ($this->option('print')) {
-            $this->line(strip_tags($message));
+            $user = User::oldest('id')->first();
+            $this->line(strip_tags($user ? $this->message($analytics, $user) : ''));
 
             return self::SUCCESS;
         }
 
-        if (! $telegram->isConfigured()) {
-            $this->warn('Telegram is not configured, so there is nobody to send the digest to.');
+        $recipients = User::whereNotNull('telegram_chat_id')->where('digest_subscribed', true)->get();
+        if (! $telegram->isConfigured() || $recipients->isEmpty()) {
+            $this->warn('Nobody with Telegram has subscribed to the digest, so there is nobody to send it to.');
 
             return self::SUCCESS;
         }
 
-        return $telegram->send($message) ? self::SUCCESS : self::FAILURE;
+        $allSent = true;
+        foreach ($recipients as $user) {
+            $allSent = $telegram->sendTo($user, $this->message($analytics, $user)) && $allSent;
+        }
+
+        return $allSent ? self::SUCCESS : self::FAILURE;
     }
 
-    private function message(GoogleAnalytics $analytics): string
+    private function message(GoogleAnalytics $analytics, User $user): string
     {
         $sections = ['☀️ <b>Good morning</b> · '.now()->format('l j F')];
 
         $sections[] = $this->health();
-        $sections[] = $this->reminders();
+        $sections[] = $this->reminders($user);
         $sections[] = $this->tasks();
         $sections[] = $this->traffic($analytics);
         $sections[] = $this->expiries();
@@ -73,9 +79,9 @@ class SendMorningDigest extends Command
         return implode("\n", $lines);
     }
 
-    private function reminders(): string
+    private function reminders(User $user): string
     {
-        $due = Reminder::open()->where('due_at', '<=', now()->endOfDay())->orderBy('due_at')->limit(10)->get();
+        $due = Reminder::open()->where('user_id', $user->id)->where('due_at', '<=', now()->endOfDay())->orderBy('due_at')->limit(10)->get();
         if ($due->isEmpty()) {
             return '⏰ No reminders due today.';
         }

@@ -21,12 +21,13 @@ use Illuminate\View\View;
 
 class MonitorController extends Controller
 {
-    public function index(ServerHealth $health, ErrorLog $errors): View
+    public function index(Request $request, ServerHealth $health, ErrorLog $errors): View
     {
         $monitors = Monitor::orderBy('name')->get();
 
         return view('monitors.index', [
             'monitors' => $monitors,
+            'subscribedIds' => $request->user()->monitorSubscriptions()->pluck('monitors.id'),
             'sparks' => Monitor::sparklines($monitors),
             'metrics' => $health->recent(),
             'diskDaysLeft' => $health->daysUntilDiskFull(),

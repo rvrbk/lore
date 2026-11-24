@@ -68,7 +68,7 @@
         </div>
         <form method="POST" action="{{ route('logout') }}" class="sticky bottom-0 -mb-4 flex shrink-0 items-center gap-2 border-t border-zinc-800 bg-zinc-900 pb-4 pt-3 text-sm">
             @csrf
-            <span class="min-w-0 flex-1 truncate text-zinc-400" title="Signed in as {{ auth()->user()->username }}">{{ auth()->user()->username }}</span>
+            <a href="{{ route('settings.index') }}" class="min-w-0 flex-1 truncate text-zinc-400 hover:text-zinc-100" title="Signed in as {{ auth()->user()->username }} · Settings">{{ auth()->user()->username }}</a>
             <button type="button" data-palette-open class="border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 hover:text-zinc-100" title="Quick switcher">Ctrl+K</button>
             <button class="text-zinc-400 hover:text-zinc-100">Log out</button>
         </form>

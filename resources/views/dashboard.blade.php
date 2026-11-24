@@ -122,15 +122,6 @@
     </section>
 
     <section class="mt-12">
-        <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Next 14 days</h2>
-        @if($upcoming->isEmpty())
-            <p class="text-sm text-zinc-400">No upcoming reminders. <a href="{{ route('reminders.index') }}" class="underline">Add one</a>.</p>
-        @else
-            <ul class="space-y-2">@foreach($upcoming as $reminder) @include('partials.reminder-row', ['reminder' => $reminder]) @endforeach</ul>
-        @endif
-    </section>
-
-    <section class="mt-12">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-400">Recently updated pages</h2>
         <ul class="divide-y divide-zinc-800 rounded-lg border border-zinc-800 bg-zinc-900 text-sm">
             @forelse($recent as $p)
