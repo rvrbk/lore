@@ -37,7 +37,7 @@ class CornerTest extends TestCase
         $this->actingAs(User::factory()->create());
         $type = BookingType::factory()->create(['name' => 'Intro call', 'timezone' => 'Europe/Amsterdam']);
         Booking::factory()->for($type, 'type')->create(['guest_name' => 'Cancelled Carl', 'starts_at' => now()->addHour(), 'ends_at' => now()->addHour()->addMinutes(30), 'cancelled_at' => now()]);
-        Booking::factory()->for($type, 'type')->create(['guest_name' => 'Later Lena', 'starts_at' => now()->addDays(2), 'ends_at' => now()->addDays(2)->addMinutes(30)]);
+        Booking::factory()->for($type, 'type')->create(['guest_name' => 'Later Lena', 'starts_at' => now()->addDays(6), 'ends_at' => now()->addDays(6)->addMinutes(30)]);
         Booking::factory()->for($type, 'type')->create(['guest_name' => 'Soon Sam', 'starts_at' => now()->addHours(3), 'ends_at' => now()->addHours(3)->addMinutes(30)]);
         Booking::factory()->for($type, 'type')->create(['guest_name' => 'Past Pat', 'starts_at' => now()->subDay(), 'ends_at' => now()->subDay()->addMinutes(30)]);
 

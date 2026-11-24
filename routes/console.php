@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\HeatClick;
+use App\Services\CalendarAgenda;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -21,4 +22,5 @@ Schedule::command('search-console:refresh')->hourly()->withoutOverlapping();
 Schedule::command('monitors:rollup')->hourly()->withoutOverlapping();
 Schedule::command('lore:streak-nudge')->dailyAt('21:00');
 Schedule::command('jobscout:snapshot')->hourly()->withoutOverlapping();
+Schedule::call(fn () => app(CalendarAgenda::class)->refresh())->name('calendar:refresh')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::call(fn () => HeatClick::where('created_at', '<', now()->subDays(HeatClick::KEEP_DAYS))->delete())->name('heat:prune')->daily();

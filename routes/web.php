@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarSourceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ExportController;
@@ -43,6 +44,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('weather', WeatherController::class)->name('weather');
+    Route::post('calendar-sources', [CalendarSourceController::class, 'store'])->name('calendar-sources.store');
+    Route::delete('calendar-sources/{calendarSource}', [CalendarSourceController::class, 'destroy'])->name('calendar-sources.destroy');
+
     Route::post('world-clocks', [WorldClockController::class, 'store'])->name('world-clocks.store');
     Route::post('world-clocks/reorder', [WorldClockController::class, 'reorder'])->name('world-clocks.reorder');
     Route::patch('world-clocks/{worldClock}/style', [WorldClockController::class, 'toggleStyle'])->name('world-clocks.style');

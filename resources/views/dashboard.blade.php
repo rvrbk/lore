@@ -62,6 +62,8 @@
         </form>
     </section>
 
+    @include('partials.agenda')
+
     <section class="mt-12">
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-zinc-400">Server health
