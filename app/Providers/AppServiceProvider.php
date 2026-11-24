@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Booking;
 use App\Models\Deployment;
 use App\Models\Incident;
 use App\Models\Monitor;
@@ -38,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
             'commitStreak' => app(CommitStreak::class)->current(),
             'navSpaces' => Space::orderBy('name')->get(),
             'headerClock' => WorldClock::where('is_header', true)->first(),
+            'nextBooking' => Booking::active()->with('type')->where('ends_at', '>', now())->orderBy('starts_at')->first(),
             'activeDeployments' => Deployment::active()->orderBy('id')->get(['site', 'status']),
             'dueCount' => Reminder::due()->count(),
             'openIncidents' => Incident::open()->orderBy('started_at')->get(),

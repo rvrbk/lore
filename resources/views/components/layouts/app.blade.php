@@ -9,7 +9,7 @@
 <header class="sticky top-0 z-30 flex items-center gap-3 border-b border-zinc-700 bg-zinc-900 px-4 py-2.5 lg:hidden">
     <button type="button" data-nav-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Open menu" class="-ml-1 border border-zinc-700 px-2.5 py-1 text-lg leading-none text-zinc-200">&#9776;</button>
     <a href="{{ route('dashboard') }}" class="flex items-center gap-2 font-pixel text-sm text-zinc-100"><span class="logo-mark"><img src="{{ asset('favicon.svg') }}" alt="" class="size-6 logo-normal" style="image-rendering: pixelated"><img src="{{ asset('favicon-night.svg') }}" alt="" class="size-6 logo-night" style="image-rendering: pixelated"></span>Lore<span class="text-indigo-400">_</span></a>
-    <div class="ml-auto flex items-center gap-2.5">@include('partials.streak-chip')<button type="button" data-theme-toggle aria-pressed="false" class="border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-xs leading-none text-zinc-200">☾</button>@include('partials.deploy-indicator')@include('partials.header-clock', ['class' => ''])</div>
+    <div class="ml-auto flex items-center gap-2.5">@include('partials.next-booking-chip')@include('partials.streak-chip')<button type="button" data-theme-toggle aria-pressed="false" class="border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-xs leading-none text-zinc-200">☾</button>@include('partials.deploy-indicator')@include('partials.header-clock', ['class' => ''])</div>
     @if($dueCount || $downCount)<span class="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">{{ $dueCount + $downCount }}</span>@endif
 </header>
 <div data-nav-backdrop hidden class="fixed inset-0 z-40 bg-black/70 lg:hidden"></div>
@@ -74,7 +74,7 @@
         </form>
     </aside>
     <main class="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <div class="mb-4 hidden items-center justify-end gap-2 lg:flex">@include('partials.streak-chip')<button type="button" data-theme-toggle aria-pressed="false" class="border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-xs leading-none text-zinc-200">☾</button>@include('partials.deploy-indicator')@include('partials.header-clock', ['class' => ''])</div>
+        <div class="mb-4 hidden items-center justify-end gap-2 lg:flex">@include('partials.next-booking-chip')@include('partials.streak-chip')<button type="button" data-theme-toggle aria-pressed="false" class="border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-xs leading-none text-zinc-200">☾</button>@include('partials.deploy-indicator')@include('partials.header-clock', ['class' => ''])</div>
         <div>
             @if($openIncidents->isNotEmpty() && ! request()->routeIs('incidents.*'))
                 <div role="alert" class="mb-6 border border-red-500/60 bg-red-500/10 p-3 text-sm">
