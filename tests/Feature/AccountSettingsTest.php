@@ -116,4 +116,36 @@ class AccountSettingsTest extends TestCase
         $this->assertFalse($monitor->subscribers()->whereKey($user->id)->exists());
         $this->assertSame([$unrelated->id], Reminder::where('user_id', $user->id)->pluck('id')->all());
     }
+
+    public function test_admins_are_subscribed_to_every_monitor_including_new_ones_and_cannot_opt_out(): void
+    {
+        Http::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $regular = User::factory()->create();
+
+        $monitor = Monitor::factory()->create(['name' => 'Shop']);
+
+        $this->assertTrue($monitor->subscribers()->whereKey($admin->id)->exists());
+        $this->assertFalse($monitor->subscribers()->whereKey($regular->id)->exists());
+
+        $this->actingAs($admin);
+        $this->get(route('monitors.index'))->assertSee('Expiry reminders (admin)');
+        $this->delete(route('monitors.unsubscribe', $monitor))->assertForbidden();
+        $this->assertTrue($monitor->subscribers()->whereKey($admin->id)->exists());
+    }
+
+    public function test_the_make_admin_command_subscribes_the_account_to_every_existing_monitor(): void
+    {
+        $user = User::factory()->create(['username' => 'rik']);
+        $monitors = Monitor::factory()->count(2)->create();
+
+        $this->artisan('lore:make-admin', ['username' => 'nobody'])->assertFailed();
+        $this->artisan('lore:make-admin', ['username' => 'rik'])->assertSuccessful();
+
+        $this->assertTrue($user->fresh()->isAdmin());
+        $this->assertSame(2, $user->monitorSubscriptions()->count());
+
+        $this->artisan('lore:make-admin', ['username' => 'rik', '--revoke' => true])->assertSuccessful();
+        $this->assertFalse($user->fresh()->isAdmin());
+    }
 }

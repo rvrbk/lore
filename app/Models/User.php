@@ -18,6 +18,23 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_USER = 'user';
+
+    /** Admins are always subscribed to every monitor, now and for monitors added later. */
+    public const ROLE_ADMIN = 'admin';
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /** Gives the user the admin role and subscribes them to every existing monitor. */
+    public function makeAdmin(): void
+    {
+        $this->forceFill(['role' => self::ROLE_ADMIN])->save();
+        $this->monitorSubscriptions()->syncWithoutDetaching(Monitor::pluck('id'));
+    }
+
     /**
      * The monitors whose domain expiry reminders this user receives.
      *

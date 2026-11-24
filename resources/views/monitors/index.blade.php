@@ -31,7 +31,9 @@
                         <button class="rounded border px-2 py-1 text-xs hover:bg-zinc-800">Save</button>
                         @if($monitor->isPublic())<a href="{{ route('status.show', $monitor->public_token) }}" target="_blank" rel="noopener" class="text-xs text-indigo-300 hover:underline">Open status page</a>@endif
                     </form>
-                    @if($subscribedIds->contains($monitor->id))
+                    @if(auth()->user()->isAdmin())
+                        <span class="rounded border border-emerald-600/50 px-2 py-1 text-xs text-emerald-400" title="Admins get the reminders and alerts of every monitor">✓ Expiry reminders (admin)</span>
+                    @elseif($subscribedIds->contains($monitor->id))
                         <form method="POST" action="{{ route('monitors.unsubscribe', $monitor) }}" title="You get reminders before this site's domain expires">@csrf @method('DELETE')<button class="rounded border border-emerald-600/50 px-2 py-1 text-xs text-emerald-400 hover:bg-zinc-800">✓ Expiry reminders</button></form>
                     @else
                         <form method="POST" action="{{ route('monitors.subscribe', $monitor) }}" title="Get reminders before this site's domain expires">@csrf<button class="rounded border px-2 py-1 text-xs hover:bg-zinc-800">Subscribe to expiry reminders</button></form>

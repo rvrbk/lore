@@ -41,6 +41,10 @@ class Monitor extends Model
         static::creating(function (Monitor $monitor): void {
             $monitor->heat_key ??= Str::random(32);
         });
+
+        static::created(function (Monitor $monitor): void {
+            $monitor->subscribers()->syncWithoutDetaching(User::where('role', User::ROLE_ADMIN)->pluck('id'));
+        });
     }
 
     protected function casts(): array
