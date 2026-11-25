@@ -118,6 +118,40 @@ class VaultTest extends TestCase
         }
     }
 
+    public function test_the_extension_list_has_only_my_items_and_never_a_password(): void
+    {
+        $mine = VaultItem::factory()->create(['user_id' => $this->user->id, 'name' => 'GitHub', 'url' => 'https://github.com/login', 'username' => 'rik', 'password' => self::SECRET]);
+        VaultItem::factory()->create(['user_id' => User::factory()->create()->id, 'name' => 'Theirs']);
+
+        $response = $this->unlockedAs($this->user)->getJson(route('vault.items'));
+
+        $response->assertOk()->assertJsonCount(1, 'items')->assertJsonPath('items.0.id', $mine->id)->assertJsonPath('items.0.username', 'rik')
+            ->assertJsonPath('items.0.reveal', route('vault.reveal', $mine))->assertJsonStructure(['csrf']);
+        $this->assertStringNotContainsString(self::SECRET, $response->getContent());
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+    }
+
+    public function test_the_extension_list_is_locked_like_the_rest_of_the_vault(): void
+    {
+        $this->getJson(route('vault.items'))->assertUnauthorized();
+        $this->actingAs($this->user)->getJson(route('vault.items'))->assertStatus(423);
+        $this->actingAs($this->user)->withSession([RequireTwoFactor::PASSED => true])->getJson(route('vault.items'))->assertStatus(423);
+    }
+
+    public function test_the_extension_zip_downloads_for_signed_in_users_and_holds_the_manifest(): void
+    {
+        $this->get(route('extension.download'))->assertRedirect(route('login'));
+        $this->get(route('extension.show'))->assertRedirect(route('login'));
+        $this->actingAs($this->user)->get(route('extension.show'))->assertOk()->assertSee('Load unpacked');
+
+        $response = $this->actingAs($this->user)->get(route('extension.download'))->assertOk()->assertDownload('lore-vault-extension.zip');
+
+        $zip = new \ZipArchive;
+        $this->assertTrue($zip->open($response->baseResponse->getFile()->getPathname()));
+        $this->assertNotFalse($zip->locateName('lore-vault-extension/manifest.json'));
+        $this->assertNotFalse($zip->locateName('lore-vault-extension/icons/128.png'));
+    }
+
     public function test_reveal_returns_the_password_updates_the_timestamp_and_logs_without_the_value(): void
     {
         $logFile = $this->useLogFile('vault');
@@ -174,7 +208,7 @@ class VaultTest extends TestCase
         $this->app->make(Kernel::class); // syncs the middleware groups into the router
         $router = $this->app['router'];
         $routes = collect($router->getRoutes()->getRoutes())->filter(fn ($route) => str_starts_with((string) $route->getName(), 'vault.'));
-        $this->assertCount(9, $routes);
+        $this->assertCount(10, $routes);
 
         foreach ($routes as $route) {
             $stack = collect($router->resolveMiddleware($route->gatherMiddleware()));

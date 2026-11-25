@@ -31,6 +31,7 @@ use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\VaultController;
 use App\Http\Controllers\VaultExportController;
+use App\Http\Controllers\VaultExtensionController;
 use App\Http\Controllers\VaultKeySettingsController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WorldClockController;
@@ -66,6 +67,8 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
     Route::get('confirm-password', [ConfirmPasswordController::class, 'show'])->name('password.confirm');
     Route::post('confirm-password', [ConfirmPasswordController::class, 'confirm'])->middleware('throttle:6,1,password-confirm');
     Route::get('settings/two-factor', [TwoFactorSettingsController::class, 'show'])->name('settings.two-factor');
+    Route::get('extension', [VaultExtensionController::class, 'show'])->name('extension.show');
+    Route::get('extension/download', [VaultExtensionController::class, 'download'])->name('extension.download');
     Route::get('settings/vault-key', [VaultKeySettingsController::class, 'show'])->name('settings.vault-key');
     Route::middleware('password.confirm')->group(function () {
         Route::put('settings/vault-key', [VaultKeySettingsController::class, 'update'])->name('settings.vault-key.update');
@@ -82,6 +85,7 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
         Route::get('export/decrypt-tool', [VaultExportController::class, 'decryptTool'])->name('export.decrypt-tool');
         Route::post('export', [VaultExportController::class, 'download'])->middleware('throttle:10,1,vault-export-attempts')->name('export.download');
         Route::get('/', [VaultController::class, 'index'])->name('index');
+        Route::get('items', [VaultController::class, 'items'])->name('items');
         Route::post('/', [VaultController::class, 'store'])->name('store');
         Route::get('{item}/edit', [VaultController::class, 'edit'])->name('edit');
         Route::put('{item}', [VaultController::class, 'update'])->name('update');

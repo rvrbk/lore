@@ -11,6 +11,7 @@
             <button class="rounded border px-3 py-1.5 hover:bg-zinc-800">Search</button>
         </form>
         <span class="ml-auto flex gap-3 text-sm text-zinc-400">
+            <a href="{{ route('extension.show') }}" class="underline hover:text-zinc-100" title="Install the Chrome extension that fills logins from this vault.">Chrome extension</a>
             <a href="{{ route('vault.export') }}" class="underline hover:text-zinc-100" title="Download your passwords as a file. Asks for your password again.">Export</a>
         </span>
     </div>

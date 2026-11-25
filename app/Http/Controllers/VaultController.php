@@ -22,6 +22,24 @@ class VaultController extends Controller
         ]);
     }
 
+    /**
+     * The saved logins as JSON for the browser extension: no passwords, same data as the list page. The CSRF token lets the
+     * extension make the reveal POST with the session the person already unlocked in the browser.
+     */
+    public function items(Request $request): JsonResponse
+    {
+        return response()->json([
+            'csrf' => csrf_token(),
+            'items' => $request->user()->vaultItems()->matching($request->query('q'))->orderBy('name')->get(['id', 'name', 'url', 'username'])->map(fn (VaultItem $item): array => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'url' => $item->url,
+                'username' => $item->username,
+                'reveal' => route('vault.reveal', $item),
+            ])->all(),
+        ]);
+    }
+
     public function store(VaultItemRequest $request): RedirectResponse
     {
         $request->user()->vaultItems()->create($request->itemData());

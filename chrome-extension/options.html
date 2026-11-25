@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Lore Vault settings</title>
+    <style>
+        :root { color-scheme: light dark; font: 14px/1.4 system-ui, sans-serif; }
+        body { padding: 12px; min-width: 320px; }
+        input { width: 100%; box-sizing: border-box; padding: 6px 8px; margin: 4px 0 8px; }
+        #status { min-height: 1.2em; }
+    </style>
+</head>
+<body>
+    <label for="base">Lore address</label>
+    <input id="base" type="url" placeholder="https://lore.verbeek.ug">
+    <button id="save" type="button">Save</button>
+    <label><input id="auto" type="checkbox" style="width:auto"> Fill automatically when exactly one login matches the site</label>
+    <p><small>Needs permission to run on every https site. It fills only after the page has loaded, only on pages with a visible password field, and each fill is logged in Lore like a reveal.</small></p>
+    <p id="status" role="status"></p>
+    <script type="module" src="options.js"></script>
+</body>
+</html>
