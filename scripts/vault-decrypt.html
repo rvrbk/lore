@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Open a Lore vault export</title>
+<style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; color: #1f2937; }
+    h1 { font-size: 1.4rem; }
+    label { display: block; margin-top: 1rem; font-weight: 600; }
+    input[type=file], textarea { display: block; width: 100%; margin-top: .25rem; box-sizing: border-box; }
+    textarea { font-family: ui-monospace, monospace; }
+    button { margin-top: 1rem; padding: .5rem 1rem; font: inherit; cursor: pointer; }
+    .note { background: #fef3c7; border: 1px solid #f59e0b; padding: .75rem; margin: 1rem 0; }
+    #message { margin-top: 1rem; font-weight: 600; }
+    .error { color: #b91c1c; } .ok { color: #047857; }
+</style>
+</head>
+<body>
+<h1>Open a Lore vault export</h1>
+<p>Decrypts a <code>lore-vault-….csv.sealed</code> file with your private key. Everything happens inside this page on your own computer: nothing is uploaded, and the page cannot reach the internet.</p>
+<div class="note">The result is a <strong>plain, unencrypted CSV</strong> with all your passwords. Import it into your password manager, then delete it and the <code>.sealed</code> file. Do not open it in a spreadsheet. Needs a current browser (Chrome 133+, Edge 133+, Firefox 130+, Safari 17+).</div>
+
+<label for="file">1. The encrypted file (<code>.sealed</code>)</label>
+<input id="file" type="file">
+
+<label for="keyfile">2. Your private key file (<code>~/.lore-vault.key</code>), or paste its text below</label>
+<input id="keyfile" type="file">
+<textarea id="key" rows="2" autocomplete="off" spellcheck="false" placeholder="paste the private key here"></textarea>
+
+<button id="go" type="button">Decrypt and save the CSV</button>
+<p id="message" role="status"></p>
+
+<script>
+'use strict';
+const MAGIC = 'LVT2';
+const INFO = 'lore-vault-export-v1';
+const message = (text, ok) => { const el = document.getElementById('message'); el.textContent = text; el.className = ok ? 'ok' : 'error'; };
+
+const fromBase64 = (text) => Uint8Array.from(atob(text.replace(/\s+/g, '')), (c) => c.charCodeAt(0));
+
+// A raw 32 byte X25519 private key, wrapped in the PKCS#8 envelope WebCrypto wants.
+const pkcs8 = (secret) => {
+    const prefix = Uint8Array.from([0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x04, 0x22, 0x04, 0x20]);
+    const der = new Uint8Array(prefix.length + 32);
+    der.set(prefix);
+    der.set(secret, prefix.length);
+    return der;
+};
+
+// Layout: "LVT2", ephemeral public key (32), IV (12), ciphertext, GCM tag (16).
+async function decryptExport(file, base64Secret) {
+    const magic = new TextDecoder().decode(file.slice(0, 4));
+    if (magic === 'LVT1') {
+        throw new Error('This is a backup, not an export. Open backups with scripts/vault-decrypt.php or vault:restore.');
+    }
+    if (magic !== MAGIC || file.length < 4 + 32 + 12 + 16) {
+        throw new Error('This is not an exported Lore vault file.');
+    }
+
+    let secret;
+    try { secret = fromBase64(base64Secret); } catch { secret = null; }
+    if (!secret || secret.length !== 32) {
+        throw new Error('That is not a valid private key.');
+    }
+
+    const ephemeralPublic = file.slice(4, 36);
+    const iv = file.slice(36, 48);
+    const ciphertextAndTag = file.slice(48);
+
+    const privateKey = await crypto.subtle.importKey('pkcs8', pkcs8(secret), { name: 'X25519' }, false, ['deriveBits']);
+    const peer = await crypto.subtle.importKey('raw', ephemeralPublic, { name: 'X25519' }, false, []);
+    const shared = await crypto.subtle.deriveBits({ name: 'X25519', public: peer }, privateKey, 256);
+    const hkdf = await crypto.subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+    const aesKey = await crypto.subtle.deriveKey(
+        { name: 'HKDF', hash: 'SHA-256', salt: ephemeralPublic, info: new TextEncoder().encode(INFO) },
+        hkdf, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+    );
+
+    try {
+        return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, ciphertextAndTag));
+    } catch {
+        throw new Error('Could not decrypt: wrong private key, or the file is damaged.');
+    }
+}
+
+const readBytes = async (input) => new Uint8Array(await input.files[0].arrayBuffer());
+
+document.getElementById('keyfile').addEventListener('change', async (event) => {
+    if (event.target.files.length) {
+        document.getElementById('key').value = (await event.target.files[0].text()).trim();
+    }
+});
+
+document.getElementById('go').addEventListener('click', async () => {
+    message('', true);
+    try {
+        if (!window.crypto || !crypto.subtle) { throw new Error('This browser cannot do the cryptography. Open the file in a current Chrome, Edge, Firefox or Safari.'); }
+        const fileInput = document.getElementById('file');
+        if (!fileInput.files.length) { throw new Error('Choose the .sealed file first.'); }
+        const key = document.getElementById('key').value.trim();
+        if (!key) { throw new Error('Choose your private key file or paste the key.'); }
+
+        const plain = await decryptExport(await readBytes(fileInput), key);
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([plain], { type: 'text/csv' }));
+        link.download = 'lore-vault.csv';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+        message('Done: lore-vault.csv was saved. Import it, then delete it and the .sealed file.', true);
+    } catch (error) {
+        message(error.message, false);
+    }
+});
+</script>
+</body>
+</html>

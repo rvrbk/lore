@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class VaultExportController extends Controller
@@ -61,7 +62,7 @@ class VaultExportController extends Controller
             $buffer = fopen('php://temp', 'w+');
             $csv->write($buffer, $items->lazy());
             rewind($buffer);
-            $sealed = $sealer->seal(stream_get_contents($buffer));
+            $sealed = $sealer->sealExport(stream_get_contents($buffer));
             fclose($buffer);
 
             return response($sealed, 200, [
@@ -75,5 +76,11 @@ class VaultExportController extends Controller
             $csv->write($out, $items->lazy());
             fclose($out);
         }, 'lore-vault-'.$stamp.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** The offline browser tool for opening encrypted exports, for people who do not have the repository. */
+    public function decryptTool(): BinaryFileResponse
+    {
+        return response()->download(base_path('scripts/vault-decrypt.html'), 'lore-vault-decrypt.html', ['Content-Type' => 'text/html; charset=UTF-8']);
     }
 }

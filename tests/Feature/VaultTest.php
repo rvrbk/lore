@@ -174,7 +174,7 @@ class VaultTest extends TestCase
         $this->app->make(Kernel::class); // syncs the middleware groups into the router
         $router = $this->app['router'];
         $routes = collect($router->getRoutes()->getRoutes())->filter(fn ($route) => str_starts_with((string) $route->getName(), 'vault.'));
-        $this->assertCount(8, $routes);
+        $this->assertCount(9, $routes);
 
         foreach ($routes as $route) {
             $stack = collect($router->resolveMiddleware($route->gatherMiddleware()));

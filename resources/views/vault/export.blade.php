@@ -37,8 +37,12 @@
 
     <section class="mt-8 max-w-2xl space-y-2 border border-zinc-800 bg-zinc-900 p-4 text-sm">
         <h2 class="font-semibold">Opening the encrypted download</h2>
-        <p class="text-zinc-400">The file is called <code>lore-vault-YYYY-MM-DD.csv.sealed</code>. It can only be opened on the computer that holds your private key (<code>~/.lore-vault.key</code>, made by <code>scripts/vault-keygen.php</code>). On that computer, in a copy of the Lore repository, with the PHP <code>sodium</code> extension enabled:</p>
-        <pre class="overflow-x-auto bg-zinc-950 p-3 text-xs">php scripts/vault-decrypt.php ~/Downloads/lore-vault-2026-11-25.csv.sealed > vault.csv</pre>
-        <p class="text-zinc-400">That gives a plain CSV in Bitwarden's format (a different private key file can be given as the second argument). Import it into your password manager, then delete both <code>vault.csv</code> and the <code>.sealed</code> file. If it says it could not decrypt, the file was sealed to a different key than the one you are using.</p>
+        <p class="text-zinc-400">The file is called <code>lore-vault-YYYY-MM-DD.csv.sealed</code>. It is locked with a public key and can only be opened with the matching <strong>private key</strong>, a small text file (usually <code>~/.lore-vault.key</code>) that never leaves your own computer. Without that key nobody can open it, not even Lore.</p>
+        <ol class="list-decimal space-y-1 pl-5 text-zinc-300">
+            <li><a href="{{ route('vault.export.decrypt-tool') }}" class="underline">Download the decrypt tool</a> (one HTML file, no install) and open it from your computer in Chrome, Edge, Firefox or Safari.</li>
+            <li>Choose the <code>.sealed</code> file and your private key file, then press the button. It runs offline inside the page and saves a plain CSV (<code>lore-vault.csv</code>).</li>
+            <li>Import that CSV into your password manager, then delete it and the <code>.sealed</code> file.</li>
+        </ol>
+        <p class="text-xs text-zinc-500">Prefer a terminal? With the Lore repository and PHP's sodium extension: <code>php scripts/vault-decrypt.php file.csv.sealed &gt; vault.csv</code>. If it says it could not decrypt, the file was locked with a different key than the one you used.</p>
     </section>
 </x-layouts.app>

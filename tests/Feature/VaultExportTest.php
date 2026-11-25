@@ -106,14 +106,14 @@ class VaultExportTest extends TestCase
 
         $response->assertOk();
         $sealed = $response->getContent();
-        $this->assertStringStartsWith(VaultSealer::MAGIC, $sealed);
+        $this->assertStringStartsWith(VaultSealer::EXPORT_MAGIC, $sealed);
         $this->assertStringNotContainsString('sealed-marker-8842', $sealed);
         $this->assertStringNotContainsString('Secret site', $sealed);
 
-        $csv = VaultSealer::open($sealed, $keys['secret']);
+        $csv = VaultSealer::openExport($sealed, $keys['secret']);
         $this->assertSame('sealed-marker-8842', $this->parse($csv)[1][9]);
         $this->expectException(\RuntimeException::class);
-        VaultSealer::open($sealed, $this->makeKeypair()['secret']);
+        VaultSealer::openExport($sealed, $this->makeKeypair()['secret']);
     }
 
     public function test_the_encrypted_export_is_refused_without_a_public_key(): void
@@ -133,7 +133,8 @@ class VaultExportTest extends TestCase
             ->assertSee('not protected at all')
             ->assertSee('delete')
             ->assertSee('scripts/vault-decrypt.php')
-            ->assertSee('.lore-vault.key');
+            ->assertSee('.lore-vault.key')
+            ->assertSee(route('vault.export.decrypt-tool'), false);
     }
 
     public function test_every_download_asks_for_the_password_again_even_right_after_confirming(): void
@@ -157,6 +158,39 @@ class VaultExportTest extends TestCase
 
         $this->assertStringNotContainsString('vault exported', File::get($file));
         File::delete($file);
+    }
+
+    public function test_the_decrypt_tool_is_a_self_contained_page_that_cannot_reach_the_network(): void
+    {
+        $response = $this->unlockedAs($this->user)->get(route('vault.export.decrypt-tool'));
+
+        $response->assertOk()->assertDownload('lore-vault-decrypt.html');
+        $html = $response->getFile()->getContent();
+        $this->assertStringContainsString("default-src 'none'", $html);
+        $this->assertStringNotContainsString('src="http', $html);
+        $this->assertStringNotContainsString('fetch(', $html);
+        $this->assertStringNotContainsString('XMLHttpRequest', $html);
+        $this->get(route('vault.export.decrypt-tool'))->assertOk();
+        auth()->logout();
+        $this->flushSession()->get(route('vault.export.decrypt-tool'))->assertRedirect(route('login'));
+    }
+
+    public function test_the_php_script_opens_exports_and_backups(): void
+    {
+        $this->skipWithoutSodium();
+        $keys = $this->makeKeypair();
+        $sealer = new VaultSealer($keys['public']);
+        $dir = sys_get_temp_dir().'/lore-decrypt-'.bin2hex(random_bytes(4));
+        File::ensureDirectoryExists($dir);
+        File::put("$dir/key", $keys['secret']);
+        File::put("$dir/export.sealed", $sealer->sealExport("a,b\n1,2\n"));
+        File::put("$dir/backup.sealed", $sealer->seal('{"version":1}'));
+
+        $script = base_path('scripts/vault-decrypt.php');
+        $this->assertSame("a,b\n1,2\n", shell_exec('php '.escapeshellarg($script).' '.escapeshellarg("$dir/export.sealed").' '.escapeshellarg("$dir/key")));
+        $this->assertSame('{"version":1}', shell_exec('php '.escapeshellarg($script).' '.escapeshellarg("$dir/backup.sealed").' '.escapeshellarg("$dir/key")));
+
+        File::deleteDirectory($dir);
     }
 
     /** @return list<list<string|null>> */

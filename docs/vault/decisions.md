@@ -48,7 +48,7 @@ The test throws an exception during a save and checks the log file and the error
 **CSV export is plain text on purpose** (Bitwarden format, unencrypted download). Values are not altered to defuse spreadsheet formulas, because that would
 corrupt passwords that start with `=`, `+`, `-` or `@`. Import it into a password manager, do not open it in Excel, and delete it afterwards.
 
-**One keypair for exports and backups** (`VAULT_PUBLIC_KEY`, libsodium sealed boxes). The private key never touches the server.
+**One keypair for exports and backups** (`VAULT_PUBLIC_KEY`). Backups are libsodium sealed boxes (`LVT1`). Exports use `LVT2`: ephemeral X25519 + HKDF-SHA256 + AES-256-GCM, a standard recipe on purpose, so `scripts/vault-decrypt.html` can open them in any current browser with WebCrypto, offline, without PHP, sodium or the repository. The page has a no-network content security policy; a test checks it stays self-contained. The private key never touches the server.
 Sealed files start with `LVT1` so the scripts can recognise them. The encrypted export seals the whole CSV in memory, which is fine for a personal vault.
 
 **Backups contain decrypted items, sealed to your public key,** not the raw ciphertext. So they do not depend on this install's APP_KEY (a

@@ -2,7 +2,8 @@
 <?php
 
 /**
- * Opens a sealed vault export or backup on your own computer.
+ * Opens a sealed vault export or backup on your own computer. (Exports can also be opened without PHP or the repository
+ * by the single-file browser tool, scripts/vault-decrypt.html.)
  *
  *   php scripts/vault-decrypt.php <file.sealed> [path-to-private-key] > vault.csv
  *
@@ -22,19 +23,26 @@ if ($file === null || ! is_file($file) || ! is_file($keyFile)) {
 }
 
 $sealed = file_get_contents($file);
-if (! str_starts_with($sealed, 'LVT1')) {
-    fwrite(STDERR, "This is not a sealed vault file.\n");
-    exit(1);
-}
-
 $secret = base64_decode(trim(file_get_contents($keyFile)), true);
 if ($secret === false || strlen($secret) !== SODIUM_CRYPTO_BOX_SECRETKEYBYTES) {
     fwrite(STDERR, "The private key file is not valid.\n");
     exit(1);
 }
 
-$keypair = sodium_crypto_box_keypair_from_secretkey_and_publickey($secret, sodium_crypto_box_publickey_from_secretkey($secret));
-$plain = sodium_crypto_box_seal_open(substr($sealed, 4), $keypair);
+if (str_starts_with($sealed, 'LVT2')) {
+    // Export: X25519 + HKDF-SHA256 + AES-256-GCM. Layout: magic, ephemeral public key (32), IV (12), ciphertext, tag (16).
+    $ephemeralPublic = substr($sealed, 4, 32);
+    $key = hash_hkdf('sha256', sodium_crypto_scalarmult($secret, $ephemeralPublic), 32, 'lore-vault-export-v1', $ephemeralPublic);
+    $plain = strlen($sealed) < 64 ? false : openssl_decrypt(substr($sealed, 48, -16), 'aes-256-gcm', $key, OPENSSL_RAW_DATA, substr($sealed, 36, 12), substr($sealed, -16));
+} elseif (str_starts_with($sealed, 'LVT1')) {
+    // Backup: a libsodium sealed box.
+    $keypair = sodium_crypto_box_keypair_from_secretkey_and_publickey($secret, sodium_crypto_box_publickey_from_secretkey($secret));
+    $plain = sodium_crypto_box_seal_open(substr($sealed, 4), $keypair);
+} else {
+    fwrite(STDERR, "This is not a sealed vault file.\n");
+    exit(1);
+}
+
 if ($plain === false) {
     fwrite(STDERR, "Could not decrypt: wrong private key, or the file is damaged.\n");
     exit(1);
