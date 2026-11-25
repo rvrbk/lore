@@ -15,6 +15,10 @@ class VaultExportController extends Controller
         $format = $request->query('format', 'csv');
         abort_unless(in_array($format, ['csv', 'encrypted'], true), 422);
 
+        if ($format === 'encrypted' && ! $sealer->isAvailable()) {
+            return redirect()->route('vault.index')->with('error', 'Encrypted export is not set up: add VAULT_PUBLIC_KEY to the server .env (make the pair with scripts/vault-keygen.php).');
+        }
+
         $items = $request->user()->vaultItems()->orderBy('id');
         $stamp = now()->format('Y-m-d');
 
@@ -26,8 +30,6 @@ class VaultExportController extends Controller
         ]);
 
         if ($format === 'encrypted') {
-            abort_unless($sealer->isAvailable(), 422, 'Encrypted export needs VAULT_PUBLIC_KEY and the PHP sodium extension.');
-
             $buffer = fopen('php://temp', 'w+');
             $csv->write($buffer, $items->lazy());
             rewind($buffer);

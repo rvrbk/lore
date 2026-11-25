@@ -3,6 +3,7 @@
     <p class="mt-1 max-w-2xl text-sm text-zinc-400">Passwords are encrypted on the server and only leave it when you press Reveal or Copy. The vault asks for your password again after {{ $idleLockMinutes }} idle minutes.</p>
 
     @if(session('status'))<p class="mt-3 text-sm text-emerald-400">{{ session('status') }}</p>@endif
+    @if(session('error'))<p class="mt-3 text-sm text-red-400">{{ session('error') }}</p>@endif
 
     <div class="mt-4 flex flex-wrap items-center gap-3">
         <form method="GET" action="{{ route('vault.index') }}" class="flex gap-2 text-sm">
@@ -11,7 +12,11 @@
         </form>
         <span class="ml-auto flex gap-3 text-sm text-zinc-400">
             <a href="{{ route('vault.export') }}" class="underline hover:text-zinc-100" title="Bitwarden import format. The file is not encrypted.">Export CSV</a>
-            <a href="{{ route('vault.export', ['format' => 'encrypted']) }}" class="underline hover:text-zinc-100" title="Sealed to your public key. Only your private key opens it.">Export encrypted</a>
+            @if($canExportEncrypted)
+                <a href="{{ route('vault.export', ['format' => 'encrypted']) }}" class="underline hover:text-zinc-100" title="Sealed to your public key. Only your private key opens it.">Export encrypted</a>
+            @else
+                <span class="cursor-help text-zinc-600" title="Set VAULT_PUBLIC_KEY in the server .env first (see docs/vault/README.md).">Export encrypted (not set up)</span>
+            @endif
         </span>
     </div>
 

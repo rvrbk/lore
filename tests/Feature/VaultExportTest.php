@@ -115,7 +115,8 @@ class VaultExportTest extends TestCase
         config(['vault.public_key' => null]);
         $this->app->forgetInstance(VaultSealer::class);
 
-        $this->unlockedAs($this->user)->get(route('vault.export', ['format' => 'encrypted']))->assertStatus(422);
+        $this->unlockedAs($this->user)->get(route('vault.export', ['format' => 'encrypted']))->assertRedirect(route('vault.index'))->assertSessionHas('error');
+        $this->get(route('vault.index'))->assertOk()->assertSee('Export encrypted (not set up)');
         $this->get(route('vault.export', ['format' => 'bogus']))->assertStatus(422);
     }
 
