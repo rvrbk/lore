@@ -41,6 +41,17 @@ class Telegram
         return $recipients->map(fn (User $user) => $this->sendTo($user, $html))->every(fn (bool $sent) => $sent);
     }
 
+    /** Sends an HTML-formatted message to every admin who connected Telegram. */
+    public function sendToAdmins(string $html): bool
+    {
+        $admins = User::where('role', User::ROLE_ADMIN)->whereNotNull('telegram_chat_id')->get();
+        if (! $this->isConfigured() || $admins->isEmpty()) {
+            return false;
+        }
+
+        return $admins->map(fn (User $admin) => $this->sendTo($admin, $html))->every(fn (bool $sent) => $sent);
+    }
+
     /**
      * Sends a message about a monitor to the users subscribed to it. Without a monitor it goes to everyone, like send().
      */

@@ -26,7 +26,8 @@ class AuthTest extends TestCase
         $this->post(route('logout'));
         $this->get(route('register'))->assertOk();
         $this->post(route('register'), ['username' => 'eve', 'email' => 'eve@example.com', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('login'));
+        $this->assertGuest();
         $this->assertSame(2, User::count());
     }
 

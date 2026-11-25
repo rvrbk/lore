@@ -5,6 +5,8 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,6 +24,27 @@ class User extends Authenticatable
 
     /** Admins are always subscribed to every monitor, now and for monitors added later. */
     public const ROLE_ADMIN = 'admin';
+
+    public function isApproved(): bool
+    {
+        return $this->approved_at !== null;
+    }
+
+    public function approve(): void
+    {
+        $this->forceFill(['approved_at' => now()])->save();
+    }
+
+    /**
+     * Accounts that registered and wait for an admin to approve them.
+     *
+     * @param  Builder<User>  $query
+     */
+    #[Scope]
+    protected function pending(Builder $query): void
+    {
+        $query->whereNull('approved_at');
+    }
 
     public function isAdmin(): bool
     {
@@ -123,6 +146,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'approved_at' => 'datetime',
             'digest_subscribed' => 'boolean',
             'password' => 'hashed',
             'two_factor_secret' => 'encrypted',

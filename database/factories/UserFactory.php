@@ -28,6 +28,13 @@ class UserFactory extends Factory
             'username' => fake()->unique()->userName(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'approved_at' => now(),
         ];
+    }
+
+    /** An account that is still waiting for an admin to approve it. */
+    public function pending(): static
+    {
+        return $this->state(['approved_at' => null]);
     }
 }

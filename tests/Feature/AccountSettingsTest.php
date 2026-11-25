@@ -59,7 +59,7 @@ class AccountSettingsTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
 
         $this->post(route('register'), ['username' => 'eve', 'email' => 'taken@example.com', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])->assertSessionHasErrors('email');
-        $this->post(route('register'), ['username' => 'eve', 'email' => 'eve@example.com', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])->assertRedirect(route('dashboard'));
+        $this->post(route('register'), ['username' => 'eve', 'email' => 'eve@example.com', 'password' => 'secret-pass', 'password_confirmation' => 'secret-pass'])->assertRedirect(route('login'));
 
         $this->assertSame('eve@example.com', User::where('username', 'eve')->firstOrFail()->email);
     }

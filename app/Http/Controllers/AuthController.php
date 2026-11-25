@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Telegram;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,10 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['username' => 'Wrong username or password.']);
         }
 
+        if (! $user->isApproved()) {
+            throw ValidationException::withMessages(['username' => 'Your account is waiting for approval.']);
+        }
+
         if ($user->hasTwoFactorEnabled()) {
             $request->session()->put([
                 TwoFactorChallengeController::PENDING_USER => $user->id,
@@ -55,7 +60,7 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, Telegram $telegram): RedirectResponse
     {
         $data = $request->validate([
             'username' => ['required', 'string', 'alpha_dash', 'min:3', 'max:40', 'unique:users,username'],
@@ -63,10 +68,20 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        Auth::login(User::create($data));
-        $request->session()->regenerate();
+        $isFirstAccount = ! User::exists();
+        $user = User::create($data);
 
-        return redirect()->route('dashboard');
+        if ($isFirstAccount) {
+            $user->approve();
+            Auth::login($user);
+            $request->session()->regenerate();
+
+            return redirect()->route('dashboard');
+        }
+
+        $telegram->sendToAdmins('🆕 <b>New Lore account</b> waiting for approval: '.e($user->username).' ('.e($user->email).")\n".route('admin.users.index'));
+
+        return redirect()->route('login')->with('status', 'Thanks! Your account is created. You can log in once an admin has approved it.');
     }
 
     public function logout(Request $request): RedirectResponse

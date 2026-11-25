@@ -15,6 +15,7 @@ use App\Http\Controllers\MonitorSubscriptionController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PendingUserController;
 use App\Http\Controllers\PointyBookingController;
 use App\Http\Controllers\PointyController;
 use App\Http\Controllers\ReminderController;
@@ -87,6 +88,9 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
         Route::delete('{item}', [VaultController::class, 'destroy'])->name('destroy');
         Route::post('{item}/reveal', [VaultController::class, 'reveal'])->middleware('throttle:30,1,vault-reveal')->name('reveal');
     });
+    Route::get('admin/users', [PendingUserController::class, 'index'])->name('admin.users.index');
+    Route::post('admin/users/{user}/approve', [PendingUserController::class, 'approve'])->name('admin.users.approve');
+    Route::delete('admin/users/{user}', [PendingUserController::class, 'reject'])->name('admin.users.reject');
     Route::get('settings', [SettingsController::class, 'show'])->name('settings.index');
     Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::get('settings/telegram', [TelegramSettingsController::class, 'show'])->name('settings.telegram');
