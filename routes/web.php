@@ -73,7 +73,8 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
 
     // The password vault: two-factor, a recent password confirmation (which lapses after idle time) and rate limits on every route.
     Route::middleware(['vault.no-recording', 'two-factor', 'vault.idle', 'password.confirm', 'throttle:60,1,vault'])->prefix('vault')->name('vault.')->group(function () {
-        Route::get('export', VaultExportController::class)->middleware('throttle:3,60,vault-export')->name('export');
+        Route::get('export', [VaultExportController::class, 'show'])->name('export');
+        Route::post('export', [VaultExportController::class, 'download'])->middleware('throttle:10,1,vault-export-attempts')->name('export.download');
         Route::get('/', [VaultController::class, 'index'])->name('index');
         Route::post('/', [VaultController::class, 'store'])->name('store');
         Route::get('{item}/edit', [VaultController::class, 'edit'])->name('edit');

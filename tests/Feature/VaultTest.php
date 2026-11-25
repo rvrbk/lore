@@ -154,6 +154,7 @@ class VaultTest extends TestCase
     {
         $this->get(route('vault.index'))->assertRedirect(route('login'));
         $this->get(route('vault.export'))->assertRedirect(route('login'));
+        $this->post(route('vault.export.download'))->assertRedirect(route('login'));
     }
 
     public function test_the_vault_asks_for_the_password_again_after_idle_time(): void
@@ -173,7 +174,7 @@ class VaultTest extends TestCase
         $this->app->make(Kernel::class); // syncs the middleware groups into the router
         $router = $this->app['router'];
         $routes = collect($router->getRoutes()->getRoutes())->filter(fn ($route) => str_starts_with((string) $route->getName(), 'vault.'));
-        $this->assertCount(7, $routes);
+        $this->assertCount(8, $routes);
 
         foreach ($routes as $route) {
             $stack = collect($router->resolveMiddleware($route->gatherMiddleware()));

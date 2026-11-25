@@ -81,7 +81,7 @@ class VaultSecurityTest extends TestCase
         $this->unlockedAs($this->user);
         $this->post(route('vault.store'), ['name' => 'Another', 'password' => self::SECRET]);
         $this->postJson(route('vault.reveal', $item))->assertOk();
-        $this->get(route('vault.export'))->assertOk();
+        $this->post(route('vault.export.download'), ['format' => 'csv', 'password' => 'password', 'acknowledge' => 1])->assertOk();
 
         Queue::assertNothingPushed();
         $this->assertStringNotContainsString(self::SECRET, File::get($this->logFile));
@@ -94,7 +94,7 @@ class VaultSecurityTest extends TestCase
     {
         $this->unlockedAs($this->user);
 
-        foreach ([$this->get(route('vault.index')), $this->get(route('vault.export'))] as $response) {
+        foreach ([$this->get(route('vault.index')), $this->get(route('vault.export')), $this->post(route('vault.export.download'), ['format' => 'csv', 'password' => 'password', 'acknowledge' => 1])] as $response) {
             $cacheControl = $response->headers->get('Cache-Control');
             $this->assertStringContainsString('no-store', $cacheControl);
             $this->assertStringContainsString('no-cache', $cacheControl);

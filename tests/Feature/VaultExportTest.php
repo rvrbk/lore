@@ -18,6 +18,9 @@ class VaultExportTest extends TestCase
 
     private User $user;
 
+    /** @var array<string, mixed> */
+    private const CSV = ['format' => 'csv', 'password' => 'password', 'acknowledge' => 1];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -28,7 +31,9 @@ class VaultExportTest extends TestCase
     {
         VaultItem::factory()->create(['user_id' => $this->user->id]);
 
-        $this->actingAs($this->user)->withSession(['two_factor.passed' => true])->get(route('vault.export'))->assertRedirect(route('password.confirm'));
+        $this->actingAs($this->user)->withSession(['two_factor.passed' => true]);
+        $this->get(route('vault.export'))->assertRedirect(route('password.confirm'));
+        $this->post(route('vault.export.download'), self::CSV)->assertRedirect(route('password.confirm'));
         $this->unlockedAs($this->user)->get(route('vault.export'))->assertOk();
     }
 
@@ -37,7 +42,7 @@ class VaultExportTest extends TestCase
         VaultItem::factory()->create(['user_id' => $this->user->id, 'name' => 'Bank, "main"', 'url' => 'https://bank.example', 'username' => 'rik', 'password' => 'p@ss,"word"', 'notes' => "line one\nline two"]);
         VaultItem::factory()->create(['user_id' => User::factory()->create()->id, 'name' => 'Not mine']);
 
-        $response = $this->unlockedAs($this->user)->get(route('vault.export'));
+        $response = $this->unlockedAs($this->user)->post(route('vault.export.download'), self::CSV);
         $response->assertOk()->assertDownload();
         $this->assertStringContainsString('text/csv', $response->headers->get('Content-Type'));
 
@@ -50,7 +55,7 @@ class VaultExportTest extends TestCase
 
     public function test_the_response_may_not_be_cached(): void
     {
-        $cacheControl = $this->unlockedAs($this->user)->get(route('vault.export'))->headers->get('Cache-Control');
+        $cacheControl = $this->unlockedAs($this->user)->post(route('vault.export.download'), self::CSV)->headers->get('Cache-Control');
 
         foreach (['no-store', 'no-cache', 'must-revalidate'] as $directive) {
             $this->assertStringContainsString($directive, $cacheControl);
@@ -66,9 +71,10 @@ class VaultExportTest extends TestCase
 
         $this->unlockedAs($this->user);
         foreach (range(1, 3) as $ignored) {
-            $this->get(route('vault.export'))->assertOk()->streamedContent();
+            $this->post(route('vault.export.download'), self::CSV)->assertOk()->streamedContent();
         }
-        $this->get(route('vault.export'))->assertStatus(429);
+        $this->post(route('vault.export.download'), self::CSV)->assertStatus(429);
+        $this->post(route('vault.export.download'), ['password' => 'wrong'] + self::CSV)->assertSessionHasErrors('password');
 
         $log = File::get($file);
         File::delete($file);
@@ -85,7 +91,7 @@ class VaultExportTest extends TestCase
         foreach (range(1, 5) as $ignored) {
             $this->postJson(route('vault.reveal', $item))->assertOk();
         }
-        $this->get(route('vault.export'))->assertOk();
+        $this->post(route('vault.export.download'), self::CSV)->assertOk();
     }
 
     public function test_the_encrypted_export_can_only_be_opened_with_the_private_key(): void
@@ -96,7 +102,7 @@ class VaultExportTest extends TestCase
         $this->app->forgetInstance(VaultSealer::class);
         VaultItem::factory()->create(['user_id' => $this->user->id, 'name' => 'Secret site', 'password' => 'sealed-marker-8842']);
 
-        $response = $this->unlockedAs($this->user)->get(route('vault.export', ['format' => 'encrypted']));
+        $response = $this->unlockedAs($this->user)->post(route('vault.export.download'), ['format' => 'encrypted'] + self::CSV);
 
         $response->assertOk();
         $sealed = $response->getContent();
@@ -115,9 +121,42 @@ class VaultExportTest extends TestCase
         config(['vault.public_key' => null]);
         $this->app->forgetInstance(VaultSealer::class);
 
-        $this->unlockedAs($this->user)->get(route('vault.export', ['format' => 'encrypted']))->assertRedirect(route('vault.index'))->assertSessionHas('error');
-        $this->get(route('vault.index'))->assertOk()->assertSee('Export encrypted (not set up)');
-        $this->get(route('vault.export', ['format' => 'bogus']))->assertStatus(422);
+        $this->unlockedAs($this->user)->post(route('vault.export.download'), ['format' => 'encrypted'] + self::CSV)->assertRedirect(route('vault.export'))->assertSessionHas('error');
+        $this->get(route('vault.export'))->assertOk()->assertSee('not set up');
+        $this->post(route('vault.export.download'), ['format' => 'bogus'] + self::CSV)->assertSessionHasErrors('format');
+    }
+
+    public function test_the_page_warns_about_the_risks_and_explains_how_to_open_the_encrypted_file(): void
+    {
+        $this->unlockedAs($this->user)->get(route('vault.export'))->assertOk()
+            ->assertSee('every password in your vault')
+            ->assertSee('not protected at all')
+            ->assertSee('delete')
+            ->assertSee('scripts/vault-decrypt.php')
+            ->assertSee('.lore-vault.key');
+    }
+
+    public function test_every_download_asks_for_the_password_again_even_right_after_confirming(): void
+    {
+        VaultItem::factory()->create(['user_id' => $this->user->id]);
+        $this->unlockedAs($this->user);
+
+        $this->post(route('vault.export.download'), ['password' => 'wrong'] + self::CSV)->assertSessionHasErrors('password');
+        $this->post(route('vault.export.download'), array_diff_key(self::CSV, ['password' => 1]))->assertSessionHasErrors('password');
+        $this->post(route('vault.export.download'), ['acknowledge' => 0] + self::CSV)->assertSessionHasErrors('acknowledge');
+        $this->post(route('vault.export.download'), self::CSV)->assertOk();
+    }
+
+    public function test_a_failed_attempt_downloads_and_logs_nothing(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'lore-log-');
+        config(['logging.channels.vault.driver' => 'single', 'logging.channels.vault.path' => $file]);
+        Log::forgetChannel('vault');
+
+        $this->unlockedAs($this->user)->post(route('vault.export.download'), ['password' => 'wrong'] + self::CSV)->assertSessionHasErrors('password');
+
+        $this->assertStringNotContainsString('vault exported', File::get($file));
+        File::delete($file);
     }
 
     /** @return list<list<string|null>> */

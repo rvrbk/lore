@@ -11,12 +11,7 @@
             <button class="rounded border px-3 py-1.5 hover:bg-zinc-800">Search</button>
         </form>
         <span class="ml-auto flex gap-3 text-sm text-zinc-400">
-            <a href="{{ route('vault.export') }}" class="underline hover:text-zinc-100" title="Bitwarden import format. The file is not encrypted.">Export CSV</a>
-            @if($canExportEncrypted)
-                <a href="{{ route('vault.export', ['format' => 'encrypted']) }}" class="underline hover:text-zinc-100" title="Sealed to your public key. Only your private key opens it.">Export encrypted</a>
-            @else
-                <span class="cursor-help text-zinc-600" title="Set VAULT_PUBLIC_KEY in the server .env first (see docs/vault/README.md).">Export encrypted (not set up)</span>
-            @endif
+            <a href="{{ route('vault.export') }}" class="underline hover:text-zinc-100" title="Download your passwords as a file. Asks for your password again.">Export</a>
         </span>
     </div>
 

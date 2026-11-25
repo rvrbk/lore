@@ -35,7 +35,7 @@ needs its old value. A test proves nothing secret ends up in the session. (`$don
 because the test failed.)
 
 **Throttle keys.** Stacked `throttle:` middleware share one counter per user unless they get a name. Without names, normal vault use ate the
-export limit. The vault uses `throttle:60,1,vault`, reveal `throttle:30,1,vault-reveal`, export `throttle:3,60,vault-export`, and the
+export limit. The vault uses `throttle:60,1,vault`, reveal `throttle:30,1,vault-reveal`, export downloads are limited to 3 successful ones per hour with the rate limiter (a plain `throttle:3,60` also counted typos), plus `throttle:10,1,vault-export-attempts` against password guessing, and the
 confirm and challenge routes have their own names too. A test covers it.
 
 **Nothing secret in logs.** `zend.exception_ignore_args` is switched on at boot, so a stack trace never prints call arguments (PHP would print

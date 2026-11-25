@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VaultItemRequest;
 use App\Models\VaultItem;
-use App\Services\Vault\VaultSealer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,12 +13,11 @@ use Illuminate\View\View;
 
 class VaultController extends Controller
 {
-    public function index(Request $request, VaultSealer $sealer): View
+    public function index(Request $request): View
     {
         return view('vault.index', [
             'items' => $request->user()->vaultItems()->matching($request->query('q'))->orderBy('name')->get(['id', 'name', 'url', 'username', 'last_revealed_at']),
             'search' => (string) $request->query('q'),
-            'canExportEncrypted' => $sealer->isAvailable(),
             'idleLockMinutes' => config('vault.idle_lock_minutes'),
         ]);
     }

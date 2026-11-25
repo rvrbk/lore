@@ -41,8 +41,7 @@ Back up `~/.lore-vault.key` somewhere safe and offline (without it the backups c
 
 ## Export
 
-On the Vault page: **Export CSV** (`GET /vault/export`) or **Export encrypted** (`?format=encrypted`). Both need a recent password confirmation and are limited to 3 per hour.
-Every export is logged (user, ip, time, format), never the content.
+On the Vault page, **Export** opens a page with the risks spelled out. Downloading needs the account password typed again every time (however recently it was confirmed), a ticked "I understand" box, and is limited to 3 successful downloads per hour (wrong passwords have their own limit and do not use them up). Every export is logged (user, ip, time, format), never the content.
 
 - CSV: Bitwarden's import format (`folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp`). **It is not encrypted**: delete it after importing.
 - Encrypted: sealed to your public key. Open it on your computer:
@@ -50,6 +49,8 @@ Every export is logged (user, ip, time, format), never the content.
 ```bash
 php scripts/vault-decrypt.php lore-vault-2026-11-25.csv.sealed > vault.csv   # uses ~/.lore-vault.key, or pass a key file as the 2nd argument
 ```
+
+The export page shows these same instructions. Delete `vault.csv` and the `.sealed` file when you are done.
 
 ## Backups
 
