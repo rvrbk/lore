@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     @include('partials.head')
+    <meta name="due-reminders" content="{{ $dueCount }}">
     <meta name="weather-url" content="{{ route('weather') }}">
     <meta name="tag-suggestions-url" content="{{ route('tags.suggestions') }}">
 </head>

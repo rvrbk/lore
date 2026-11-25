@@ -30,7 +30,26 @@ const renderBalls = (container, count) => {
     }
 };
 
+const baseTitle = document.title;
+let dueReminders = Number(document.querySelector('meta[name="due-reminders"]')?.content) || 0;
+let activeDeployments = [];
+
+/** Put what needs attention in front of the tab title: due reminders and a running deploy. */
+const updateTitle = () => {
+    const running = activeDeployments.some((deployment) => deployment.status === 'running');
+    const parts = [];
+    if (dueReminders > 0) {
+        parts.push(`(${dueReminders})`);
+    }
+    if (activeDeployments.length) {
+        parts.push(running ? 'Deploying' : 'Deploy queued');
+    }
+    document.title = parts.length ? `${parts.join(' ')} · ${baseTitle}` : baseTitle;
+};
+
 const show = (active) => {
+    activeDeployments = active;
+    updateTitle();
     indicators.forEach((indicator) => {
         indicator.hidden = active.length === 0;
         const balls = indicator.querySelector('[data-deploy-balls]');
@@ -50,6 +69,7 @@ const poll = async () => {
             const response = await fetch(indicators[0].dataset.url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
             if (response.ok) {
                 const data = await response.json();
+                dueReminders = data.reminders ?? dueReminders;
                 show(data.active);
                 const latest = data.latest?.id ?? null;
                 if (lastFinished !== undefined && latest !== null && latest !== lastFinished && !data.latest.ok) {
@@ -66,5 +86,8 @@ const poll = async () => {
 };
 
 if (indicators.length) {
+    const initial = indicators[0].hidden ? [] : [{ status: indicators[0].textContent.includes('Deploying') ? 'running' : 'requested' }];
+    activeDeployments = initial;
+    updateTitle();
     setTimeout(poll, POLL_MS);
 }

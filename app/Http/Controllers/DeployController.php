@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deployment;
+use App\Models\Reminder;
 use App\Services\Deployer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -34,13 +35,14 @@ class DeployController extends Controller
         return response()->json(['version' => Deployment::count().'-'.Deployment::max('id').'-'.Deployment::max('updated_at')]);
     }
 
-    /** What is deploying right now, for the indicator in the header. */
+    /** What is deploying right now and how many reminders are due, for the indicator in the header and the tab title. */
     public function active(): JsonResponse
     {
         $latest = Deployment::whereNotIn('status', [Deployment::REQUESTED, Deployment::RUNNING])->latest('id')->first(['id', 'status', 'smoke_status']);
 
         return response()->json([
             'active' => Deployment::active()->orderBy('id')->get(['site', 'status']),
+            'reminders' => Reminder::due()->count(),
             'latest' => $latest ? ['id' => $latest->id, 'ok' => $latest->status === Deployment::SUCCEEDED && $latest->smoke_status !== Deployment::SMOKE_FAILED] : null,
         ]);
     }

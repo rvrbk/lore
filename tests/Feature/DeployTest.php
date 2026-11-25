@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Deployment;
 use App\Models\Monitor;
+use App\Models\Reminder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -251,6 +252,16 @@ class DeployTest extends TestCase
 
         $this->get(route('dashboard'))->assertSee('Deploying: my-site');
         $this->getJson(route('deploy.active'))->assertJsonPath('active', [['site' => 'my-site', 'status' => 'running']])->assertJsonPath('latest.ok', true);
+    }
+
+    public function test_the_active_endpoint_and_layout_report_due_reminders_for_the_tab_title(): void
+    {
+        $this->actingAs(User::factory()->create());
+        Reminder::factory()->create(['due_at' => now()->subHour()]);
+        Reminder::factory()->create(['due_at' => now()->addDay()]);
+
+        $this->getJson(route('deploy.active'))->assertJsonPath('reminders', 1);
+        $this->get(route('dashboard'))->assertSee('<meta name="due-reminders" content="1">', false);
     }
 
     public function test_the_mobile_header_shows_one_ball_per_deploying_site_up_to_three(): void
