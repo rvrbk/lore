@@ -38,10 +38,6 @@ class Monitor extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (Monitor $monitor): void {
-            $monitor->heat_key ??= Str::random(32);
-        });
-
         static::created(function (Monitor $monitor): void {
             $monitor->subscribers()->syncWithoutDetaching(User::where('role', User::ROLE_ADMIN)->pluck('id'));
         });
@@ -79,14 +75,6 @@ class Monitor extends Model
         foreach ($monitors as $monitor) {
             $monitor->recordResult($results[(string) $monitor->id]);
         }
-    }
-
-    /**
-     * @return HasMany<HeatClick, $this>
-     */
-    public function heatClicks(): HasMany
-    {
-        return $this->hasMany(HeatClick::class);
     }
 
     /**
@@ -220,12 +208,6 @@ class Monitor extends Model
             ->selectRaw('count(*) as total, sum(case when is_up then 1 else 0 end) as up')->toBase()->first();
 
         return $counts->total > 0 ? round($counts->up / $counts->total * 100, 2) : null;
-    }
-
-    /** Whether this monitor is Lore itself, whose own pages are never tracked for clicks. */
-    public function isLore(): bool
-    {
-        return strcasecmp($this->host(), (string) parse_url(config('app.url'), PHP_URL_HOST)) === 0;
     }
 
     public function host(): string

@@ -7,7 +7,6 @@ use App\Http\Controllers\ConfirmPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ExportController;
-use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MarkdownController;
 use App\Http\Controllers\MonitorController;
@@ -176,9 +175,6 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
     Route::get('analytics/live', [AnalyticsController::class, 'live'])->name('analytics.live');
     Route::post('analytics', [AnalyticsController::class, 'store'])->name('analytics.store');
     Route::delete('analytics/{site}', [AnalyticsController::class, 'destroy'])->name('analytics.destroy');
-
-    Route::redirect('heatmaps', '/analytics');
-    Route::get('analytics/heatmaps/{monitor}', [HeatmapController::class, 'show'])->name('analytics.heatmaps.show');
 
     Route::get('reminders', [ReminderController::class, 'index'])->name('reminders.index');
     Route::post('reminders', [ReminderController::class, 'store'])->name('reminders.store');

@@ -6,9 +6,7 @@ use App\Models\AnalyticsSite;
 use App\Models\Monitor;
 use App\Services\DeployImpact;
 use App\Services\GitHubDeployHook;
-use App\Services\GitHubHeatmapSnippet;
 use App\Services\GoogleAnalytics;
-use App\Services\HeatmapOverview;
 use App\Services\SearchConsole;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,16 +16,13 @@ use Throwable;
 
 class AnalyticsController extends Controller
 {
-    public function index(GoogleAnalytics $analytics, HeatmapOverview $heatmaps, GitHubHeatmapSnippet $snippet, SearchConsole $searchConsole, DeployImpact $impact): View
+    public function index(GoogleAnalytics $analytics, SearchConsole $searchConsole, DeployImpact $impact): View
     {
         $monitors = Monitor::orderBy('name')->get();
 
         return view('analytics.index', [
             'monitors' => $monitors,
             'searchSites' => $monitors->where('show_in_search')->map(fn (Monitor $monitor) => ['monitor' => $monitor, 'report' => ($report = $searchConsole->report($monitor)) === null ? null : $report + ['impact' => $impact->forTraffic($monitor->name, $report['daily_impressions'])]])->when(! $searchConsole->isConfigured() || $searchConsole->properties() === null, fn ($rows) => collect()),
-            'snippet' => $snippet,
-            'clickMonitors' => $clickMonitors = $monitors->reject->isLore()->values(),
-            ...$heatmaps->for($clickMonitors),
             'sites' => AnalyticsSite::orderBy('name')->get(),
             'analytics' => $analytics->summary(),
             'configured' => $analytics->isConfigured(),
@@ -46,7 +41,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function store(Request $request, GoogleAnalytics $analytics, GitHubDeployHook $hook, GitHubHeatmapSnippet $heatmap): RedirectResponse
+    public function store(Request $request, GoogleAnalytics $analytics, GitHubDeployHook $hook): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -70,15 +65,6 @@ class AnalyticsController extends Controller
                 $redirect->with('hook', "Pushes to {$hook->install($monitor)} now deploy through Lore.");
             } catch (Throwable $e) {
                 $redirect->with('hook_error', "Site added, but deploy-on-push was not set up: {$e->getMessage()}");
-            }
-        }
-
-        if ($monitor->deploy_path !== null && $hook->isConfigured()) {
-            try {
-                $heatmap->install($monitor);
-                $redirect->with('heatmap', "{$monitor->name} now sends its clicks to Heatmaps once the push is deployed.");
-            } catch (Throwable $e) {
-                $redirect->with('heatmap_error', "Site added, but the heatmap tracker was not added: {$e->getMessage()}");
             }
         }
 
