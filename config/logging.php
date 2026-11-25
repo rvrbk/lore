@@ -58,6 +58,14 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        'vault' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/vault.log'),
+            'level' => 'info',
+            'days' => 365,
+            'replace_placeholders' => true,
+        ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),

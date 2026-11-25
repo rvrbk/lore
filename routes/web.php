@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarSourceController;
+use App\Http\Controllers\ConfirmPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ExportController;
@@ -24,7 +25,11 @@ use App\Http\Controllers\StatusPageController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TelegramSettingsController;
+use App\Http\Controllers\TwoFactorChallengeController;
+use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\VaultController;
+use App\Http\Controllers\VaultExportController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WorldClockController;
 use App\Http\Middleware\ScopeToCurrentUser;
@@ -46,6 +51,9 @@ Route::post('pointy/booking/{token}/cancel', [PointyBookingController::class, 'c
 Route::get('pointy/{slug}', [PointyBookingController::class, 'show'])->name('pointy.show');
 Route::post('pointy/{slug}', [PointyBookingController::class, 'book'])->middleware('throttle:10,1')->name('pointy.book');
 
+Route::get('two-factor-challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->middleware('throttle:5,1,two-factor-challenge')->name('two-factor.verify');
+
 Route::get('status/{token}', StatusPageController::class)->name('status.show');
 
 Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
@@ -53,6 +61,26 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('weather', WeatherController::class)->name('weather');
+    Route::get('confirm-password', [ConfirmPasswordController::class, 'show'])->name('password.confirm');
+    Route::post('confirm-password', [ConfirmPasswordController::class, 'confirm'])->middleware('throttle:6,1,password-confirm');
+    Route::get('settings/two-factor', [TwoFactorSettingsController::class, 'show'])->name('settings.two-factor');
+    Route::middleware('password.confirm')->group(function () {
+        Route::post('settings/two-factor', [TwoFactorSettingsController::class, 'start'])->name('settings.two-factor.start');
+        Route::post('settings/two-factor/recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])->name('settings.two-factor.recovery-codes');
+        Route::delete('settings/two-factor', [TwoFactorSettingsController::class, 'disable'])->name('settings.two-factor.disable');
+    });
+    Route::post('settings/two-factor/confirm', [TwoFactorSettingsController::class, 'confirm'])->middleware('throttle:5,1,two-factor-setup')->name('settings.two-factor.confirm');
+
+    // The password vault: two-factor, a recent password confirmation (which lapses after idle time) and rate limits on every route.
+    Route::middleware(['vault.no-recording', 'two-factor', 'vault.idle', 'password.confirm', 'throttle:60,1,vault'])->prefix('vault')->name('vault.')->group(function () {
+        Route::get('export', VaultExportController::class)->middleware('throttle:3,60,vault-export')->name('export');
+        Route::get('/', [VaultController::class, 'index'])->name('index');
+        Route::post('/', [VaultController::class, 'store'])->name('store');
+        Route::get('{item}/edit', [VaultController::class, 'edit'])->name('edit');
+        Route::put('{item}', [VaultController::class, 'update'])->name('update');
+        Route::delete('{item}', [VaultController::class, 'destroy'])->name('destroy');
+        Route::post('{item}/reveal', [VaultController::class, 'reveal'])->middleware('throttle:30,1,vault-reveal')->name('reveal');
+    });
     Route::get('settings', [SettingsController::class, 'show'])->name('settings.index');
     Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::get('settings/telegram', [TelegramSettingsController::class, 'show'])->name('settings.telegram');

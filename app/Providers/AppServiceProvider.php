@@ -11,6 +11,7 @@ use App\Models\Reminder;
 use App\Models\Space;
 use App\Models\WorldClock;
 use App\Services\CommitStreak;
+use App\Services\Vault\VaultSealer;
 use App\Support\NavMenu;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\View;
@@ -23,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(VaultSealer::class, fn () => VaultSealer::fromConfig());
     }
 
     /**
@@ -31,6 +32,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Stack traces in logs and error pages must never carry the arguments of the calls (they could be a password).
+        ini_set('zend.exception_ignore_args', '1');
+
         // Runs the scheduler (reminder notifications) alongside `composer dev` / `php artisan dev`.
         DevCommands::artisan('schedule:work', 'scheduler');
 

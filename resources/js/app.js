@@ -12,6 +12,7 @@ import './local-time.js';
 import './world-clocks.js';
 import './weather.js';
 import './countdown.js';
+import './vault.js';
 
 const sidebar = document.getElementById('sidebar');
 const navToggle = document.querySelector('[data-nav-toggle]');

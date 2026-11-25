@@ -21,6 +21,7 @@ class NavMenu
         'analytics' => ['label' => 'Analytics', 'route' => 'analytics.index', 'pattern' => 'analytics.*'],
         'monitors' => ['label' => 'Server health', 'route' => 'monitors.index', 'pattern' => 'monitors.*'],
         'incidents' => ['label' => 'Incidents', 'route' => 'incidents.index', 'pattern' => 'incidents.*'],
+        'vault' => ['label' => 'Vault', 'route' => 'vault.index', 'pattern' => 'vault.*'],
     ];
 
     /**

@@ -12,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['username', 'email', 'password', 'job_scout_email'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -43,6 +43,46 @@ class User extends Authenticatable
     public function monitorSubscriptions(): BelongsToMany
     {
         return $this->belongsToMany(Monitor::class);
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_secret !== null && $this->two_factor_confirmed_at !== null;
+    }
+
+    /**
+     * Makes ten new recovery codes, keeps only their hashes, and returns the codes to show once.
+     *
+     * @return list<string>
+     */
+    public function resetRecoveryCodes(): array
+    {
+        $codes = array_map(fn () => strtolower(bin2hex(random_bytes(5))).'-'.strtolower(bin2hex(random_bytes(5))), range(1, 10));
+        $this->forceFill(['two_factor_recovery_codes' => array_map(fn (string $code) => hash('sha256', $code), $codes)])->save();
+
+        return $codes;
+    }
+
+    /** Spends a recovery code: it works once. */
+    public function useRecoveryCode(string $code): bool
+    {
+        $hash = hash('sha256', strtolower(trim($code)));
+        $codes = $this->two_factor_recovery_codes ?? [];
+        $index = array_search($hash, $codes, true);
+        if ($index === false) {
+            return false;
+        }
+
+        unset($codes[$index]);
+        $this->forceFill(['two_factor_recovery_codes' => array_values($codes)])->save();
+
+        return true;
+    }
+
+    /** @return HasMany<VaultItem, $this> */
+    public function vaultItems(): HasMany
+    {
+        return $this->hasMany(VaultItem::class);
     }
 
     /** @return HasMany<Reminder, $this> */
@@ -85,6 +125,9 @@ class User extends Authenticatable
         return [
             'digest_subscribed' => 'boolean',
             'password' => 'hashed',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 }

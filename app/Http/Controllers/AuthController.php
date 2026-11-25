@@ -28,10 +28,23 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        $provider = Auth::getProvider();
+        $user = $provider->retrieveByCredentials($credentials);
+
+        if ($user === null || ! $provider->validateCredentials($user, $credentials)) {
             throw ValidationException::withMessages(['username' => 'Wrong username or password.']);
         }
 
+        if ($user->hasTwoFactorEnabled()) {
+            $request->session()->put([
+                TwoFactorChallengeController::PENDING_USER => $user->id,
+                TwoFactorChallengeController::PENDING_REMEMBER => $request->boolean('remember'),
+            ]);
+
+            return redirect()->route('two-factor.challenge');
+        }
+
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));
