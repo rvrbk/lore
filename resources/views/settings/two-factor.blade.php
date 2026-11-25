@@ -20,7 +20,8 @@
                 <form method="POST" action="{{ route('settings.two-factor.disable') }}" onsubmit="return confirm('Turn off two-factor authentication? The vault will lock.')">@csrf @method('DELETE')<button class="rounded border px-3 py-1.5 text-red-400 hover:bg-red-500/10">Turn off</button></form>
             </div>
         @elseif($secret)
-            <p>Add this key to an authenticator app (choose "enter a setup key", time based), then type the code it shows.</p>
+            <p>Scan this code with an authenticator app, or choose "enter a setup key" and type the key below. Then type the code the app shows.</p>
+            <div class="inline-block bg-white p-2 [&>svg]:size-48">{!! $qr !!}</div>
             <p class="select-all break-all font-mono text-base">{{ $secret }}</p>
             <p class="break-all text-xs text-zinc-500">Or open <span class="select-all">{{ $uri }}</span> on the phone that has the app.</p>
             <form method="POST" action="{{ route('settings.two-factor.confirm') }}" class="flex items-end gap-2">

@@ -87,6 +87,7 @@ class TwoFactorTest extends TestCase
         $user->refresh();
         $this->assertNotNull($user->two_factor_secret);
         $this->assertFalse($user->hasTwoFactorEnabled());
+        $this->get(route('settings.two-factor'))->assertOk()->assertSee('<svg', false)->assertSee($user->two_factor_secret);
 
         $this->post(route('settings.two-factor.confirm'), ['code' => '000000'])->assertSessionHasErrors('code');
         $this->assertFalse($user->fresh()->hasTwoFactorEnabled());

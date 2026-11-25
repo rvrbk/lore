@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Middleware\RequireTwoFactor;
 use App\Services\Totp;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +24,7 @@ class TwoFactorSettingsController extends Controller
             'enabled' => $user->hasTwoFactorEnabled(),
             'secret' => $pending ? $user->two_factor_secret : null,
             'uri' => $pending ? $totp->uri($user->two_factor_secret, $user->username, config('app.name')) : null,
+            'qr' => $pending ? $this->qrSvg($totp->uri($user->two_factor_secret, $user->username, config('app.name'))) : null,
             'recoveryCodes' => null,
             'recoveryLeft' => count($user->two_factor_recovery_codes ?? []),
         ]);
@@ -50,14 +55,14 @@ class TwoFactorSettingsController extends Controller
         $user->forceFill(['two_factor_confirmed_at' => now(), 'two_factor_last_step' => $step])->save();
         $request->session()->put(RequireTwoFactor::PASSED, true);
 
-        return view('settings.two-factor', ['enabled' => true, 'secret' => null, 'uri' => null, 'recoveryCodes' => $user->resetRecoveryCodes(), 'recoveryLeft' => 10]);
+        return view('settings.two-factor', ['enabled' => true, 'secret' => null, 'uri' => null, 'qr' => null, 'recoveryCodes' => $user->resetRecoveryCodes(), 'recoveryLeft' => 10]);
     }
 
     public function regenerateRecoveryCodes(Request $request): View
     {
         abort_unless($request->user()->hasTwoFactorEnabled(), 404);
 
-        return view('settings.two-factor', ['enabled' => true, 'secret' => null, 'uri' => null, 'recoveryCodes' => $request->user()->resetRecoveryCodes(), 'recoveryLeft' => 10]);
+        return view('settings.two-factor', ['enabled' => true, 'secret' => null, 'uri' => null, 'qr' => null, 'recoveryCodes' => $request->user()->resetRecoveryCodes(), 'recoveryLeft' => 10]);
     }
 
     public function disable(Request $request): RedirectResponse
@@ -66,5 +71,10 @@ class TwoFactorSettingsController extends Controller
         $request->session()->forget(RequireTwoFactor::PASSED);
 
         return redirect()->route('settings.two-factor')->with('status', 'Two-factor authentication is off. The vault is locked until you turn it on again.');
+    }
+
+    private function qrSvg(string $uri): string
+    {
+        return (new Writer(new ImageRenderer(new RendererStyle(200, 1), new SvgImageBackEnd)))->writeString($uri);
     }
 }

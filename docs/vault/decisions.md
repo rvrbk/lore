@@ -13,9 +13,7 @@ deployed with `git pull` (a push to `main` triggers the deploy workflow). A dail
 ## Decisions
 
 **2FA (TOTP) was missing, so it was added first.** It is optional for the rest of Lore and required for the vault.
-- No new Composer package (the project rule says dependencies need approval): `App\Services\Totp` implements RFC 6238 (checked against
-  the RFC test vectors). Consequence: no QR code. Setup shows the key and an `otpauth://` link to type or open on the phone. A QR library
-  (for example `bacon/bacon-qr-code`) can be added if you want one.
+- Uses `pragmarx/google2fa` (RFC 6238, checked against the RFC test vectors in `TotpTest`) and `bacon/bacon-qr-code` (SVG QR on the setup page, no imagick needed). The project rule against adding dependencies was removed on request.
 - The secret and the recovery codes are encrypted with APP_KEY. Recovery codes are stored as SHA-256 hashes, shown once (in the response of
   the request that makes them, never in a flash message, because flashes are stored in the session table).
 - A used code cannot be reused (`two_factor_last_step`).
@@ -67,7 +65,7 @@ database + APP_KEY combination. The vault has its own sealed backup instead. (Tw
 
 ## Not done / limits
 
-- No QR code (see above). No sharing between users, no folders, no TOTP storage for the items themselves, no browser extension.
+- No sharing between users, no folders, no TOTP storage for the items themselves, no browser extension.
 - Nothing was pushed or deployed; pushing to `main` deploys to production.
 - `resources/js/vault.js` (reveal, copy, generator) was built with Vite but not driven in a real browser in this session.
 - This machine's PHP has no sodium extension. Tests that need it skip here and were run in the local `php:8.5-cli` Docker image with no network

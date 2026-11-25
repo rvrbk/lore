@@ -13,7 +13,7 @@ cast and APP_KEY, never hashed, so they can be shown and copied. See [decisions.
 - The list never contains passwords. **Reveal** and **Copy password** fetch one password with a POST, which logs `user`, `item id` and `ip` to `storage/logs/vault-*.log`
   and sets `last_revealed_at`.
 - Access needs: signed in, **2FA on and passed in this session**, a recent password confirmation, and not idle longer than `VAULT_IDLE_LOCK_MINUTES` (default 10). All routes are CSRF protected and rate limited.
-- Turn on 2FA at **Settings → Two-factor** (authenticator app, time based; there is no QR code, enter the key by hand). Keep the ten recovery codes outside this server.
+- Turn on 2FA at **Settings → Two-factor** (scan the QR code with an authenticator app, or type the key). Keep the ten recovery codes outside this server.
 - The password generator runs in the browser with `crypto.getRandomValues` (length and character sets).
 
 ## APP_KEY
