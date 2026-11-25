@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use App\Models\VaultItem;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
@@ -26,6 +28,22 @@ class BackupTest extends TestCase
         $this->assertCount(2, $files);
         $this->assertSame('lore-20200103-000000.sqlite', $files[0]);
         $this->assertStringStartsWith('SQLite format 3', File::get("$dir/".$files[1]));
+
+        File::deleteDirectory($dir);
+    }
+
+    public function test_the_plain_database_backup_leaves_the_vault_out(): void
+    {
+        $user = User::factory()->create();
+        VaultItem::factory()->create(['user_id' => $user->id]);
+        $dir = storage_path('app/backups');
+        File::deleteDirectory($dir);
+
+        $this->artisan('lore:backup')->assertSuccessful();
+
+        $copy = new \PDO('sqlite:'.File::glob("$dir/lore-*.sqlite")[0]);
+        $this->assertSame(0, (int) $copy->query('select count(*) from vault_items')->fetchColumn());
+        $this->assertSame(1, (int) $copy->query('select count(*) from users')->fetchColumn());
 
         File::deleteDirectory($dir);
     }

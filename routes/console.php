@@ -14,6 +14,7 @@ Schedule::command('reminders:notify')->everyMinute();
 Schedule::command('monitors:check')->everyMinute()->withoutOverlapping();
 Schedule::command('lore:deploy')->everyMinute()->withoutOverlapping(60);
 Schedule::command('lore:backup')->dailyAt('03:15');
+Schedule::command('vault:backup')->dailyAt('03:30')->withoutOverlapping();
 Schedule::command('monitors:check-expiry')->hourly()->withoutOverlapping();
 Schedule::command('server:measure')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('lore:digest')->dailyAt('07:30');
