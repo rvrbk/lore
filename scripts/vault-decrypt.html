@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
-<title>Open a Lore vault export</title>
+<title>Lore vault: make a key, open an export</title>
 <style>
     body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; color: #1f2937; }
-    h1 { font-size: 1.4rem; }
+    h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 2rem; }
     label { display: block; margin-top: 1rem; font-weight: 600; }
     input[type=file], textarea { display: block; width: 100%; margin-top: .25rem; box-sizing: border-box; }
     textarea { font-family: ui-monospace, monospace; }
@@ -18,14 +18,25 @@
 </style>
 </head>
 <body>
-<h1>Open a Lore vault export</h1>
-<p>Decrypts a <code>lore-vault-….csv.sealed</code> file with your private key. Everything happens inside this page on your own computer: nothing is uploaded, and the page cannot reach the internet.</p>
+<h1>Lore vault key tool</h1>
+<p>Makes your key pair, and opens encrypted exports (<code>lore-vault-….csv.sealed</code>) with your private key. Everything happens inside this page on your own computer: nothing is uploaded, and the page cannot reach the internet.</p>
+
+<h2>A. Make your key (once)</h2>
+<button id="make" type="button">Make a new key</button>
+<div id="made" hidden>
+    <label for="pub">Public key: paste this into Lore (Settings, Vault key). It can only lock files, so it is safe to share.</label>
+    <textarea id="pub" rows="2" readonly></textarea>
+    <p>Fingerprint (Lore shows the same one after you save): <code id="fp"></code></p>
+    <div class="note"><strong>Private key:</strong> the file that was just saved (<code>lore-vault-private.key</code>) is the only thing that can open your encrypted exports. Store it offline (password manager or USB stick) and never upload or send it. If you lose it, your exports are gone for good.</div>
+</div>
+
+<h2>B. Open an encrypted export</h2>
 <div class="note">The result is a <strong>plain, unencrypted CSV</strong> with all your passwords. Import it into your password manager, then delete it and the <code>.sealed</code> file. Do not open it in a spreadsheet. Needs a current browser (Chrome 133+, Edge 133+, Firefox 130+, Safari 17+).</div>
 
 <label for="file">1. The encrypted file (<code>.sealed</code>)</label>
 <input id="file" type="file">
 
-<label for="keyfile">2. Your private key file (<code>~/.lore-vault.key</code>), or paste its text below</label>
+<label for="keyfile">2. Your private key file (<code>lore-vault-private.key</code>), or paste its text below</label>
 <input id="keyfile" type="file">
 <textarea id="key" rows="2" autocomplete="off" spellcheck="false" placeholder="paste the private key here"></textarea>
 
@@ -38,7 +49,25 @@ const MAGIC = 'LVT2';
 const INFO = 'lore-vault-export-v1';
 const message = (text, ok) => { const el = document.getElementById('message'); el.textContent = text; el.className = ok ? 'ok' : 'error'; };
 
+const PUBLIC_PREFIX = 'lorepub1:';
+const PRIVATE_PREFIX = 'loreprv1:';
 const fromBase64 = (text) => Uint8Array.from(atob(text.replace(/\s+/g, '')), (c) => c.charCodeAt(0));
+const toBase64 = (bytes) => btoa(String.fromCharCode(...bytes));
+const stripPrefix = (text, prefix) => (text.trim().startsWith(prefix) ? text.trim().slice(prefix.length) : text.trim());
+
+// Same short code Lore shows for a saved public key: first 16 hex digits of SHA-256, in groups of four.
+async function fingerprint(publicBytes) {
+    const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', publicBytes));
+    return [...hash.slice(0, 8)].map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase().match(/.{4}/g).join(' ');
+}
+
+// A new X25519 key pair: raw 32 byte keys, the same shape the server expects.
+async function makeKeyPair() {
+    const pair = await crypto.subtle.generateKey({ name: 'X25519' }, true, ['deriveBits']);
+    const publicBytes = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey));
+    const secretBytes = new Uint8Array(await crypto.subtle.exportKey('pkcs8', pair.privateKey)).slice(-32);
+    return { publicKey: PUBLIC_PREFIX + toBase64(publicBytes), privateKey: PRIVATE_PREFIX + toBase64(secretBytes), fingerprint: await fingerprint(publicBytes) };
+}
 
 // A raw 32 byte X25519 private key, wrapped in the PKCS#8 envelope WebCrypto wants.
 const pkcs8 = (secret) => {
@@ -60,7 +89,7 @@ async function decryptExport(file, base64Secret) {
     }
 
     let secret;
-    try { secret = fromBase64(base64Secret); } catch { secret = null; }
+    try { secret = fromBase64(stripPrefix(base64Secret, PRIVATE_PREFIX)); } catch { secret = null; }
     if (!secret || secret.length !== 32) {
         throw new Error('That is not a valid private key.');
     }
@@ -90,6 +119,25 @@ const readBytes = async (input) => new Uint8Array(await input.files[0].arrayBuff
 document.getElementById('keyfile').addEventListener('change', async (event) => {
     if (event.target.files.length) {
         document.getElementById('key').value = (await event.target.files[0].text()).trim();
+    }
+});
+
+document.getElementById('make').addEventListener('click', async () => {
+    message('', true);
+    try {
+        if (!window.crypto || !crypto.subtle) { throw new Error('This browser cannot do the cryptography. Use a current Chrome, Edge, Firefox or Safari.'); }
+        const keys = await makeKeyPair();
+        document.getElementById('pub').value = keys.publicKey;
+        document.getElementById('fp').textContent = keys.fingerprint;
+        document.getElementById('made').hidden = false;
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([keys.privateKey + '\n'], { type: 'text/plain' }));
+        link.download = 'lore-vault-private.key';
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+        message('Key made. Save lore-vault-private.key safely and paste the public key into Lore.', true);
+    } catch (error) {
+        message(error.message, false);
     }
 });
 

@@ -23,7 +23,7 @@ if ($file === null || ! is_file($file) || ! is_file($keyFile)) {
 }
 
 $sealed = file_get_contents($file);
-$secret = base64_decode(trim(file_get_contents($keyFile)), true);
+$secret = base64_decode(preg_replace('/^loreprv1:/', '', trim(file_get_contents($keyFile))), true);
 if ($secret === false || strlen($secret) !== SODIUM_CRYPTO_BOX_SECRETKEYBYTES) {
     fwrite(STDERR, "The private key file is not valid.\n");
     exit(1);

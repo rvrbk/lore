@@ -24,6 +24,11 @@ class VaultSealer
 
     private const EXPORT_INFO = 'lore-vault-export-v1';
 
+    /** Keys made by the browser tool start with these, so a private key can never be mistaken for a public one. */
+    public const PUBLIC_PREFIX = 'lorepub1:';
+
+    public const PRIVATE_PREFIX = 'loreprv1:';
+
     public function __construct(private readonly ?string $publicKey = null) {}
 
     public static function fromConfig(): self
@@ -58,7 +63,7 @@ class VaultSealer
 
         $recipient = $this->publicKeyBytes();
         if ($recipient === null) {
-            throw new RuntimeException('VAULT_PUBLIC_KEY is missing or not a valid public key. Generate one with scripts/vault-keygen.php.');
+            throw new RuntimeException('There is no valid public key to lock the export with.');
         }
 
         $ephemeral = sodium_crypto_box_keypair();
@@ -74,10 +79,7 @@ class VaultSealer
     /** Opens an export made by sealExport (the same job scripts/vault-decrypt.html does in a browser). */
     public static function openExport(string $file, #[\SensitiveParameter] string $base64SecretKey): string
     {
-        $secret = base64_decode(trim($base64SecretKey), true);
-        if ($secret === false || strlen($secret) !== SODIUM_CRYPTO_BOX_SECRETKEYBYTES) {
-            throw new RuntimeException('The private key is not valid.');
-        }
+        $secret = self::secretKeyBytes($base64SecretKey);
         if (! str_starts_with($file, self::EXPORT_MAGIC) || strlen($file) < 4 + 32 + 12 + 16) {
             throw new RuntimeException('This is not an exported vault file.');
         }
@@ -105,10 +107,7 @@ class VaultSealer
             throw new RuntimeException('This is not a sealed vault file.');
         }
 
-        $secret = base64_decode(trim($base64SecretKey), true);
-        if ($secret === false || strlen($secret) !== SODIUM_CRYPTO_BOX_SECRETKEYBYTES) {
-            throw new RuntimeException('The private key is not valid.');
-        }
+        $secret = self::secretKeyBytes($base64SecretKey);
 
         $keypair = sodium_crypto_box_keypair_from_secretkey_and_publickey($secret, sodium_crypto_box_publickey_from_secretkey($secret));
         $plain = sodium_crypto_box_seal_open(substr($sealed, strlen(self::MAGIC)), $keypair);
@@ -119,9 +118,52 @@ class VaultSealer
         return $plain;
     }
 
+    /** The 32 raw bytes of a private key given as base64, with or without the loreprv1: prefix. */
+    public static function secretKeyBytes(#[\SensitiveParameter] string $key): string
+    {
+        $key = trim($key);
+        $secret = base64_decode(str_starts_with($key, self::PRIVATE_PREFIX) ? substr($key, strlen(self::PRIVATE_PREFIX)) : $key, true);
+        if ($secret === false || strlen($secret) !== 32) {
+            throw new RuntimeException('The private key is not valid.');
+        }
+
+        return $secret;
+    }
+
+    /**
+     * Whether the text is a usable public key (with or without the lorepub1: prefix), including a trial encryption
+     * that catches keys which would make the shared secret useless.
+     */
+    public static function isValidPublicKey(string $key): bool
+    {
+        if (! function_exists('sodium_crypto_box_seal')) {
+            return false;
+        }
+
+        try {
+            (new self($key))->sealExport('probe');
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** A short code to compare a public key by eye, for example 3FA9 07C2 B1D4 5E60. The browser tool shows the same one. */
+    public static function fingerprint(string $publicKey): ?string
+    {
+        $bytes = (new self($publicKey))->publicKeyBytes();
+
+        return $bytes === null ? null : implode(' ', str_split(strtoupper(substr(hash('sha256', $bytes), 0, 16)), 4));
+    }
+
     private function publicKeyBytes(): ?string
     {
-        $bytes = $this->publicKey === null || $this->publicKey === '' ? false : base64_decode($this->publicKey, true);
+        $key = trim((string) $this->publicKey);
+        if (str_starts_with($key, self::PUBLIC_PREFIX)) {
+            $key = substr($key, strlen(self::PUBLIC_PREFIX));
+        }
+        $bytes = $key === '' ? false : base64_decode($key, true);
 
         return $bytes !== false && strlen($bytes) === 32 ? $bytes : null;
     }

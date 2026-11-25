@@ -98,8 +98,7 @@ class VaultExportTest extends TestCase
     {
         $this->skipWithoutSodium();
         $keys = $this->makeKeypair();
-        config(['vault.public_key' => $keys['public']]);
-        $this->app->forgetInstance(VaultSealer::class);
+        $this->user->forceFill(['vault_public_key' => VaultSealer::PUBLIC_PREFIX.$keys['public']])->save();
         VaultItem::factory()->create(['user_id' => $this->user->id, 'name' => 'Secret site', 'password' => 'sealed-marker-8842']);
 
         $response = $this->unlockedAs($this->user)->post(route('vault.export.download'), ['format' => 'encrypted'] + self::CSV);
@@ -110,19 +109,45 @@ class VaultExportTest extends TestCase
         $this->assertStringNotContainsString('sealed-marker-8842', $sealed);
         $this->assertStringNotContainsString('Secret site', $sealed);
 
-        $csv = VaultSealer::openExport($sealed, $keys['secret']);
+        $csv = VaultSealer::openExport($sealed, VaultSealer::PRIVATE_PREFIX.$keys['secret']);
         $this->assertSame('sealed-marker-8842', $this->parse($csv)[1][9]);
         $this->expectException(\RuntimeException::class);
         VaultSealer::openExport($sealed, $this->makeKeypair()['secret']);
     }
 
-    public function test_the_encrypted_export_is_refused_without_a_public_key(): void
+    public function test_each_user_exports_to_their_own_key_and_the_server_key_is_not_used(): void
     {
-        config(['vault.public_key' => null]);
-        $this->app->forgetInstance(VaultSealer::class);
+        $this->skipWithoutSodium();
+        $mine = $this->makeKeypair();
+        $theirs = $this->makeKeypair();
+        config(['vault.public_key' => $this->makeKeypair()['public']]);
+        $other = $this->userWithTwoFactor();
+        $this->user->forceFill(['vault_public_key' => $mine['public']])->save();
+        $other->forceFill(['vault_public_key' => $theirs['public']])->save();
+        VaultItem::factory()->create(['user_id' => $this->user->id, 'name' => 'Mine', 'password' => 'mine-secret']);
+        VaultItem::factory()->create(['user_id' => $other->id, 'name' => 'Theirs', 'password' => 'their-secret']);
+
+        $myFile = $this->unlockedAs($this->user)->post(route('vault.export.download'), ['format' => 'encrypted'] + self::CSV)->getContent();
+        $theirFile = $this->flushSession()->unlockedAs($other)->post(route('vault.export.download'), ['format' => 'encrypted'] + self::CSV)->getContent();
+
+        $this->assertStringContainsString('mine-secret', VaultSealer::openExport($myFile, $mine['secret']));
+        $this->assertStringContainsString('their-secret', VaultSealer::openExport($theirFile, $theirs['secret']));
+        foreach ([[$myFile, $theirs['secret']], [$theirFile, $mine['secret']]] as [$file, $wrongKey]) {
+            try {
+                VaultSealer::openExport($file, $wrongKey);
+                $this->fail('A file opened with somebody else\'s key.');
+            } catch (\RuntimeException) {
+                $this->addToAssertionCount(1);
+            }
+        }
+    }
+
+    public function test_the_encrypted_export_is_refused_until_the_user_has_their_own_key_even_if_the_server_has_one(): void
+    {
+        config(['vault.public_key' => 'MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=']);
 
         $this->unlockedAs($this->user)->post(route('vault.export.download'), ['format' => 'encrypted'] + self::CSV)->assertRedirect(route('vault.export'))->assertSessionHas('error');
-        $this->get(route('vault.export'))->assertOk()->assertSee('not set up');
+        $this->get(route('vault.export'))->assertOk()->assertSee('set up your own key first');
         $this->post(route('vault.export.download'), ['format' => 'bogus'] + self::CSV)->assertSessionHasErrors('format');
     }
 
@@ -133,7 +158,7 @@ class VaultExportTest extends TestCase
             ->assertSee('not protected at all')
             ->assertSee('delete')
             ->assertSee('scripts/vault-decrypt.php')
-            ->assertSee('.lore-vault.key')
+            ->assertSee('private key')
             ->assertSee(route('vault.export.decrypt-tool'), false);
     }
 

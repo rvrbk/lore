@@ -20,7 +20,7 @@
         <fieldset class="space-y-2">
             <legend class="text-zinc-400">Format</legend>
             <label class="flex items-start gap-2"><input type="radio" name="format" value="csv" @checked(old('format', 'csv') === 'csv') class="mt-1 accent-indigo-500"><span><strong>CSV, not encrypted</strong><span class="block text-xs text-zinc-500">Bitwarden's import format; most password managers can read it.</span></span></label>
-            <label class="flex items-start gap-2 {{ $canExportEncrypted ? '' : 'opacity-50' }}"><input type="radio" name="format" value="encrypted" @checked(old('format') === 'encrypted') @disabled(! $canExportEncrypted) class="mt-1 accent-indigo-500"><span><strong>Encrypted</strong>@unless($canExportEncrypted) (not set up: add <code>VAULT_PUBLIC_KEY</code> to the server's .env)@endunless<span class="block text-xs text-zinc-500">Locked with your public key. Only your private key, kept on your own computer, can open it. Lose that key and the file is useless.</span></span></label>
+            <label class="flex items-start gap-2 {{ $canExportEncrypted ? '' : 'opacity-50' }}"><input type="radio" name="format" value="encrypted" @checked(old('format') === 'encrypted') @disabled(! $canExportEncrypted) class="mt-1 accent-indigo-500"><span><strong>Encrypted</strong>@unless($canExportEncrypted) (<a href="{{ route('settings.vault-key') }}" class="underline">set up your own key first</a>)@endunless<span class="block text-xs text-zinc-500">Locked with your own public key (Settings, Vault key). Only your private key, kept on your own computer, can open it. Lose that key and the file is useless.</span></span></label>
             @error('format')<p class="text-red-400">{{ $message }}</p>@enderror
         </fieldset>
 
@@ -37,9 +37,9 @@
 
     <section class="mt-8 max-w-2xl space-y-2 border border-zinc-800 bg-zinc-900 p-4 text-sm">
         <h2 class="font-semibold">Opening the encrypted download</h2>
-        <p class="text-zinc-400">The file is called <code>lore-vault-YYYY-MM-DD.csv.sealed</code>. It is locked with a public key and can only be opened with the matching <strong>private key</strong>, a small text file (usually <code>~/.lore-vault.key</code>) that never leaves your own computer. Without that key nobody can open it, not even Lore.</p>
+        <p class="text-zinc-400">The file is called <code>lore-vault-YYYY-MM-DD.csv.sealed</code>. It is locked with a public key and can only be opened with the matching <strong>private key</strong>, the small key file the tool made for you, which never leaves your own computer. Without that key nobody can open it, not even Lore.</p>
         <ol class="list-decimal space-y-1 pl-5 text-zinc-300">
-            <li><a href="{{ route('vault.export.decrypt-tool') }}" class="underline">Download the decrypt tool</a> (one HTML file, no install) and open it from your computer in Chrome, Edge, Firefox or Safari.</li>
+            <li><a href="{{ route('vault.export.decrypt-tool') }}" class="underline">Download the key and decrypt tool</a> (one HTML file, no install) and open it from your computer in Chrome, Edge, Firefox or Safari.</li>
             <li>Choose the <code>.sealed</code> file and your private key file, then press the button. It runs offline inside the page and saves a plain CSV (<code>lore-vault.csv</code>).</li>
             <li>Import that CSV into your password manager, then delete it and the <code>.sealed</code> file.</li>
         </ol>

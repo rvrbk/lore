@@ -30,6 +30,7 @@ use App\Http\Controllers\TwoFactorSettingsController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\VaultController;
 use App\Http\Controllers\VaultExportController;
+use App\Http\Controllers\VaultKeySettingsController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WorldClockController;
 use App\Http\Middleware\ScopeToCurrentUser;
@@ -64,7 +65,10 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
     Route::get('confirm-password', [ConfirmPasswordController::class, 'show'])->name('password.confirm');
     Route::post('confirm-password', [ConfirmPasswordController::class, 'confirm'])->middleware('throttle:6,1,password-confirm');
     Route::get('settings/two-factor', [TwoFactorSettingsController::class, 'show'])->name('settings.two-factor');
+    Route::get('settings/vault-key', [VaultKeySettingsController::class, 'show'])->name('settings.vault-key');
     Route::middleware('password.confirm')->group(function () {
+        Route::put('settings/vault-key', [VaultKeySettingsController::class, 'update'])->name('settings.vault-key.update');
+        Route::delete('settings/vault-key', [VaultKeySettingsController::class, 'destroy'])->name('settings.vault-key.destroy');
         Route::post('settings/two-factor', [TwoFactorSettingsController::class, 'start'])->name('settings.two-factor.start');
         Route::post('settings/two-factor/recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])->name('settings.two-factor.recovery-codes');
         Route::delete('settings/two-factor', [TwoFactorSettingsController::class, 'disable'])->name('settings.two-factor.disable');

@@ -20,13 +20,13 @@ class VaultExportController extends Controller
     private const DOWNLOADS_PER_HOUR = 3;
 
     /** The page with the warnings. Nothing is downloaded until the form on it is submitted with the password. */
-    public function show(VaultSealer $sealer): View
+    public function show(Request $request): View
     {
-        return view('vault.export', ['canExportEncrypted' => $sealer->isAvailable()]);
+        return view('vault.export', ['canExportEncrypted' => $this->sealerFor($request)->isAvailable()]);
     }
 
     /** Every download asks for the account password again, however recently it was confirmed. */
-    public function download(Request $request, BitwardenCsv $csv, VaultSealer $sealer): Response|RedirectResponse
+    public function download(Request $request, BitwardenCsv $csv): Response|RedirectResponse
     {
         $data = $request->validate([
             'format' => ['required', 'in:csv,encrypted'],
@@ -42,8 +42,9 @@ class VaultExportController extends Controller
         abort_if(RateLimiter::tooManyAttempts($limiterKey, self::DOWNLOADS_PER_HOUR), 429, 'Too many exports. Try again later.');
 
         $format = $data['format'];
+        $sealer = $this->sealerFor($request);
         if ($format === 'encrypted' && ! $sealer->isAvailable()) {
-            return redirect()->route('vault.export')->with('error', 'Encrypted export is not set up: add VAULT_PUBLIC_KEY to the server .env (make the pair with scripts/vault-keygen.php).');
+            return redirect()->route('vault.export')->with('error', 'Encrypted export needs your own key first: add your public key under Settings, Vault key.');
         }
 
         RateLimiter::hit($limiterKey, 3600);
@@ -76,6 +77,12 @@ class VaultExportController extends Controller
             $csv->write($out, $items->lazy());
             fclose($out);
         }, 'lore-vault-'.$stamp.'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** Encrypted exports are locked to the signed-in user's own public key, never to a key of the server. */
+    private function sealerFor(Request $request): VaultSealer
+    {
+        return new VaultSealer($request->user()->vault_public_key);
     }
 
     /** The offline browser tool for opening encrypted exports, for people who do not have the repository. */
