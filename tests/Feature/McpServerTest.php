@@ -142,14 +142,15 @@ class McpServerTest extends TestCase
 
     public function test_tokens_are_made_and_revoked_on_the_settings_page_after_confirming_the_password(): void
     {
-        $this->get(route('settings.mcp'))->assertOk()->assertSee(route('mcp.lore'));
+        $this->get(route('settings.mcp'))->assertOk()->assertSee(route('mcp.lore'))->assertSee('&lt;your token&gt;', false);
 
         $this->post(route('settings.mcp.store'), ['name' => 'Laptop'])->assertRedirect(route('password.confirm'));
         $this->withSession(['auth.password_confirmed_at' => time()]);
 
         $this->post(route('settings.mcp.store'), ['name' => ''])->assertSessionHasErrors('name');
         $this->post(route('settings.mcp.store'), ['name' => 'Laptop'])->assertRedirect(route('settings.mcp'))->assertSessionHas('new_token');
-        $this->get(route('settings.mcp'))->assertSee('Laptop')->assertSee('never used');
+        $page = $this->get(route('settings.mcp'))->assertSee('Laptop')->assertSee('never used')->assertSee('VS Code (GitHub Copilot)')->assertSee('Copilot CLI')->assertSee('Cursor')->assertSee('Codex');
+        $this->assertStringNotContainsString('&lt;your token&gt;', $page->getContent(), 'a created token is filled into the snippets');
 
         $token = $this->user->tokens()->firstOrFail();
         $stranger = User::factory()->create()->createToken('theirs')->accessToken;

@@ -16,10 +16,22 @@
             <div class="border border-emerald-700 bg-emerald-500/10 p-3">
                 <p class="font-medium text-emerald-400">Your new token. Copy it now: it is not shown again.</p>
                 <code class="mt-2 block select-all break-all border border-zinc-700 px-2 py-1">{{ session('new_token') }}</code>
-                <p class="mt-3 text-zinc-400">Add it to Claude Code with:</p>
-                <code class="mt-1 block select-all break-all border border-zinc-700 px-2 py-1">claude mcp add --transport http lore {{ $endpoint }} --header "Authorization: Bearer {{ session('new_token') }}"</code>
             </div>
         @endif
+
+        <div>
+            <h2 class="font-semibold">Connect a client</h2>
+            <p class="mt-1 text-zinc-400">Any MCP client that supports HTTP servers with a custom header works: use the endpoint above and an <code>Authorization: Bearer</code> header. Setup for common ones{{ session('new_token') ? ', with your new token filled in' : ' (create a token first to get it filled in)' }}:</p>
+            @foreach($clients as $client)
+                <details class="mt-2 border border-zinc-800">
+                    <summary class="cursor-pointer px-3 py-2">{{ $client['name'] }}</summary>
+                    <div class="px-3 pb-3">
+                        <p class="text-xs text-zinc-500">{{ $client['where'] }}</p>
+                        <pre class="mt-2 select-all overflow-x-auto whitespace-pre-wrap break-all border border-zinc-700 px-2 py-1 font-mono text-xs">{{ $client['code'] }}</pre>
+                    </div>
+                </details>
+            @endforeach
+        </div>
 
         <form method="POST" action="{{ route('settings.mcp.store') }}" class="flex items-end gap-2">
             @csrf

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\McpClients;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,8 +14,11 @@ class McpSettingsController extends Controller
 {
     public function show(Request $request): View
     {
+        $endpoint = route('mcp.lore');
+
         return view('settings.mcp', [
-            'endpoint' => route('mcp.lore'),
+            'endpoint' => $endpoint,
+            'clients' => McpClients::snippets('lore', $endpoint, session('new_token') ?? '<your token>'),
             'tokens' => $request->user()->tokens()->latest('id')->get(),
         ]);
     }
