@@ -8,7 +8,7 @@
                 @if($reminder->task) · <a href="{{ route('tasks.index') }}" class="underline">Task: {{ $reminder->task->title }}</a> @endif
                 @if($reminder->page) · <a href="{{ route('pages.show', $reminder->page) }}" class="underline">{{ $reminder->page->title }}</a> @endif
             </div>
-            @if($reminder->notes)<p class="mt-1 text-sm text-zinc-400">{{ $reminder->notes }}</p>@endif
+            @if($reminder->notes)<p class="mt-1 whitespace-pre-line text-sm text-zinc-400">{!! preg_replace('~https?://[^\s<]+~', '<a href="$0" target="_blank" rel="noopener" class="underline">$0</a>', e($reminder->notes)) !!}</p>@endif
         </div>
         <div class="flex flex-wrap gap-1.5 text-xs sm:shrink-0 sm:justify-end">
             @if($reminder->completed_at)
@@ -22,4 +22,8 @@
             <form method="POST" action="{{ route('reminders.destroy', $reminder) }}" onsubmit="return confirm('Delete this reminder?')">@csrf @method('DELETE')<button class="rounded border px-2 py-1 text-red-400 hover:bg-red-500/10">Delete</button></form>
         </div>
     </div>
+    <details class="mt-3 border-t border-zinc-800 pt-2" @if($errors->any() && old('form_id') == $reminder->id) open @endif>
+        <summary class="cursor-pointer text-xs text-zinc-400 hover:text-zinc-200">Edit</summary>
+        <div class="mt-3">@include('partials.reminder-form', ['reminder' => $reminder])</div>
+    </details>
 </li>

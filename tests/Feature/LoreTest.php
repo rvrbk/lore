@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Page;
 use App\Models\Reminder;
 use App\Models\Space;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -127,6 +128,24 @@ class LoreTest extends TestCase
         $user->forceFill(['telegram_chat_id' => '555'])->save();
         Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
         $this->artisan('telegram:test')->expectsOutputToContain('Test message sent to rik')->assertSuccessful();
+    }
+
+    public function test_reminders_can_be_edited_from_the_reminders_page_without_losing_links(): void
+    {
+        $task = Task::factory()->create();
+        $r = Reminder::factory()->create(['title' => 'Old', 'task_id' => $task->id, 'notes' => 'See https://example.com/x']);
+
+        $this->get(route('reminders.index'))
+            ->assertOk()
+            ->assertSee(route('reminders.update', $r), false)
+            ->assertSee('<a href="https://example.com/x"', false);
+
+        $this->put(route('reminders.update', $r), [
+            'title' => 'New', 'due_at' => '2027-04-23T09:00', 'recurrence' => 'none', 'task_id' => $task->id, 'notes' => 'Edited',
+        ])->assertRedirect();
+
+        $this->assertSame('New', $r->fresh()->title);
+        $this->assertSame($task->id, $r->fresh()->task_id);
     }
 
     public function test_snooze_resets_notification(): void

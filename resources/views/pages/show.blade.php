@@ -73,7 +73,7 @@
                 <ul class="space-y-2">@foreach($reminders as $reminder) @include('partials.reminder-row', ['reminder' => $reminder]) @endforeach</ul>
                 <details class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 p-3">
                     <summary class="cursor-pointer text-sm font-medium">Add a reminder</summary>
-                    <div class="mt-3">@include('partials.reminder-form', ['pageId' => $page->id])</div>
+                    <div class="mt-3">@include('partials.reminder-form', ['pageId' => $page->id, 'reminder' => null])</div>
                 </details>
             </section>
         </article>
