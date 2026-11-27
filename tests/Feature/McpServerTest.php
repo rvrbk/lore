@@ -139,4 +139,23 @@ class McpServerTest extends TestCase
         $this->assertSame([], $this->callTool('list-reminders-tool')['data']['reminders']);
         $this->assertModelExists($theirs);
     }
+
+    public function test_tokens_are_made_and_revoked_on_the_settings_page_after_confirming_the_password(): void
+    {
+        $this->get(route('settings.mcp'))->assertOk()->assertSee(route('mcp.lore'));
+
+        $this->post(route('settings.mcp.store'), ['name' => 'Laptop'])->assertRedirect(route('password.confirm'));
+        $this->withSession(['auth.password_confirmed_at' => time()]);
+
+        $this->post(route('settings.mcp.store'), ['name' => ''])->assertSessionHasErrors('name');
+        $this->post(route('settings.mcp.store'), ['name' => 'Laptop'])->assertRedirect(route('settings.mcp'))->assertSessionHas('new_token');
+        $this->get(route('settings.mcp'))->assertSee('Laptop')->assertSee('never used');
+
+        $token = $this->user->tokens()->firstOrFail();
+        $stranger = User::factory()->create()->createToken('theirs')->accessToken;
+        $this->delete(route('settings.mcp.destroy', $stranger->id))->assertNotFound();
+        $this->delete(route('settings.mcp.destroy', $token->id))->assertRedirect(route('settings.mcp'));
+        $this->assertSame(0, $this->user->tokens()->count());
+        $this->assertSame(1, $stranger->newQuery()->count());
+    }
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\DeployController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MarkdownController;
+use App\Http\Controllers\McpSettingsController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\MonitorSubscriptionController;
 use App\Http\Controllers\NewsController;
@@ -69,7 +70,10 @@ Route::middleware(['auth', ScopeToCurrentUser::class])->group(function () {
     Route::get('extension', [VaultExtensionController::class, 'show'])->name('extension.show');
     Route::get('extension/download', [VaultExtensionController::class, 'download'])->name('extension.download');
     Route::get('settings/vault-key', [VaultKeySettingsController::class, 'show'])->name('settings.vault-key');
+    Route::get('settings/mcp', [McpSettingsController::class, 'show'])->name('settings.mcp');
     Route::middleware('password.confirm')->group(function () {
+        Route::post('settings/mcp', [McpSettingsController::class, 'store'])->name('settings.mcp.store');
+        Route::delete('settings/mcp/{token}', [McpSettingsController::class, 'destroy'])->name('settings.mcp.destroy');
         Route::put('settings/vault-key', [VaultKeySettingsController::class, 'update'])->name('settings.vault-key.update');
         Route::delete('settings/vault-key', [VaultKeySettingsController::class, 'destroy'])->name('settings.vault-key.destroy');
         Route::post('settings/two-factor', [TwoFactorSettingsController::class, 'start'])->name('settings.two-factor.start');
